@@ -1,0 +1,10 @@
+RSpec.configure do |c|
+  c.around(:example, :db) do |example|
+    DB.transaction(rollback: :always) {example.run}
+  end
+  c.before(:suite) do
+    Sequel.extension :migration
+    Sequel::Migrator.run(DB, 'db/migrations')
+    DB[:members].truncate
+  end
+end

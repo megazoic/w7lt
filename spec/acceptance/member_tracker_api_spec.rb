@@ -1,9 +1,9 @@
 require 'rack/test'
 require 'json'
-require_relative '../app/api'
+require_relative '../../app/api'
 
 module MemberTracker
-  RSpec.describe 'Member Tracker API' do
+  RSpec.describe 'Member Tracker API', :db do
     include Rack::Test::Methods
     
     def app
@@ -11,13 +11,12 @@ module MemberTracker
     end
     
     it 'records submitted members' do
-      member = {
-        'name' => 'nick',
-        'call' => 'KI7PTT',
-        'email' => 'nick@nicksit.com'
+      member_data = {
+        'fname' => 'joe',
+        'lname' => 'smith'
       }
       
-      post '/members', JSON.generate(member)
+      post '/members', JSON.generate(member_data)
       expect(last_response.status).to eq(200)
       
       parsed = JSON.parse(last_response.body)
