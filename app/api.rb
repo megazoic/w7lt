@@ -10,8 +10,8 @@ module MemberTracker
     end
     
     post '/members' do
-      member = JSON.parse(request.body.read)
-      result = @member.record(member)
+      member_data = JSON.parse(request.body.read)
+      result = @member.record(member_data)
       if result.success?
         JSON.generate('member_id' => result.member_id)
       else

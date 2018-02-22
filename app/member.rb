@@ -1,5 +1,5 @@
 module MemberTracker
-  #used to package up status info
+  require_relative '../config/sequel'
   RecordResult = Struct.new(:success?, :member_id, :error_message)
   class Member
     def record(member)
@@ -12,6 +12,7 @@ module MemberTracker
       RecordResult.new(true, id, nil)
     end
     def members_with_lastname(name)
+      DB[:members].where(lname: name).all
     end
   end
 end

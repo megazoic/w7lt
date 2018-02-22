@@ -1,7 +1,7 @@
 require_relative '../../../app/member'
-require_relative '../../../config/sequel'
 
 module MemberTracker
+  #:aggregate_failures allows muclitple failures to be recorded p87
   RSpec.describe Member, :aggregate_failures, :db do
     let(:member) {Member.new}
     let(:member_data) do
@@ -32,6 +32,23 @@ module MemberTracker
           expect(result.error_message).to include('\'lname\' is required')
           expect(DB[:members].count).to eq(0)
         end
+      end
+    end
+    describe '#members_with_lastname' do
+      it 'returns all members with a name provided' do
+        result_1 = member.record(member_data.merge('fname' => 'fred',
+        'lname' => 'smith'))
+        result_2 = member.record(member_data.merge('fname' => 'mary',
+        'lname' => 'smith'))
+        result_3 = member.record(member_data.merge('fname' => 'fred',
+        'lname' => 'jones'))
+        expect(member.members_with_lastname('smith')).to contain_exactly(
+        a_hash_including(id: result_1.member_id),
+        a_hash_including(id: result_2.member_id)
+        )
+      end
+      it 'returns a blank array when there are no matching members' do
+        expect(member.members_with_lastname('smith')).to eq([])
       end
     end
   end
