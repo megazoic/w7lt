@@ -1,5 +1,4 @@
 module MemberTracker
-  require_relative '../config/sequel'
   RecordResult = Struct.new(:success?, :member_id, :error_message)
   class Member
     def record(member)

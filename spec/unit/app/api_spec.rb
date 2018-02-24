@@ -7,14 +7,54 @@ module MemberTracker
     include Rack::Test::Methods
     
     def app
-      API.new(member: member)
+      API.new(member: member, auth_user: auth_user)
     end
     def parsedJSON
       JSON.parse(last_response.body)
     end
 
     let(:member) {instance_double ('MemberTracker::Member')}
+    let(:auth_user) {instance_double ('MemberTracker::Auth_user')}
     
+    describe 'POST /login' do
+      let(:auth_user_credentials) {{'some'=>'data', 'some_more'=>'data'}}
+      context 'when the auth_user is successfully authorized' do
+        before do
+          allow(auth_user).to receive(:authenticate)
+          .with(auth_user_credentials)
+          .and_return(true)
+        end
+        it 'responds with a 302 (Found)' do
+          post '/login', JSON.generate(auth_user_credentials)
+          expect(last_response.status).to eq(302)
+        end
+        it 'redirects to \'/\' the root route' do
+          post '/login', JSON.generate(auth_user_credentials)
+          #need to figure out how to set this
+          expect(last_response.location).to match("http://example.org/")
+        end
+        it 'returns the authorized user\'s id' do
+          post '/login', JSON.generate(auth_user_credentials)
+          expect(rack_mock_session.cookie_jar.to_hash).to include("auth_user_id" => "24")
+        end
+      end
+      context 'when the auth_user is unsuccessfully authorized' do
+        before do
+          allow(auth_user).to receive(:authenticate)
+          .with(auth_user_credentials)
+          .and_return(false)
+        end
+        it 'responds with a 302 (Found)' do
+          post '/login', JSON.generate(auth_user_credentials)
+          expect(last_response.status).to eq(302)
+        end
+        it 'redirects to \'/login\'' do
+          post '/login', JSON.generate(auth_user_credentials)
+          #need to figure out how to set this
+          expect(last_response.location).to match("http://example.org/login")
+        end
+      end
+    end
     describe 'POST /members' do
       let(:member_data) {{'some'=>'data'}}
       context 'when the member is successfully recorded' do
