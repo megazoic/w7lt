@@ -1,4 +1,3 @@
-require_relative '../../config/sequel'
 
 RSpec.configure do |c|
   c.around(:example, :db) do |example|
@@ -6,7 +5,8 @@ RSpec.configure do |c|
   end
   c.before(:suite) do
     Sequel.extension :migration
-    Sequel::Migrator.run(DB, 'db/migrations')
+    Sequel::Migrator.run(DB, './db/migrations')
     DB[:members].truncate
+    DB[:auth_users].truncate
   end
 end

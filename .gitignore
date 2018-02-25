@@ -10,7 +10,9 @@ Icon
 .rvmrc
 
 *.sqlite3
+*.db
 
 Gemfile.lock
 #rspec
 examples.txt
+[0-9]
