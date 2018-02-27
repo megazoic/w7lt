@@ -1,5 +1,6 @@
 require_relative '../../../app/api'
 require 'rack/test'
+require 'erb'
 
 module MemberTracker
   
@@ -11,6 +12,12 @@ module MemberTracker
     end
     def parsedJSON
       JSON.parse(last_response.body)
+    end
+    def parsedHTML
+      mbr_arry = JSON.parse(last_response.body)
+      out = ERB.new(("<% mbr_arry.each do |m| %><li><a href=\"/member/<%=m[0]%>"+
+      "\"><%=m[1]%> <%=m[2]%></a></li><%end%>"), nil, "%").result(binding)
+      out
     end
 
     let(:member) {instance_double ('MemberTracker::Member')}
@@ -103,12 +110,18 @@ module MemberTracker
           query_name = 'smith' 
           allow(member).to receive(:members_with_lastname)
           .with(query_name)
-          .and_return([['joe', 'smith'], ['mary', 'smith']])
+          .and_return([[0, 'joe', 'smith'], [1, 'mary', 'smith']])
         end
           
         it 'returns a member as JSON' do
-          get '/members/smith'
-          expect(parsedJSON).to eq([['joe', 'smith'], ['mary', 'smith']])
+          get '/members/smith', {}, {'HTTP_ACCEPT' => 'application/json'}
+          expect(parsedJSON).to eq([[0, 'joe', 'smith'], [1, 'mary', 'smith']])
+        end
+        it 'returns a member as HTML' do
+          get '/members/smith', {}, {'HTTP_ACCEPT' => 'application/json'}
+          test_str = "<li><a href=\"/member/0\">joe smith</a></li>"+
+          "<li><a href=\"/member/1\">mary smith</a></li>"
+          expect(parsedHTML).to match(test_str)
         end
         it 'responds with a 200 (OK)' do
           get '/members/smith'

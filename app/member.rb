@@ -14,10 +14,10 @@ module MemberTracker
     end
     def members_with_lastname(name)
       matching_members = Member.where(lname: name).all
-      data_out = []
-      matching_members.each {|m| data_out << m.values}
-      data_out
-      #DB[:members].where(lname: name).all
+      matching_members
+      #data_out = []
+      #matching_members.each {|m| data_out << m.values}
+      #data_out
     end
   end
 end

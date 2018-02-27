@@ -13,9 +13,13 @@
 # it.
 #
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
+require 'rspec_sequel_matchers'
 
 ENV['RACK_ENV'] = 'test'
+
 RSpec.configure do |config|
+  # from openhood/rspec_sequel_matchers gem instructions
+  config.include RspecSequel::Matchers
   # from Prag Prog Effective Testing with RSpec3 p93
   config.when_first_matching_example_defined(:db) do
     require_relative 'support/db'

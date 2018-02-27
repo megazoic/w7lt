@@ -15,4 +15,5 @@ Icon
 Gemfile.lock
 #rspec
 examples.txt
+loadsequel.rb
 [0-9]

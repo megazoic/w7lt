@@ -1,5 +1,6 @@
 require_relative '../../../app/member'
 
+
 module MemberTracker
   #:aggregate_failures allows muclitple failures to be recorded p87
   RSpec.describe Member, :aggregate_failures, :db do
@@ -42,10 +43,9 @@ module MemberTracker
         'lname' => 'smith'))
         result_3 = member.record(member_data.merge('fname' => 'fred',
         'lname' => 'jones'))
-        expect(member.members_with_lastname('smith')).to contain_exactly(
-        a_hash_including(id: result_1.member_id),
-        a_hash_including(id: result_2.member_id)
-        )
+        member.members_with_lastname('smith').each {|m|
+          expect(m.lname).to eq('smith')
+        }
       end
       it 'returns a blank array when there are no matching members' do
         expect(member.members_with_lastname('smith')).to eq([])
