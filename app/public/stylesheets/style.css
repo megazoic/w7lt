@@ -1,0 +1,17 @@
+tr:nth-child(even) {background: #CCC}
+tr:nth-child(odd) {background: #FFF}
+table, th, td {
+	border: 1px solid black;
+	border-collapse: collapse;
+}
+th, td {
+	padding: 7px;
+}
+
+/* text style */
+.highlight {
+	background-color: #fff2ac;
+}
+.textColor {
+	color: blue;
+}

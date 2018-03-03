@@ -1,9 +1,0 @@
-<ul>
-<% @members.each do |member| %>
- <li>
-   <a href="/member/<%= member.id %>"><%= member.fname %></a> | <%= member.lname %>
-   <% mbr_arry.each do |m| %><li><a href=\"/member/<%=m[0]%>"+
-         "\"><%=m[1]%> <%=m[2]%></a></li><%end%>
- </li>
-<% end %>
-</ul>

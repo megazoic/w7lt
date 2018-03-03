@@ -1,0 +1,87 @@
+<%#
+:fname	:lname	:email	:apt	:city	:street
+:zip	:state	:callsign	:phm	:phm_pub
+:phh	:phh_pub	:phw	:phw_pub
+:license_class	:mbr_type	:paid_up	:arrl
+:arrl_expire	:ares	:net	:ve	:elmer
+go through the whole thing and look for exampe like apt
+%>
+<h1>Edit Member <span class="textColor"><%="#{@member[:fname]} #{@member[:lname]}"%></span></h1>
+<form action='/save/member' method='POST' name="mbrVitals" onsubmit="return validateForm();">
+	<label for="fname">First*</label>
+	<input type="text" name="fname" value="<%=@member[:fname]%>" id="fname">
+	<label for="lname">Last*</label>
+	<input type="text" name="lname" value="<%=@member[:lname]%>" id="lname">
+	<label for="callsign">Callsign</label>
+	<input type="text" name="callsign" value="<%=@member[:callsign]%>" id="callsign" size="10"><br />
+	<p>Address:</p>
+	<label for="email">email</label>
+	<input type="text" name="email" value="<%=@member[:email]%>" id="email" onfocusout="validateEmail(this)">
+	<label for="street">Street</label>
+	<input type="text" name="street" value="<%=@member[:street]%>" id="street">
+	<label for="apt">Appartment</label>
+	<input type="text" name="apt" value="<%=@member[:apt]%>" id="apt"><br />
+	<label for="city">City</label>
+	<input type="text" name="city" value="<%=@member[:city]%>" id="city">
+	<label for="state">State</label>
+	<input type="text" name="state" value="<%=@member[:state]%>" id="state"><br />
+	<label for="fname">Zip Code</label>
+	<input type="text" name="zip" value="<%=@member[:zip]%>" id="zip" size="10"> format XXXXX-XXXX (last 4 optional)<br />
+	<p>Phone: XXX-XXX-XXXX Format</p>
+	<label for="phh">Home</label>
+	<input type="text" name="phh" value="<%=@member[:phh]%>" id="phh" onfocusout="validatePh(this)">
+	<label for="phh_pub">Publish?</label>
+	<input type="hidden" name="phh_pub" value="0">
+	<input type="checkbox" name="phh_pub" id="phh_pub" value="1" <%=@member[:phh_pub]==1  ? "checked" : nil%>><br />
+	<label for="phw">Work</label>
+	<input type="text" name="phw" value="<%=@member[:phw]%>" id="phw"  onfocusout="validatePh(this)">
+	<label for="phw_pub">Publish?</label>
+	<input type="hidden" name="phw_pub" value="0">
+	<input type="checkbox" name="phw_pub" id="phw_pub" value="1" <%=@member[:phw_pub]==1  ? "checked" : nil%>><br />
+	<label for="phm">Mobile</label>
+	<input type="text" name="phm" value="<%=@member[:phm]%>" id="phm"  onfocusout="validatePh(this)">
+	<label for="phm_pub">Publish?</label>
+	<input type="hidden" name="phm_pub" value="0">
+	<input type="checkbox" name="phm_pub" id="phm_pub" value="1" <%=@member[:phm_pub]==1  ? "checked" : nil%>><br />
+<%# :license_class	:mbr_type	:paid_up	:arrl
+:arrl_expire	:ares	:net	:ve	:elmer%>
+	<p>Membership status</p>
+	Member Type: <select id="mbr_type" name="mbr_type">
+		<option value="full" <%=@member[:mbr_type] == 'full' ? "selected" : nil%>>Full</option>
+		<option value="student" <%=@member[:mbr_type] == 'student' ? "selected" : nil%>>Student</option>
+		<option value="family" <%=@member[:mbr_type] == 'family' ? "selected" : nil%>>Family</option>
+		<option value="honorary" <%=@member[:mbr_type] == 'honorary' ? "selected" : nil%>>Honorary</option>
+	</select>
+	License_class <select id="license_class" name="license_class">
+		<option value="tech" <%=@member[:license_class] == 'full' ? "selected" : nil%>>Tech</option>
+		<option value="general" <%=@member[:license_class] == 'general' ? "selected" : nil%>>General</option>
+		<option value="extra" <%=@member[:license_class] == 'extra' ? "selected" : nil%>>Extra</option>
+		<option value="none" <%=@member[:license_class] == '' ? "selected" : nil%>>None</option>
+	</select>
+	<label for="paid_up">Paid through <%=Time.new.year%></label>
+	<input type="hidden" name="paid_up" value="0">
+	<input type="checkbox" name="paid_up" id="paid_up" value="1" <%=@member[:paid_up] == 1  ? "checked" : nil%>>
+	<p>Other Affiliations and Volunteering</p>
+	<label for="arrl">ARRL</label>
+	<input type="hidden" name="arrl" value="0">
+	<input type="checkbox" name="arrl" id="arrl" value="1" <%=@member[:arrl] == 1  ? "checked" : nil%> onchange="arrlSet();">
+	Expire date YYYY-MM-DD <input type="text" name="arrl_expire" id="arrl_expire" value="<%=@member[:arrl_expire]%>"  <%if @member[:arrl]==0 %>disabled="disabled"<% end %> onfocusout="validateArrlExpDate(this)">
+	  |  <label for="ares">ARES</label>
+	<input type="hidden" name="ares" value="0">
+	<input type="checkbox" name="ares" id="ares" value="1" <%=@member[:ares] == 1  ? "checked" : nil%>>
+	  |  <label for="net">Portland NET</label>
+	<input type="hidden" name="net" value="0">
+	<input type="checkbox" name="net" id="net" value="1" <%=@member[:net] == 1  ? "checked" : nil%>>
+	  |  <label for="ve">VE</label>
+	<input type="hidden" name="ve" value="0">
+	<input type="checkbox" name="ve" id="ve" value="1" <%=@member[:ve] == 1  ? "checked" : nil%>>
+	  |  <label for="elmer">Elmer</label>
+	<input type="hidden" name="elmer" value="0">
+	<input type="checkbox" name="elmer" id="elmer" value="1" <%=@member[:elmer] == 1  ? "checked" : nil%>>
+	<hr />
+	<input type="hidden" name="id" value="<%=@member[:id]%>">
+	<input type="submit" value="Submit" onsubmit="validateForm()"> | <a href="/list/members">Cancel</a>
+</form>
+  <form action="/logout" method="POST">
+    <input type="submit" value="Sign Out" />
+  </form>

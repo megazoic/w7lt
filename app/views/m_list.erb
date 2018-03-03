@@ -1,0 +1,38 @@
+<%#
+:fname	:lname	:email	:apt	:city	:street
+:zip	:state	:callsign	:phm	:phm_pub
+:phh	:phh_pub	:phw	:phw_pub
+:license_class	:mbr_type	:paid_up	:arrl
+:arrl_expire	:ares	:net	:ve	:elmer
+%>
+<div>
+  <h3>Members List</h3>
+</div>
+<div>
+	<table>
+		<tr>
+			<th>First Name</th>
+			<th>Last Name</th>
+			<th>call</th>
+			<th>license</th>
+			<th>email</th>
+			<th>paid <%=Time.new.year%></th>
+			<th></th>
+		</tr>
+		<% for member in @member %>
+		<tr>
+		<td><%=member[:fname]%></td>
+		<td><%=member[:lname]%></td>
+		<td><%=member[:callsign]%></td>
+		<td><%=member[:license_class]%></td>
+		<td><%=member[:email]%></td>
+		<td><%=member[:paid_up]%></td>
+		<td><a href="/edit/member/<%= member[:id]%>">edit</a> |
+		<a href="/show/member/<%= member[:id]%>">view</a></td>
+		</tr>
+		<% end %>
+	</table>
+</div>
+<div id="footer">
+  <p><b>A Ruby Sinatra App</b>.</p>
+</div>

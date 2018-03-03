@@ -1,0 +1,8 @@
+1,freddy,mith,234@456.com,1
+2,creddy,smith,234@456.com,0
+3,sreddy,mith,234@456.com,1
+4,dreddy,smith,234@456.com,0
+5,reddy,pith,234@456.com,1
+6,deddy,doe,234@456.com,0
+7,freddy,dta,234@456.com,0
+8,freddy,dfe,234@456.com,1

@@ -1,5 +1,10 @@
-  <h1>Home</h1>
-  <p>Hello, <%= current_user.username %>.</p>
-  <form action="/sign_out" method="POST">
+  <h1>PARC Home</h1>
+  <p>Hello!</p>
+  <p>Please choose...</p>
+  <a href="/query">Query the member data</a><br />
+  <a href="/list/members">List members</a><br />
+  <a href="/new/member">Add a new member</a><br />
+
+  <form action="/logout" method="POST">
     <input type="submit" value="Sign Out" />
   </form>
