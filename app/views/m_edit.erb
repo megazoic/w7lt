@@ -7,7 +7,7 @@
 go through the whole thing and look for exampe like apt
 %>
 <h1>Edit Member <span class="textColor"><%="#{@member[:fname]} #{@member[:lname]}"%></span></h1>
-<form action='/save/member' method='POST' name="mbrVitals" onsubmit="return validateForm();">
+<form action='/save/member' method='POST' name="mbrVitals" onsubmit="return validateMbrForm();">
 	<label for="fname">First*</label>
 	<input type="text" name="fname" value="<%=@member[:fname]%>" id="fname">
 	<label for="lname">Last*</label>
@@ -80,8 +80,5 @@ go through the whole thing and look for exampe like apt
 	<input type="checkbox" name="elmer" id="elmer" value="1" <%=@member[:elmer] == 1  ? "checked" : nil%>>
 	<hr />
 	<input type="hidden" name="id" value="<%=@member[:id]%>">
-	<input type="submit" value="Submit" onsubmit="validateForm()"> | <a href="/list/members">Cancel</a>
+	<input type="submit" value="Submit" onsubmit="validateMbrForm()"> | <a href="/list/members">Cancel</a>
 </form>
-  <form action="/logout" method="POST">
-    <input type="submit" value="Sign Out" />
-  </form>

@@ -19,6 +19,3 @@ Volunteer:<br />VE <span class="highlight"><%=@member[:ve].to_i == 0 ? "N" : "Y"
 	 
 <a href="/edit/member/<%= @member[:id]%>">Edit</a><form action="/destroy/member/<%= @member[:id]%>" method="post">
 	<input type="submit" value="Delete Member?"></form>
-    <form action="/logout" method="POST">
-      <input type="submit" value="Sign Out" />
-    </form>

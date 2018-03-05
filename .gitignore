@@ -11,7 +11,7 @@ Icon
 
 *.sqlite3
 *.db
-mydata.txt
+mydata.*
 
 Gemfile.lock
 #rspec

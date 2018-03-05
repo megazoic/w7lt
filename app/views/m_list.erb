@@ -7,6 +7,17 @@
 %>
 <div>
   <h3>Members List</h3>
+  <%case @type_of_query; when "unpaid"%>Those with unpaid dues (<%=@member.length%>)
+  <%when "paid"%>Those with dues paid in full (<%=@member.length%>)
+  <%when "mbr_full"%>Those who are full members (<%=@member.length%>)
+  <%when "mbr_student"%>Those who are student members (<%=@member.length%>)
+  <%when "mbr_family"%>Those who are family members (<%=@member.length%>)
+  <%when "mbr_honorary"%>Those who are honorary members (<%=@member.length%>)
+  <%when "ve"%>Those who are volunteer examiners (<%=@member.length%>)
+  <%when "arrl"%>Those who are ARRL members (<%=@member.length%>)
+  <%when "ares"%>Those who are ARES members (<%=@member.length%>)
+  <%else%>All members (<%=@member.length%>)
+  <%end%>
 </div>
 <div>
 	<table>

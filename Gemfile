@@ -1,10 +1,10 @@
 source 'https://rubygems.org'
 
-gem 'rspec'
-gem 'coderay'
-gem 'rack-test'
-gem 'sinatra'
-gem 'sequel'
-gem 'sqlite3'
-gem 'bcrypt'
-gem "rspec_sequel_matchers", group: :test
+gem 'rspec', '3.7.0'
+gem 'coderay', '1.1.2'
+gem 'rack-test', '0.8.2'
+gem 'sinatra', '2.0.1'
+gem 'sequel', '5.5.0'
+gem 'sqlite3', '1.3.13'
+gem 'bcrypt', '3.1.11'
+gem "rspec_sequel_matchers", group: :test, '0.4.0'

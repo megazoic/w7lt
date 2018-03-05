@@ -64,7 +64,17 @@ function validateEmail(textbox){
 		textbox.setAttribute('isInValid','');
 	}
 }
-function validateForm(){
+function validateQueryForm(){
+	var formInvalid = true
+	var queryType = $(query_select);
+	if (queryType == "paid_up"){
+		//check to see radio button selected
+	}
+	if (queryType == "mbr_type"){
+		//check to see radio button selected
+	}
+}
+function validateMbrForm(){
 	var arrlDate = $("arrl_expire").getAttribute('isInValid');
 	var phoneHome = $("phh").getAttribute('isInValid');
 	var phoneWork = $("phw").getAttribute('isInValid');

@@ -26,26 +26,58 @@ module MemberTracker
     get '/' , :provides => 'json' do
       puts 'in get and json'
     end
+    get '/dump' , :provides => 'html' do
+      @m = Member.all
+      erb :dump
+    end
     get '/home' do
+      @member_lnames = Member.select(:id, :lname).order(:lname).all
       erb :home
     end
     get '/query' do
-      erb :query
+      erb :query, :layout => :layout_w_logout
     end
     post '/query' do
-      case params[:type]
+      case params[:query_type]
       when "paid_up"
-        @member = Member.where(paid_up: 0)
+        if params[:dues_status] == "unpaid"
+          @type_of_query="unpaid"
+          @member = Member.where(paid_up: 0).all
+        else
+          @type_of_query="paid"
+          @member = Member.where(paid_up: 1).all
+        end
       when "ve"
-        @member = Member.where(ve: 1)
+        @type_of_query="ve"
+        @member = Member.where(ve: 1).all
       when "arrl"
-        @member = Member.where(arrl: 1)
+        @type_of_query="arrl"
+        @member = Member.where(arrl: 1).all
       when "ares"
-        @member = Member.where(ares: 1)
+        @type_of_query="ares"
+        @member = Member.where(ares: 1).all
+      when "mbr_type"
+        #full, student, family, honorary
+        case params[:mbr_type]
+        when "full"
+          @type_of_query="mbr_full"
+          @member = Member.where(mbr_type: "full").all
+        when "student"
+          @type_of_query="mbr_student"
+          @member = Member.where(mbr_type: "student").all
+        when "family"
+          @type_of_query="mbr_family"
+          @member = Member.where(mbr_type: "family").all
+        when "honorary"
+          @type_of_query="mbr_honorary"
+          @member = Member.where(mbr_type: "honorary").all
+        else
+          redirect '/query'
+        end
       else
         redirect '/query'
       end
-      erb :m_list
+      erb :m_list, :layout => :layout_w_logout
     end
     get '/login' do
       erb :login
@@ -92,15 +124,15 @@ module MemberTracker
     end
     get '/list/members' do
       @member = Member.all
-      erb :m_list
+      erb :m_list, :layout => :layout_w_logout
     end
     get '/show/member/:id' do
       @member = Member[params[:id].to_i]
-      erb :m_show
+      erb :m_show, :layout => :layout_w_logout
     end
     get '/edit/member/:id' do
       @member = Member[params[:id].to_i]
-      erb :m_edit
+      erb :m_edit, :layout => :layout_w_logout
     end
     get '/new/member' do
       @record = {:fname => '', :lname => '', :email => '', :apt => '',
@@ -109,7 +141,7 @@ module MemberTracker
         :phw => '', :phw_pub => '', :license_class => '', :mbr_type => '',
         :paid_up => '', :arrl => '', :arrl_expire => '', :ares => '',
         :net => '', :ve => '', :elmer => ''}
-      erb :m_edit
+      erb :m_edit, :layout => :layout_w_logout
     end
     post '/save/member' do
       mbr_id = params[:id]
@@ -121,6 +153,9 @@ module MemberTracker
       else
         mbr_record = Member[params[:id].to_i]
         params.reject!{|k,v| k == "id"}
+        #the js form validator that uses regex inserts a captures key
+        #in the returning params. need to pull this out too
+        params.reject!{|k,v| k == "captures"}
         mbr_record.update(params)
       end
       redirect "/show/member/#{mbr_id}"
