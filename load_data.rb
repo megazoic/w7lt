@@ -2,7 +2,8 @@ require 'csv'
 require 'sinatra'
 require 'sequel'
 
-DB = Sequel.sqlite("./db/development.db")
+#DB = Sequel.sqlite("./db/development.db")
+#DB = Sequel.connect('postgres://dev-mbr:4hamD3v@localhost:5432/mbr-devdb')
 
 colnames = [:phw, :phw_pub, :phh, :phh_pub, :phm, :phm_pub, :fname, :lname, :email, 
 :apt, :city, :street, :zip, :state, :callsign, :paid_up, :arrl, :ares, 

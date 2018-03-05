@@ -13,7 +13,7 @@ module MemberTracker
     
     enable :sessions
 
-    before do # need to remove this for testing!!!
+    before do # need to comment this for RSpec
       next if request.path_info == '/login'
       if session[:auth_user_id].nil?
         redirect '/login'
@@ -26,13 +26,17 @@ module MemberTracker
     get '/' , :provides => 'json' do
       puts 'in get and json'
     end
-    get '/dump' , :provides => 'html' do
-      @m = Member.all
-      erb :dump
+    get '/dump/:table' , :provides => 'html' do
+      if params[:table] = 'mbr'
+        @m = Member.all
+        erb :dump
+      else
+        redirect '/home'
+      end
     end
     get '/home' do
       @member_lnames = Member.select(:id, :lname).order(:lname).all
-      erb :home
+      erb :home, :layout => :layout_w_logout
     end
     get '/query' do
       erb :query, :layout => :layout_w_logout
@@ -191,11 +195,5 @@ module MemberTracker
       end
     end
     #################### end from test environment ##########
-    helpers do
-      def authenticate
-        #need to test session here for auth_user_id
-        #and auth_user_authority
-      end
-    end
   end
 end

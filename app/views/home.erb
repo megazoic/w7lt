@@ -1,12 +1,4 @@
   <h1>PARC Home</h1>
-  <p>Please choose...</p>
-    <form action="/logout" method="POST">
-      <input type="submit" value="Sign Out" />
-    </form>
-  <a href="/dump">Output the member data as an unfomatted comma separated list</a><br />
-  <a href="/query">Query the member data</a><br />
-  <a href="/list/members">List members</a><br />
-  <a href="/new/member">Add a new member</a><br />
 <p>Or choose a member to view from the following list</p><br />
 	<table>
 		<%@member_lnames.each_slice(5) do |member| %>
