@@ -43,7 +43,7 @@ DEPENDENCIES
   coderay (= 1.1.2)
   pg (= 1.0.0)
   rack-test (= 0.8.2)
-  rake
+  rake (= 12.3.0)
   rspec (= 3.7.0)
   rspec_sequel_matchers (= 0.4.0)
   sequel (= 5.5.0)
