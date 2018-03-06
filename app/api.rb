@@ -149,6 +149,9 @@ module MemberTracker
     end
     post '/save/member' do
       mbr_id = params[:id]
+      #the js form validator that uses regex inserts a captures key
+      #in the returning params. need to pull this out too
+      params.reject!{|k,v| k == "captures"}
       if mbr_id == ''
         params.reject!{|k,v| k == "id"}
         mbr_record = Member.new(params)
@@ -157,9 +160,6 @@ module MemberTracker
       else
         mbr_record = Member[params[:id].to_i]
         params.reject!{|k,v| k == "id"}
-        #the js form validator that uses regex inserts a captures key
-        #in the returning params. need to pull this out too
-        params.reject!{|k,v| k == "captures"}
         mbr_record.update(params)
       end
       redirect "/show/member/#{mbr_id}"

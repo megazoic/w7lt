@@ -43,7 +43,7 @@ DEPENDENCIES
   bcrypt (= 3.1.11)
   coderay (= 1.1.2)
   pg (= 1.0.0)
-  puma
+  puma (= 3.11.2)
   rack-test (= 0.8.2)
   rake (= 12.3.0)
   rspec (= 3.7.0)
