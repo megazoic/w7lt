@@ -12,6 +12,7 @@ Icon
 *.sqlite3
 *.db
 mydata.*
+dumpfile
 
 #rspec
 examples.txt

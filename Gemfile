@@ -2,6 +2,7 @@ source 'https://rubygems.org'
 
 ruby '2.4.1'
 
+gem 'puma'
 gem 'rake', '12.3.0'
 gem 'rspec', '3.7.0'
 gem 'coderay', '1.1.2'
