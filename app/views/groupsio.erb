@@ -1,0 +1,50 @@
+<%#
+      @unmatched is an array of arrays [{parc-mbr hash}:, {groups.io hash}]
+      where the groups.io hash has keys "gio_id" "gio_fn" "gio_email"
+      and the par-mbr hash has keys "id", "fname", "lname", "callsign", "email"
+%>
+<form action="/groupsio" method="post">
+	<table>
+		<tr>
+			<th>PARC Name</th>
+			<th>call</th>
+			<th>PARC email</th>
+			<th>Groups.io name</th>
+			<th>Groups.io email</th>
+			<th>copy to PARC?</th>
+		</tr>
+		<%
+		for mbr in @unmatched
+			#first element in array is a hash of parc-mbr info unless nil
+			if !mbr[0].nil?
+		 %>
+		<tr>
+			<td><%="#{mbr[0][:fname]} #{mbr[0][:lname]}"%></td>
+			<td><%=mbr[0][:callsign]%></td>
+			<td><%=mbr[0][:email]%></td>
+			<td><%=mbr[1]["gio_fn"]%></td>
+			<td><%=mbr[1]["gio_email"]%></td>
+			<td><input type="checkbox" name=<%=mbr[0][:id]%> value=<%=mbr[1]["gio_email"]%>></td>
+		</tr>
+		<% end; end %>
+	</table>
+	<input type="submit" value="Update" />
+</form>
+<%#
+      @unmatched.each{|mbr|
+        if mbr[0].kind_of?(Integer)
+          #have a matching member in the database pull it up and update
+          parc_mbr = Member[mbr[0]]
+          puts "PARC member #{parc_mbr.fname} #{parc_mbr.lname} has new email #{mbr[1]['gio_email']} Add?"
+          reply = gets
+          if reply.chomp == "y"
+            parc_mbr.email = mbr[1]["gio_email"]
+            parc_mbr.save
+          else
+            puts "you said no"
+          end
+        else
+          puts "Groups.io member #{mbr[1]['gio_fn']} with email #{mbr[1]['gio_email']} and groups.io id #{mbr[1]['gio_id']} not found"
+        end
+      }
+%>

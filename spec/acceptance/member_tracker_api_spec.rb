@@ -52,11 +52,12 @@ module MemberTracker
         parsed = JSON.parse(last_response.body)
         expect(parsed).to include('member_id' => a_kind_of(Integer))
       end
-      #before do
+      before do
         #need authority to test this so give it here
-        #rack_mock_session.set_cookie('auth_user_id=1')
-        #rack_mock_session.set_cookie('auth_user_authority=0')
-        #end
+        #also, be sure to remove sessions before hook from api.rb file
+        rack_mock_session.set_cookie('auth_user_id=1')
+        rack_mock_session.set_cookie('auth_user_authority=0')
+      end
       it 'creates new auth_user' do
       new_auth_user_data = { 'fname' => 'first_name',
         'lname' => 'last_name',

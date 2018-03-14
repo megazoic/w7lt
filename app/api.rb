@@ -2,6 +2,7 @@ require 'sinatra/base'
 require 'json'
 require_relative 'member'
 require_relative 'auth_user'
+require_relative 'groups_sync'
 
 module MemberTracker
   class API < Sinatra::Base
@@ -19,7 +20,6 @@ module MemberTracker
         redirect '/login'
       end
     end
-    
     get '/' , :provides => 'html' do
       puts 'in get and html'
     end
@@ -37,6 +37,43 @@ module MemberTracker
     get '/home' do
       @member_lnames = Member.select(:id, :lname).order(:lname).all
       erb :home, :layout => :layout_w_logout
+    end
+    get '/groupsio' do
+      gio = GroupsioData.new
+      if gio.setToken == 0
+        #success, retrieve data
+        if gio.getMbrData == 0
+          #success, find unmatched emails
+          gio.compareEmails
+        end
+      end
+      if gio.groupsIOError["error"].to_i == 0
+        @unmatched = gio.unmatched
+        erb :groupsio, :layout => :layout_w_logout
+      else
+        #failed send message
+        @gioerror = gio.groupsIOError["errorMsg"]
+        erb :errorMsg, :layout => :layout_w_logout
+      end
+    end
+    post '/groupsio' do
+      #if params has any numbered keys these are parc_mbr ids that need to
+      #be updated with the value, first remove the captures key
+      params.reject!{|k,v| k == "captures"}
+      mbrs = []
+      params.each{|k,v|
+        if /\d+/.match(k)
+          #there is an id need to update a record in Members
+          mbr = Member[k.to_i]
+          mbr.email = v
+          if mbr.save
+            mbrs << k.to_i
+          end
+        end
+      }
+      #return successful updates
+      @mbrs = Member.select(:id, :fname, :lname, :callsign, :email).where(id: mbrs).all
+      erb :list_saved, :layout => :layout_w_logout
     end
     get '/query' do
       erb :query, :layout => :layout_w_logout

@@ -6,8 +6,9 @@
 # Icon must end with two \r
 Icon
 
-.rspec
-.rvmrc
+#misc
+curlOut.txt
+app/scripts/*
 
 *.sqlite3
 *.db
@@ -21,3 +22,5 @@ dumpfile
 examples.txt
 loadsequel.rb
 [0-9]
+.rspec
+.rvmrc

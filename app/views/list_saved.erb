@@ -1,0 +1,15 @@
+<h1>The following member emails have been updated with Groups.io addresses</h1>
+	<table>
+		<tr>
+			<th>Name</th>
+			<th>call</th>
+			<th>email</th>
+		</tr>
+		<% for member in @mbrs %>
+		<tr>
+		<td><%="#{member[:fname]} #{member[:lname]}"%></td>
+		<td><%=member[:callsign]%></td>
+		<td><%=member[:email]%></td>
+		</tr>
+		<%end%>
+	</table>
