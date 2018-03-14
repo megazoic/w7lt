@@ -2,8 +2,14 @@
       @unmatched is an array of arrays [{parc-mbr hash}:, {groups.io hash}]
       where the groups.io hash has keys "gio_id" "gio_fn" "gio_email"
       and the par-mbr hash has keys "id", "fname", "lname", "callsign", "email"
+	This form has two tables, the first deals with members who have a corresponding
+	groups.io account registered in the gio_id field
+	the second deals with Groups.io members who have no corresponding member here
+	ie. orphans. Params returned with the form have name=mbr_id value=email from the
+	first table and name=gio_id, value=mbr_id from the second table
 %>
 <form action="/groupsio" method="post">
+	<h3>Members with existing Groups.io account</h3>
 	<table>
 		<tr>
 			<th>PARC Name</th>
@@ -13,7 +19,7 @@
 			<th>Groups.io email</th>
 			<th>copy to PARC?</th>
 		</tr>
-		<%
+		<%gio_orphan = false
 		for mbr in @unmatched
 			#first element in array is a hash of parc-mbr info unless nil
 			if !mbr[0].nil?
@@ -26,8 +32,34 @@
 			<td><%=mbr[1]["gio_email"]%></td>
 			<td><input type="checkbox" name=<%=mbr[0][:id]%> value=<%=mbr[1]["gio_email"]%>></td>
 		</tr>
-		<% end; end %>
+		<% else gio_orphan = true; end; end %>
 	</table>
+	<br />
+	<%#only if there are mbrs without a gio account AND gio accounts w/o a corresponding mbr here%>
+	<%if @mbrs_wo_gio.length > 0 && gio_orphan == true%>
+	<h3>Members with Groups.io account with no database entry here</h3>
+	<table>
+		<tr>
+			<th>Groups.io name</th>
+			<th>Groups.io email</th>
+			<th>PARC member?</th>
+		</tr>
+		<%for mbr in @unmatched
+			if mbr[0].nil?%>
+			<tr>
+				<td><%=mbr[1]["gio_fn"]%></td>
+				<td><%=mbr[1]["gio_email"]%></td>
+				<td><select name=<%="#{mbr[1]['gio_id']}"%>>
+					<option value="none" selected>Not Selected</option>
+					<%for mbr in @mbrs_wo_gio%>
+					<option value=<%="#{mbr[:id]}"%>><%="#{mbr[:fname]} #{mbr[:lname]}"%></option>
+					<%end%>
+				</select>
+				</td>
+			</tr>
+			<%end;end%>
+	</table>
+	<%end%>
 	<input type="submit" value="Update" />
 </form>
 <%#

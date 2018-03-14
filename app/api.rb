@@ -39,6 +39,8 @@ module MemberTracker
       erb :home, :layout => :layout_w_logout
     end
     get '/groupsio' do
+      #get members who have no Groups.io account record
+      @mbrs_wo_gio = Member.select(:id, :fname, :lname).where(Sequel.lit('gio_id IS NULL')).all
       gio = GroupsioData.new
       if gio.setToken == 0
         #success, retrieve data
@@ -59,15 +61,27 @@ module MemberTracker
     post '/groupsio' do
       #if params has any numbered keys these are parc_mbr ids that need to
       #be updated with the value, first remove the captures key
+      #Params returned with the form have name=mbr_id value=email from the
+      #first table and name=gio_id, value=mbr_id from the second table
       params.reject!{|k,v| k == "captures"}
       mbrs = []
       params.each{|k,v|
         if /\d+/.match(k)
-          #there is an id need to update a record in Members
-          mbr = Member[k.to_i]
-          mbr.email = v
-          if mbr.save
-            mbrs << k.to_i
+          #there is an id need to update a record in Members based on which
+          #id we're dealing with here Groups.io or this database
+          if k.to_i > 10000
+            #this is a groups.io id use value to get member from this db
+            mbr = Member[v.to_i]
+            mbr.gio_id = k
+            if mbr.save
+              mbrs << v.to_i
+            end
+          else #this is a parc-mbr database id use key to get member
+            mbr = Member[k.to_i]
+            mbr.email = v
+            if mbr.save
+              mbrs << k.to_i
+            end
           end
         end
       }
