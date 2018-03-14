@@ -64,30 +64,35 @@ module MemberTracker
       #Params returned with the form have name=mbr_id value=email from the
       #first table and name=gio_id, value=mbr_id from the second table
       params.reject!{|k,v| k == "captures"}
-      mbrs = []
-      params.each{|k,v|
-        if /\d+/.match(k)
-          #there is an id need to update a record in Members based on which
-          #id we're dealing with here Groups.io or this database
-          if k.to_i > 10000
-            #this is a groups.io id use value to get member from this db
-            mbr = Member[v.to_i]
-            mbr.gio_id = k
-            if mbr.save
-              mbrs << v.to_i
-            end
-          else #this is a parc-mbr database id use key to get member
-            mbr = Member[k.to_i]
-            mbr.email = v
-            if mbr.save
-              mbrs << k.to_i
+      params.reject!{|k,v| v == "none"}
+      if params.length > 0
+        mbrs = []
+        params.each{|k,v|
+          if /\d+/.match(k)
+            #there is an id need to update a record in Members based on which
+            #id we're dealing with here Groups.io or this database
+            if k.to_i > 10000
+              #this is a groups.io id use value to get member from this db
+              mbr = Member[v.to_i]
+              mbr.gio_id = k.to_i
+              if mbr.save
+                mbrs << v.to_i
+              end
+            else #this is a parc-mbr database id use key to get member
+              mbr = Member[k.to_i]
+              mbr.email = v
+              if mbr.save
+                mbrs << k.to_i
+              end
             end
           end
-        end
-      }
-      #return successful updates
-      @mbrs = Member.select(:id, :fname, :lname, :callsign, :email).where(id: mbrs).all
-      erb :list_saved, :layout => :layout_w_logout
+        }
+        #return successful updates
+        @mbrs = Member.select(:id, :fname, :lname, :callsign, :email).where(id: mbrs).all
+        erb :list_saved, :layout => :layout_w_logout
+      else #nothing was sent
+        erb :home, :layout => :layout_w_logout
+      end
     end
     get '/query' do
       erb :query, :layout => :layout_w_logout
