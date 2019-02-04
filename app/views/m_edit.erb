@@ -78,7 +78,7 @@ go through the whole thing and look for exampe like apt
 	  |  <label for="elmer">Elmer</label>
 	<input type="hidden" name="elmer" value="0">
 	<input type="checkbox" name="elmer" id="elmer" value="1" <%=@member[:elmer] == 1  ? "checked" : nil%>>
-	<hr />
+	<input type="checkbox" name="sota" id="sota" value="1" <%=@member[:sota] == 1  ? "checked" : nil%>>	<hr />
 	<input type="hidden" name="id" value="<%=@member[:id]%>">
 	<input type="submit" value="Submit" onsubmit="validateMbrForm()"> | <a href="/list/members">Cancel</a>
 </form>

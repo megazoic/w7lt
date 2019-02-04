@@ -99,14 +99,12 @@ module MemberTracker
     end
     post '/query' do
       case params[:query_type]
-      when "paid_up"
-        if params[:dues_status] == "unpaid"
-          @type_of_query="unpaid"
-          @member = Member.where(paid_up: 0).all
-        else
-          @type_of_query="paid"
-          @member = Member.where(paid_up: 1).all
-        end
+      when "unpaid"
+        @type_of_query="unpaid"
+        @member = Member.where(paid_up: 0).all
+      when "paid"
+        @type_of_query="paid"
+        @member = Member.where(paid_up: 1).all
       when "ve"
         @type_of_query="ve"
         @member = Member.where(ve: 1).all
@@ -116,24 +114,18 @@ module MemberTracker
       when "ares"
         @type_of_query="ares"
         @member = Member.where(ares: 1).all
-      when "mbr_type"
-        #full, student, family, honorary
-        case params[:mbr_type]
-        when "full"
-          @type_of_query="mbr_full"
-          @member = Member.where(mbr_type: "full").all
-        when "student"
-          @type_of_query="mbr_student"
-          @member = Member.where(mbr_type: "student").all
-        when "family"
-          @type_of_query="mbr_family"
-          @member = Member.where(mbr_type: "family").all
-        when "honorary"
-          @type_of_query="mbr_honorary"
-          @member = Member.where(mbr_type: "honorary").all
-        else
-          redirect '/query'
-        end
+      when "full"
+        @type_of_query="mbr_full"
+        @member = Member.where(mbr_type: "full").all
+      when "student"
+        @type_of_query="mbr_student"
+        @member = Member.where(mbr_type: "student").all
+      when "family"
+        @type_of_query="mbr_family"
+        @member = Member.where(mbr_type: "family").all
+      when "honorary"
+        @type_of_query="mbr_honorary"
+        @member = Member.where(mbr_type: "honorary").all
       else
         redirect '/query'
       end

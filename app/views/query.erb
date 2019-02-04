@@ -2,34 +2,19 @@
 <form acton="/query" method="POST">
  <select id="query_select" name="query_type">
   <option value="dummy">Pick one</option>
+  <optgroup label="Dues Status">
+    <option value="paid">Dues Paid</option>
+    <option value="unpaid">Dues Unpaid</option>
+  </optgroup>
+  <optgroup label="Membership Type">
+    <option value="full">Full</option>
+    <option value="student">Student</option>
+    <option value="family">Family</option>
+    <option value="honorary">Honorary</option>
+  </optgroup>
   <option value="arrl">ARRL Members</option>
-  <option value="paid_up">Dues status</option>
   <option value="ares">ARES</option>
   <option value="ve">VE</option>
-  <option value="mbr_type">Membership Type</option>
-</select>
-<div>
-    <input type="radio" id="duesUnpaid"
-     name="dues_status" value="unpaid" checked>
-    <label for="duesUnpaid">Unpaid</label>
-
-    <input type="radio" id="duesPaid"
-     name="dues_status" value="paid">
-    <label for="duesPaid">Paid</label>
-</div>
-<div>
-    <input type="radio" id="mbrTypeFull"
-     name="mbr_type" value="full" checked>
-    <label for="mbrTypeFull">Full</label>
-    <input type="radio" id="mbrTypeStudent"
-     name="mbr_type" value="student">
-    <label for="mbrTypeStudent">Student</label>
-    <input type="radio" id="mbrTypeFamily"
-     name="mbr_type" value="family">
-    <label for="mbrTypeFamily">Family</label>
-    <input type="radio" id="mbrTypeHonorary"
-     name="mbr_type" value="honorary">
-    <label for="mbrTypeHonorary">Honorary</label>
-</div>
-	<input type="submit" value="Submit">
+ </select>
+ <input type="submit" value="Submit">
 </form>
