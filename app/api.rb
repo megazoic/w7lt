@@ -142,7 +142,7 @@ module MemberTracker
       auth_user_credentials = params
       auth_user_result = @auth_user.authenticate(auth_user_credentials)
       if auth_user_result.has_key?('auth_user_id')
-      ######begin for rack testing ########
+        ######begin for rack testing ########
         #response.set_cookie "auth_user_id", :value => auth_user_result['auth_user_id']
         #response.set_cookie "auth_user_authority",
         #  :value => auth_user_result['authority']

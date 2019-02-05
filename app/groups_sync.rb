@@ -1,43 +1,9 @@
-=begin
-Will need to find best way to display discrepancies (where emails don't
-match). Handle members who are not located in PARC-mbr cms
-#https://api.groups.io/v1/login?email=nick@nicksit.com&password=24jimmyj12" -u 123456
-#newuri = URI::HTTP.build({:host => 'www.example.com', :path => '/foo/bar',
-  #:query =>'need example'})
-
-#uri = URI("https://api.groups.io/v1/getmembers?group_name=W7LT")
-steps to pull groups.io member id, email and full_name
-  create instance of GroupsioData
-  call setToken method
-  call getMbrData
-
-steps to compare records from groups with PARC-mbr data
-#require 'sinatra'
-#require 'sequel'
-
-#DB = Sequel.connect('postgres://dev-mbr:4hamD3v@localhost:5432/mbr-devdb')
-
-class Member < Sequel::Model
-end
-
-@mbrs = Member.select(:id, :fname, :lname, :callsign, :email)
-
-
-=end
-
+#SEE SENSITIVE.TXT FOR DETAILS
 require 'net/http'
-#for testing only
-#require 'json'
-#require 'sinatra'
-#require 'sequel'
-#for testing purposes only
-#DB = Sequel.connect('postgres://dev-mbr:4hamD3v@localhost:5432/mbr-devdb')
-#class Member < Sequel::Model
-#end
 module MemberTracker
   class GroupsioData
     attr_reader :unmatched, :groupsIOError
-    def initialize( api_key = '123456' )
+    def initialize( api_key = ENV['PARCGIOKEY'] )
       @api_key = api_key
       @has_more = true
       @api_token = ''
@@ -60,12 +26,12 @@ module MemberTracker
       if @auth != ''
         # use AUTH_TOKEN
         path = '/v1/getmembers'
-        query = 'group_name=W7LT'
+        query = "group_name=#{ENV['PARCGIOGROUP']}"
         @auth = @api_token
       else
         #call login, use api_key and get AUTH_TOKEN
         path = '/v1/login'
-        query = 'email=nick@nicksit.com&password=24jimmyj12'
+        query = "email=#{ENV['PARCGIOUSER']}&password=#{ENV['PARCGIOPWD']}"
         @auth = @api_key
       end
       if @page_token.nil? == false
@@ -129,7 +95,7 @@ module MemberTracker
       #need to remove these elements
       @mbr_array.delete_if {|gio_hash| gio_hash["gio_fn"] == 'PARC mod'}
       @mbr_array.delete_if {|gio_hash| gio_hash["gio_fn"] == 'admin mod'}
-      @mbr_array.delete_if {|gio_hash| gio_hash["gio_email"] == 'scmods_2000@yahoo.com'}
+      @mbr_array.delete_if {|gio_hash| gio_hash["gio_email"] == "#{ENV['PARCGIOBOGUSEMAIL']}"}
       if @groupsIOError["errorCode"] = 0
         return 0
       else

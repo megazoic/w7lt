@@ -9,6 +9,8 @@ Icon
 #misc
 curlOut.txt
 app/scripts/*
+sensitive.txt
+env_vars
 
 *.sqlite3
 *.db
