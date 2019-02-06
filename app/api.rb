@@ -98,6 +98,40 @@ module MemberTracker
       erb :query, :layout => :layout_w_logout
     end
     post '/query' do
+      query_keys = Hash["dues_status", :dues_status,
+        "mbr_full", :mbr_full, "mbr_student", :mbr_student, "mbr_family", :mbr_family,
+        "mbr_honorary", :mbr_honorary, "arrl", :arrl, "ares", :ares, "pdxnet", :pdxnet,
+        "ve", :ve, "elmer", :elmer]
+        @qset = Hash.new
+        query_keys.each do |k,v|
+          if ["", nil].include?(params[v])
+            #skip
+          else
+            case k
+            when "dues_status"
+              @qset[:paid_up] = params[v]
+            when "arrl"
+              @qset[:arrl] = 1
+            when "ares"
+              @qset[:ares] = 1
+            when "membership"
+              @qset[:mbr_type] = params[v]
+            when "pdxnet"
+              @qset[:net] = 1
+            when "elmer"
+              @qset[:elmer] = 1
+            when "ve"
+              @qset[:ve] = 1
+            else
+              puts "error"
+            end
+          end
+        end
+        
+        @member = Member.where(@qset)
+        erb :m_list, :layout => :layout_w_logout
+    end
+    post '/query2' do
       case params[:query_type]
       when "unpaid"
         @type_of_query="unpaid"
