@@ -3,7 +3,10 @@ require 'bcrypt'
 
 module MemberTracker
   class Auth_user < Sequel::Model
-    TABLE_FIELDS = ['fname', 'lname', 'email', 'password', 'authority']
+    many_to_many :roles, left_key: :user_id, right_key: :role_id, join_table: :roles_users
+    many_to_one :member, key: :mbr_id
+    
+    TABLE_FIELDS = ['password', 'mbr_id', 'role']
     def authenticate(auth_user_credentials)
       #returns a hash with 'auth_user_id' and 'auth_user_authority' keys
       #if passed and 'error' key if fail
@@ -15,12 +18,30 @@ module MemberTracker
           return message
         end
       end
-      #get auth_user, test password, if pass return auth_user Sequel dataset
-      auth_user = Auth_user.find(email: auth_user_credentials['email'])
+      #get auth_user, test password, if pass return array of [id, role1, role2, ...]
+      #first, find member with this email, if more than one, need to iterate through :ids
+      mbrs = Member.where(email: auth_user_credentials['email']).all
+      mbr_id = 0
+      if mbrs.count > 1
+        mbrs.each do |m|
+          #look through the auth_user table to find corresponding member
+          auth_user = Auth_user.find(mbr_id: m.id)
+          if !auth_user.nil?
+            break
+          end
+        end
+      else
+        auth_user= Auth_user.find(mbr_id: mbrs[0].id)
+      end
       if !auth_user.nil?
         if BCrypt::Password.new(auth_user.password) == auth_user_credentials['password']
           message['auth_user_id'] = auth_user.id
-          message['auth_user_authority'] = auth_user.authority
+          #get roles
+          au_roles = []
+          auth_user.roles.each do |r|
+            au_roles << r.name
+          end
+          message['auth_user_roles'] = au_roles
         else
           message['error'] = 'password mismatch'
         end
@@ -42,7 +63,7 @@ module MemberTracker
         message['error'] = 'password too weak'
         return message
       end
-      #test integrity of auth_user's data all fields but fname must not be empty
+      #test integrity of auth_user's data: there can be no 2 or more auth_users with the same email addr
       TABLE_FIELDS.each do |f|
         unless auth_user_data.has_key?(f)
           message['error'] = 'all fields must be present'
@@ -73,7 +94,7 @@ module MemberTracker
       auth_user = Auth_user.new(auth_user_data)
       auth_user.save
       message['auth_user_id'] = auth_user.id
-      message['auth_user_authority'] = auth_user.authority
+      message['auth_user_roles'] = auth_user.roles
       message
     end
   end

@@ -3,12 +3,14 @@ require 'json'
 require_relative 'member'
 require_relative 'auth_user'
 require_relative 'groups_sync'
+require_relative 'role'
 
 module MemberTracker
+  #using modular (cf classical) approach (see https://www.toptal.com/ruby/api-with-sinatra-and-sequel-ruby-tutorial)
   class API < Sinatra::Base
-    def initialize(member: Member.new, auth_user: Auth_user.new)
-      @member = member
-      @auth_user = auth_user
+    def initialize()
+      @member = Member.new
+      @auth_user = Auth_user.new
       super()
     end
     
@@ -18,6 +20,16 @@ module MemberTracker
       next if request.path_info == '/login'
       if session[:auth_user_id].nil?
         redirect '/login'
+      end
+    end
+    before '/admin/*' do
+      authorize!
+    end
+    
+    def authorize!
+      if !session[:auth_user_roles].include?('auth_u')
+        session[:flash_msg] = "Sorry, you don't have permission"
+        redirect '/home'
       end
     end
     get '/' , :provides => 'html' do
@@ -36,6 +48,8 @@ module MemberTracker
     end
     get '/home' do
       @member_lnames = Member.select(:id, :lname).order(:lname).all
+      @err_msg = session[:flash_msg]
+      session[:flash_msg] = nil
       erb :home, :layout => :layout_w_logout
     end
     get '/groupsio' do
@@ -183,7 +197,9 @@ module MemberTracker
         #########end for rack testing###########
         #########begin web configuration ############
         session[:auth_user_id] = auth_user_result['auth_user_id']
-        session[:auth_user_authority] = auth_user_result['auth_user_authority']
+        session[:auth_user_roles] = auth_user_result['auth_user_roles']
+        
+        puts "auth roles is #{session[:auth_user_roles]}"
         #########end web configuration ############
         redirect '/home'
       else
@@ -191,7 +207,17 @@ module MemberTracker
         redirect '/login'
       end
     end
-    post '/create_auth_user' do
+    get '/admin/create_auth_user' do
+      erb :create_au, :layout => :layout_w_logout
+    end
+    post '/admin/create_auth_user' do
+      before do
+        #check authorization
+        if session[:auth_user_role] != 'admin'
+          #block this user with message
+          redirect '/'
+        end
+      end
       auth_user_data = JSON.parse(request.body.read)
       #expecting Auth_user#create to return a hash with
       #the new auth_user id and authority on success or
@@ -253,6 +279,17 @@ module MemberTracker
         redirect "/show/member/#{mbr_result.id}"
       else
         redirect "/list/members"
+      end
+    end
+    get '/test_role' do
+      before do
+        #check authorization
+        if session[:auth_user_roles].include?('admin')
+          #allow
+        else
+          #block this user with message
+          redirect '/'
+        end
       end
     end
     #################### start from test environment ##########

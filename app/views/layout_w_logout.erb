@@ -18,5 +18,10 @@
 	<a href="/groupsio">Check Groups.io email list</a><br />
 	<br />
     <%= yield %>
+	<% if @err_msg %>
+		<div id="error" style="border: 2px solid red;">
+			<%= @err_msg %>
+		</div>
+	<% end %>
   </body>
 </html>
