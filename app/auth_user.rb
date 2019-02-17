@@ -1,12 +1,12 @@
 require_relative '../config/sequel'
 require 'bcrypt'
+require 'securerandom'
 
 module MemberTracker
   class Auth_user < Sequel::Model
     many_to_many :roles, left_key: :user_id, right_key: :role_id, join_table: :roles_users
     many_to_one :member, key: :mbr_id
     
-    TABLE_FIELDS = ['password', 'mbr_id', 'role']
     def authenticate(auth_user_credentials)
       #returns a hash with 'auth_user_id' and 'auth_user_authority' keys
       #if passed and 'error' key if fail
@@ -50,52 +50,61 @@ module MemberTracker
       end
       message
     end
-    def create(auth_user_data)
-      message = Hash.new
+    def update
       #check new password for strength move this to javascript
       #password must have one or more each of Caps, Lowercase, number and
       #be between 8 and 24 characters
       regex = /^(?=.*[A-Z]+)(?=.*[0-9]+)(?=.*[a-z]+).{8,24}$/
-      temp_password = auth_user_data['password']
-      if regex.match(temp_password)
+      if regex.match(password)
         auth_user_data['password'] = BCrypt::Password.create(temp_password).to_s
       else
-        message['error'] = 'password too weak'
-        return message
-      end
-      #test integrity of auth_user's data: there can be no 2 or more auth_users with the same email addr
-      TABLE_FIELDS.each do |f|
-        unless auth_user_data.has_key?(f)
-          message['error'] = 'all fields must be present'
+          message['error'] = 'password too weak'
           return message
-        end
       end
-      auth_user_data.each do |key, value|
-        if key != 'fname'
-          if value == ''
-            message['error'] = 'one or more required fields are empty'
-            return message
-          end
-        end
-      end
+    end
+    def create(mbr_id, roles, email)
+      message = Hash.new
+      password = SecureRandom.hex[0,6]
       #test for existing user with these credentials
-      existing_auth_user = Auth_user.find(:email => auth_user_data['email'])
+      existing_auth_user = Auth_user.first(mbr_id: mbr_id)
       if !existing_auth_user.nil?
-        auth_user_data['password'] = BCrypt::Password.new(existing_auth_user.password)
-        message['error'] = 'this auth_user already exists'
+        message["success"] = false
+        message["mbr_id"] = mbr_id
+        message['message'] = 'this auth_user already exists, select update instead of create new'
         return message
       end
-      #test for out of range authority value
-      if !(0..3).include?(auth_user_data['authority'])
-        message['error'] = 'authorization value out of range'
+      #test for duplicate emails in members table for this user
+      member_emails = Member.select(:id, :fname, :lname, :callsign, :email).where(email: email).all
+      if member_emails.length > 1
+        puts "there are more than one member with this email"
+        member_emails.each do |m|
+          puts "#{m.fname}, #{m.lname}, #{m.callsign}, #{m.email}"
+        end
+        message["success"] = false
+        message["mbr_id"] = mbr_id
+        message['message'] = 'this auth_user shares an email: needs to be unique'
         return message
       end
-      #all criteria are passing, go ahead and save this auth_user
-      auth_user = Auth_user.new(auth_user_data)
-      auth_user.save
-      message['auth_user_id'] = auth_user.id
-      message['auth_user_roles'] = auth_user.roles
-      message
+       #all criteria are passing, go ahead and save this auth_user
+      role_names = []
+      begin
+        auth_user = Auth_user.new(:password => password, :mbr_id => mbr_id, :time_pwd_set => Time.now, :new_login => 1)
+        auth_user.save
+        #set the the roles for this user
+        roles.each do |k,v|
+          puts "role is #{k}"
+          auth_user.add_role(Role[k.to_i])
+        end
+        auth_user.roles.each {|r| role_names << r.name}
+        message["success"] = true
+        message["mbr_id"] = mbr_id
+        message["message"] = "temp password: #{password}"
+      rescue StandardError => e
+        message["success"] = false
+        message["mbr_id"] = mbr_id
+        message["message"] = "error: could not create authorized user.\n#{e}"
+      end
+      return message
     end
   end
 end

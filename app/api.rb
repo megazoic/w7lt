@@ -7,15 +7,15 @@ require_relative 'role'
 
 module MemberTracker
   #using modular (cf classical) approach (see https://www.toptal.com/ruby/api-with-sinatra-and-sequel-ruby-tutorial)
+  RecordResult = Struct.new(:success?, :member_id, :message)
   class API < Sinatra::Base
     def initialize()
       @member = Member.new
       @auth_user = Auth_user.new
+      @role = Role.new
       super()
     end
-    
     enable :sessions
-
     before do # need to comment this for RSpec
       next if request.path_info == '/login'
       if session[:auth_user_id].nil?
@@ -25,7 +25,6 @@ module MemberTracker
     before '/admin/*' do
       authorize!
     end
-    
     def authorize!
       if !session[:auth_user_roles].include?('auth_u')
         session[:flash_msg] = "Sorry, you don't have permission"
@@ -48,7 +47,7 @@ module MemberTracker
     end
     get '/home' do
       @member_lnames = Member.select(:id, :lname).order(:lname).all
-      @err_msg = session[:flash_msg]
+      @tmp_msg = session[:flash_msg]
       session[:flash_msg] = nil
       erb :home, :layout => :layout_w_logout
     end
@@ -68,7 +67,7 @@ module MemberTracker
         erb :groupsio, :layout => :layout_w_logout
       else
         #failed send message
-        @gioerror = gio.groupsIOError["errorMsg"]
+        @err_msg = gio.groupsIOError["errorMsg"]
         erb :errorMsg, :layout => :layout_w_logout
       end
     end
@@ -198,36 +197,12 @@ module MemberTracker
         #########begin web configuration ############
         session[:auth_user_id] = auth_user_result['auth_user_id']
         session[:auth_user_roles] = auth_user_result['auth_user_roles']
-        
-        puts "auth roles is #{session[:auth_user_roles]}"
         #########end web configuration ############
         redirect '/home'
       else
         #there is an error message in the auth_user_result if needed
+        puts "error is " + auth_user_result['error']
         redirect '/login'
-      end
-    end
-    get '/admin/create_auth_user' do
-      erb :create_au, :layout => :layout_w_logout
-    end
-    post '/admin/create_auth_user' do
-      before do
-        #check authorization
-        if session[:auth_user_role] != 'admin'
-          #block this user with message
-          redirect '/'
-        end
-      end
-      auth_user_data = JSON.parse(request.body.read)
-      #expecting Auth_user#create to return a hash with
-      #the new auth_user id and authority on success or
-      #error message
-      create = @auth_user.create(auth_user_data)
-      if create.has_key?('auth_user_id')
-        JSON.generate(create)
-      else
-        status 422
-        JSON.generate(create)
       end
     end
     post '/logout' do
@@ -281,6 +256,86 @@ module MemberTracker
         redirect "/list/members"
       end
     end
+    ################### START ADMIN #######################
+    get '/admin/list_auth_users' do
+      @au_list = []
+      #get a 2D array of [[mbr_id, auth_user_id]] for each auth_user
+      au = MemberTracker::Auth_user.map(){|x| [x.mbr_id, x.id]}
+      #fill this array with additional info
+      au.each do |u|
+        au_hash = Hash.new
+        m = Member.select(:id, :fname, :lname, :callsign).where(id: u[0]).first
+        au_hash["mbr_id"] = m.values[:id]
+        au_hash["fname"] = m.values[:fname]
+        au_hash["lname"] = m.values[:lname]
+        au_hash["callsign"] = m.values[:callsign]
+        au_hash["roles"] = []
+        
+        Auth_user[u[1]].roles.each do |r|
+          au_hash["roles"] << r.desc
+        end
+        @au_list << au_hash
+      end
+      @au_list
+      erb :list_auth_users, :layout => :layout_w_logout
+    end
+    get '/admin/update_au_roles/:id' do
+      @mbr_to_update = Member.select(:id, :fname, :lname, :callsign, :email)[params[:id].to_i]
+      #build 2D array of [role_id, role_desc, au_has_role]
+      @au_roles = Role.map(){|x| [x.id, x.desc]}
+      au = Auth_user.where(mbr_id: params[:id]).first
+      Auth_user[au.values[:id]].roles.each do |r|
+        count = 0
+        @au_roles.each do |au_role|
+          if au_role[0] == r.id
+            #this au has this role
+            @au_roles[count] << 1
+          end
+          count += 1
+        end
+      end
+      count = 0
+      #fill the cases where au has no role
+      @au_roles.each do |au_role|
+        if au_role.length < 3
+          @au_roles[count] << 0
+        end
+        count += 1
+      end
+      erb :update_au_roles, :layout => :layout_w_logout
+    end
+    post '/admin/update_auth_user' do
+      mbr_id = params[:mbr_id]
+      roles = params[:roles]
+      #need to remove all existing roles before updating with new
+      au = Auth_user.where(mbr_id: mbr_id).first
+      au.remove_all_roles
+      roles.each do |k,v|
+        au.add_role(Role[k.to_i])
+      end
+      redirect '/admin/list_auth_users'
+    end
+    get '/admin/set_au_roles/:id' do
+      @sel_au_mbr = Member.select(:id, :fname, :lname, :callsign, :email)[params[:id].to_i]
+      @roles = Role.all
+      erb :set_au_roles, :layout => :layout_w_logout
+    end
+    get '/admin/create_auth_user' do
+      @sel_au_from_mbrs = Member.select(:id, :fname, :lname, :callsign, :email).all
+      erb :create_au, :layout => :layout_w_logout
+    end
+    post '/admin/create_auth_user' do
+      mbr_id = params[:mbr_id]
+      roles = params[:roles]
+      email = Member.select(:email)[mbr_id.to_i].email
+      result = @auth_user.create(mbr_id, roles, email)
+      if result["success"]
+        @tmp_msg = result["message"]
+      else
+        @tmp_msg = "there was an error: " + result["message"] + " member id: " + result["mbr_id"]
+      end
+      redirect "/admin/list_auth_users"
+    end
     get '/test_role' do
       before do
         #check authorization
@@ -292,6 +347,7 @@ module MemberTracker
         end
       end
     end
+    #################### END ADMIN #############################
     #################### start from test environment ##########
     get '/members/:name', :provides => 'json' do
       JSON.generate(@member.members_with_lastname(params[:name]))
@@ -310,7 +366,7 @@ module MemberTracker
         JSON.generate('member_id' => result.member_id)
       else
         status 422
-        JSON.generate('error' => result.error_message)
+        JSON.generate('error' => result.message)
       end
     end
     #################### end from test environment ##########

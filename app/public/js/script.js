@@ -74,6 +74,17 @@ function validateQueryForm(){
 		//check to see radio button selected
 	}
 }
+function validateAssignRoleForm(){
+	var roles = document.querySelectorAll('input[type="checkbox"]');
+	//test to see if at least one checkbox is checked
+	var checkedOne = Array.prototype.slice.call(roles).some(x => x.checked);
+	if (checkedOne){//$("roles").length > 0
+		document.auRoles.submit();
+	} else {
+		alert("At least one Role must be selected");
+		return false;
+	}
+}
 function validateMbrForm(){
 	var arrlDate = $("arrl_expire").getAttribute('isInValid');
 	var phoneHome = $("phh").getAttribute('isInValid');
