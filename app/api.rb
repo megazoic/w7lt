@@ -23,10 +23,13 @@ module MemberTracker
       end
     end
     before '/admin/*' do
-      authorize!
+      authorize!("auth_u")
     end
-    def authorize!
-      if !session[:auth_user_roles].include?('auth_u')
+    before '/mbrmgr/*' do
+      authorize!("mbr_mgr")
+    end
+    def authorize!(role)
+      if !session[:auth_user_roles].include?(role)
         session[:flash_msg] = "Sorry, you don't have permission"
         redirect '/home'
       end
@@ -47,8 +50,8 @@ module MemberTracker
     end
     get '/home' do
       @member_lnames = Member.select(:id, :lname).order(:lname).all
-      @tmp_msg = session[:flash_msg]
-      session[:flash_msg] = nil
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
       erb :home, :layout => :layout_w_logout
     end
     get '/groupsio' do
@@ -140,7 +143,6 @@ module MemberTracker
             end
           end
         end
-        
         @member = Member.where(@qset)
         erb :m_list, :layout => :layout_w_logout
     end
@@ -179,7 +181,8 @@ module MemberTracker
       erb :m_list, :layout => :layout_w_logout
     end
     get '/login' do
-      erb :login
+      @tmp_msg = session[:msg]
+      erb :login, :layout => :layout
     end
     post '/login' do
       # only if passes test in auth_user
@@ -188,7 +191,14 @@ module MemberTracker
       #for RSpec test JSON.parse() request.body.read )
       auth_user_credentials = params
       auth_user_result = @auth_user.authenticate(auth_user_credentials)
-      if auth_user_result.has_key?('auth_user_id')
+      puts auth_user_result
+      if auth_user_result['error'] == 'new_user'
+        #need to reset password
+        session[:auth_user_id] = auth_user_result['auth_user_id']
+        mbr_id = Auth_user[auth_user_result['auth_user_id']].mbr_id
+        puts "mbr id is #{mbr_id}"
+        redirect "/reset_password/#{mbr_id}"
+      elsif auth_user_result.has_key?('auth_user_id')
         ######begin for rack testing ########
         #response.set_cookie "auth_user_id", :value => auth_user_result['auth_user_id']
         #response.set_cookie "auth_user_authority",
@@ -201,12 +211,14 @@ module MemberTracker
         redirect '/home'
       else
         #there is an error message in the auth_user_result if needed
-        puts "error is " + auth_user_result['error']
+        @tmp_msg = auth_user_result['error']
+        session.clear
         redirect '/login'
       end
     end
     post '/logout' do
       session.clear
+      session[:msg] = 'you have successfully logged out'
       redirect '/login'
     end
     get '/list/members' do
@@ -256,11 +268,22 @@ module MemberTracker
         redirect "/list/members"
       end
     end
+    ################### START MEMBER MGR ##################
+    get '/reset_password/:id' do
+      @mbr = Member.select(:id, :fname, :lname, :callsign).where(id: params[:id]).first
+      erb :reset_password, :layout => :layout_w_logout
+    end
+    post '/reset_password' do
+      @auth_user.update(params[:password], params[:mbr_id])
+      session.clear
+      session[:msg] = 'Password successfully reset, please login with your new password'
+      redirect '/login'
+    end
     ################### START ADMIN #######################
     get '/admin/list_auth_users' do
       @au_list = []
       #get a 2D array of [[mbr_id, auth_user_id]] for each auth_user
-      au = MemberTracker::Auth_user.map(){|x| [x.mbr_id, x.id]}
+      au = Auth_user.map(){|x| [x.mbr_id, x.id]}
       #fill this array with additional info
       au.each do |u|
         au_hash = Hash.new
@@ -277,6 +300,8 @@ module MemberTracker
         @au_list << au_hash
       end
       @au_list
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
       erb :list_auth_users, :layout => :layout_w_logout
     end
     get '/admin/update_au_roles/:id' do
@@ -313,6 +338,7 @@ module MemberTracker
       roles.each do |k,v|
         au.add_role(Role[k.to_i])
       end
+      session[:auth_user_roles] = roles
       redirect '/admin/list_auth_users'
     end
     get '/admin/set_au_roles/:id' do
@@ -330,11 +356,18 @@ module MemberTracker
       email = Member.select(:email)[mbr_id.to_i].email
       result = @auth_user.create(mbr_id, roles, email)
       if result["success"]
-        @tmp_msg = result["message"]
+        session[:msg] = result["message"]
       else
-        @tmp_msg = "there was an error: " + result["message"] + " member id: " + result["mbr_id"]
+        session[:msg] = "there was an error: " + result["message"] + " member id: " + result["mbr_id"]
       end
       redirect "/admin/list_auth_users"
+    end
+    get '/admin/delete_auth_user/:id' do
+      mbr_id = params[:id]
+      au = Auth_user.where(mbr_id: mbr_id).first
+      au.remove_all_roles
+      au.delete
+      redirect '/admin/list_auth_users'
     end
     get '/test_role' do
       before do

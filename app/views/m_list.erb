@@ -7,8 +7,11 @@
 %>
 <div>
   <h3>Members List</h3>
-  <%@qset.each do |k,v|%>
-    filter <%k%>: value <%v%>
+  <%if @qset%>
+  <p>Filters in place</p>
+	  <%@qset.each do |k,v|%>
+    	<p><%=k%> : value <%=v%></p>
+  	  <%end%>
   <%end%>
 </div>
 <div>
@@ -30,8 +33,7 @@
 		<td><%=member[:license_class]%></td>
 		<td><%=member[:email]%></td>
 		<td><%=member[:paid_up]%></td>
-		<td><a href="/edit/member/<%= member[:id]%>">edit</a> |
-		<a href="/show/member/<%= member[:id]%>">view</a></td>
+		<td><a href="/edit/member/<%= member[:id]%>">edit</a> | <a href="/show/member/<%= member[:id]%>">view</a></td>
 		</tr>
 		<% end %>
 	</table>

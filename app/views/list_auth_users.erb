@@ -16,7 +16,7 @@
 		<td><%=au["callsign"]%></td>
 		<td><%=au["roles"].join("<br>")%></td>
 		<td><a href="/admin/update_au_roles/<%= au['mbr_id']%>">Re-assign</a> |
-		<a href="/admin/remove_au/<%= au['mbr_id']%>">Remove</a></td>
+		<a href="/admin/delete_auth_user/<%= au['mbr_id']%>" class="confirm">Remove</a></td>
 		</tr>
 		<% end %>
 	</table>

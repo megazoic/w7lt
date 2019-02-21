@@ -8,5 +8,10 @@
   </head>
   <body>
     <%= yield %>
+	<% if @tmp_msg %>
+		<div id="alert">
+			<%= @tmp_msg %>
+		</div>
+	<% end %>
   </body>
 </html>
