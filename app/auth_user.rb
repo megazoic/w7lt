@@ -36,7 +36,17 @@ module MemberTracker
       if !auth_user.nil?
         #check to see if first time login
         if auth_user.new_login == 1
-          message['error'] = 'new_user'
+          t = Time.now
+          #give the new authorized user 2 days to login
+          puts "time is #{auth_user.time_pwd_set}"
+          if t - auth_user.time_pwd_set > 172800
+            message['error'] = 'expired'
+            #remove auth_user as time as expired
+            auth_user.remove_all_roles
+            auth_user.delete
+          else
+            message['error'] = 'new_user'
+          end
           message['auth_user_id'] = auth_user.id
         elsif BCrypt::Password.new(auth_user.password) == auth_user_credentials['password']
           message['auth_user_id'] = auth_user.id

@@ -192,11 +192,15 @@ module MemberTracker
       auth_user_credentials = params
       auth_user_result = @auth_user.authenticate(auth_user_credentials)
       puts auth_user_result
-      if auth_user_result['error'] == 'new_user'
+      if auth_user_result['error'] == 'expired'
+        #this auth_user has been removed and needs to be reset by admin
+        session.clear
+        session[:msg] = "The grace period for new user login has expired. Please contact admin."
+        redirect "/login"
+      elsif auth_user_result['error'] == 'new_user'
         #need to reset password
         session[:auth_user_id] = auth_user_result['auth_user_id']
         mbr_id = Auth_user[auth_user_result['auth_user_id']].mbr_id
-        puts "mbr id is #{mbr_id}"
         redirect "/reset_password/#{mbr_id}"
       elsif auth_user_result.has_key?('auth_user_id')
         ######begin for rack testing ########
@@ -283,7 +287,8 @@ module MemberTracker
     get '/admin/list_auth_users' do
       @au_list = []
       #get a 2D array of [[mbr_id, auth_user_id]] for each auth_user
-      au = Auth_user.map(){|x| [x.mbr_id, x.id]}
+      #except for currently logged in admin
+      au = Auth_user.exclude(id: session[:auth_user_id]).select(:id, :mbr_id).map(){|x| [x.mbr_id, x.id]}
       #fill this array with additional info
       au.each do |u|
         au_hash = Hash.new
@@ -347,7 +352,9 @@ module MemberTracker
       erb :set_au_roles, :layout => :layout_w_logout
     end
     get '/admin/create_auth_user' do
-      @sel_au_from_mbrs = Member.select(:id, :fname, :lname, :callsign, :email).all
+      #first, remove current user from this list
+      mbr_id = Auth_user[session[:auth_user_id]].mbr_id
+      @sel_au_from_mbrs = Member.exclude(id: mbr_id).select(:id, :fname, :lname, :callsign, :email).all
       erb :create_au, :layout => :layout_w_logout
     end
     post '/admin/create_auth_user' do
