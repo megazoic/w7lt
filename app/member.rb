@@ -1,8 +1,8 @@
 require_relative '../config/sequel'
 
 module MemberTracker
-  RecordResult = Struct.new(:success?, :member_id, :error_message)
   class Member < Sequel::Model
+    one_to_one :auth_user
     def record(member_data)
       unless member_data.key?('lname')
         message = 'Invalid member: \'lname\' is required'

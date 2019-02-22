@@ -7,16 +7,11 @@
 %>
 <div>
   <h3>Members List</h3>
-  <%case @type_of_query; when "unpaid"%>Those with unpaid dues (<%=@member.length%>)
-  <%when "paid"%>Those with dues paid in full (<%=@member.length%>)
-  <%when "mbr_full"%>Those who are full members (<%=@member.length%>)
-  <%when "mbr_student"%>Those who are student members (<%=@member.length%>)
-  <%when "mbr_family"%>Those who are family members (<%=@member.length%>)
-  <%when "mbr_honorary"%>Those who are honorary members (<%=@member.length%>)
-  <%when "ve"%>Those who are volunteer examiners (<%=@member.length%>)
-  <%when "arrl"%>Those who are ARRL members (<%=@member.length%>)
-  <%when "ares"%>Those who are ARES members (<%=@member.length%>)
-  <%else%>All members (<%=@member.length%>)
+  <%if @qset%>
+  <p>Filters in place</p>
+	  <%@qset.each do |k,v|%>
+    	<p><%=k%> : value <%=v%></p>
+  	  <%end%>
   <%end%>
 </div>
 <div>
@@ -38,8 +33,7 @@
 		<td><%=member[:license_class]%></td>
 		<td><%=member[:email]%></td>
 		<td><%=member[:paid_up]%></td>
-		<td><a href="/edit/member/<%= member[:id]%>">edit</a> |
-		<a href="/show/member/<%= member[:id]%>">view</a></td>
+		<td><a href="/edit/member/<%= member[:id]%>">edit</a> | <a href="/show/member/<%= member[:id]%>">view</a></td>
 		</tr>
 		<% end %>
 	</table>

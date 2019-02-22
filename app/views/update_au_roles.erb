@@ -1,0 +1,11 @@
+<h3>Update Roles for <%="#{@mbr_to_update[:fname]} #{@mbr_to_update[:lname]}, #{@mbr_to_update[:callsign]}: #{@mbr_to_update[:email]}"%></h3>
+<form action="/admin/update_auth_user" method="POST" name="auRoles" onsubmit="return validateAssignRoleForm();">
+	<input type="hidden" name="mbr_id" value=<%=@mbr_to_update[:id]%>>
+	<% for role in @au_roles%>
+		<input type="checkbox" name=<%="roles[#{role[0]}]"%> id=<%="#{role[0]}"%> value=1
+		<%= role[2] == 1 ? "checked": nil %>>
+		<label for=<%="#{role[0]}"%>><%=role[1]%></label>
+	<% end %>
+	<br/>
+	<input type="submit" value="Submit" onsubmit="validateAssignRoleForm()">
+</form>

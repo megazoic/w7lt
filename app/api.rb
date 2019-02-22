@@ -3,21 +3,35 @@ require 'json'
 require_relative 'member'
 require_relative 'auth_user'
 require_relative 'groups_sync'
+require_relative 'role'
 
 module MemberTracker
+  #using modular (cf classical) approach (see https://www.toptal.com/ruby/api-with-sinatra-and-sequel-ruby-tutorial)
+  RecordResult = Struct.new(:success?, :member_id, :message)
   class API < Sinatra::Base
-    def initialize(member: Member.new, auth_user: Auth_user.new)
-      @member = member
-      @auth_user = auth_user
+    def initialize()
+      @member = Member.new
+      @auth_user = Auth_user.new
+      @role = Role.new
       super()
     end
-    
     enable :sessions
-
     before do # need to comment this for RSpec
       next if request.path_info == '/login'
       if session[:auth_user_id].nil?
         redirect '/login'
+      end
+    end
+    before '/admin/*' do
+      authorize!("auth_u")
+    end
+    before '/mbrmgr/*' do
+      authorize!("mbr_mgr")
+    end
+    def authorize!(role)
+      if !session[:auth_user_roles].include?(role)
+        session[:flash_msg] = "Sorry, you don't have permission"
+        redirect '/home'
       end
     end
     get '/' , :provides => 'html' do
@@ -36,6 +50,8 @@ module MemberTracker
     end
     get '/home' do
       @member_lnames = Member.select(:id, :lname).order(:lname).all
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
       erb :home, :layout => :layout_w_logout
     end
     get '/groupsio' do
@@ -54,7 +70,7 @@ module MemberTracker
         erb :groupsio, :layout => :layout_w_logout
       else
         #failed send message
-        @gioerror = gio.groupsIOError["errorMsg"]
+        @err_msg = gio.groupsIOError["errorMsg"]
         erb :errorMsg, :layout => :layout_w_logout
       end
     end
@@ -98,6 +114,39 @@ module MemberTracker
       erb :query, :layout => :layout_w_logout
     end
     post '/query' do
+      query_keys = Hash["dues_status", :dues_status,
+        "mbr_full", :mbr_full, "mbr_student", :mbr_student, "mbr_family", :mbr_family,
+        "mbr_honorary", :mbr_honorary, "arrl", :arrl, "ares", :ares, "pdxnet", :pdxnet,
+        "ve", :ve, "elmer", :elmer]
+        @qset = Hash.new
+        query_keys.each do |k,v|
+          if ["", nil].include?(params[v])
+            #skip
+          else
+            case k
+            when "dues_status"
+              @qset[:paid_up] = params[v]
+            when "arrl"
+              @qset[:arrl] = 1
+            when "ares"
+              @qset[:ares] = 1
+            when "membership"
+              @qset[:mbr_type] = params[v]
+            when "pdxnet"
+              @qset[:net] = 1
+            when "elmer"
+              @qset[:elmer] = 1
+            when "ve"
+              @qset[:ve] = 1
+            else
+              puts "error"
+            end
+          end
+        end
+        @member = Member.where(@qset)
+        erb :m_list, :layout => :layout_w_logout
+    end
+    post '/query2' do
       case params[:query_type]
       when "unpaid"
         @type_of_query="unpaid"
@@ -132,7 +181,8 @@ module MemberTracker
       erb :m_list, :layout => :layout_w_logout
     end
     get '/login' do
-      erb :login
+      @tmp_msg = session[:msg]
+      erb :login, :layout => :layout
     end
     post '/login' do
       # only if passes test in auth_user
@@ -141,7 +191,18 @@ module MemberTracker
       #for RSpec test JSON.parse() request.body.read )
       auth_user_credentials = params
       auth_user_result = @auth_user.authenticate(auth_user_credentials)
-      if auth_user_result.has_key?('auth_user_id')
+      puts auth_user_result
+      if auth_user_result['error'] == 'expired'
+        #this auth_user has been removed and needs to be reset by admin
+        session.clear
+        session[:msg] = "The grace period for new user login has expired. Please contact admin."
+        redirect "/login"
+      elsif auth_user_result['error'] == 'new_user'
+        #need to reset password
+        session[:auth_user_id] = auth_user_result['auth_user_id']
+        mbr_id = Auth_user[auth_user_result['auth_user_id']].mbr_id
+        redirect "/reset_password/#{mbr_id}"
+      elsif auth_user_result.has_key?('auth_user_id')
         ######begin for rack testing ########
         #response.set_cookie "auth_user_id", :value => auth_user_result['auth_user_id']
         #response.set_cookie "auth_user_authority",
@@ -149,29 +210,19 @@ module MemberTracker
         #########end for rack testing###########
         #########begin web configuration ############
         session[:auth_user_id] = auth_user_result['auth_user_id']
-        session[:auth_user_authority] = auth_user_result['auth_user_authority']
+        session[:auth_user_roles] = auth_user_result['auth_user_roles']
         #########end web configuration ############
         redirect '/home'
       else
         #there is an error message in the auth_user_result if needed
+        @tmp_msg = auth_user_result['error']
+        session.clear
         redirect '/login'
-      end
-    end
-    post '/create_auth_user' do
-      auth_user_data = JSON.parse(request.body.read)
-      #expecting Auth_user#create to return a hash with
-      #the new auth_user id and authority on success or
-      #error message
-      create = @auth_user.create(auth_user_data)
-      if create.has_key?('auth_user_id')
-        JSON.generate(create)
-      else
-        status 422
-        JSON.generate(create)
       end
     end
     post '/logout' do
       session.clear
+      session[:msg] = 'you have successfully logged out'
       redirect '/login'
     end
     get '/list/members' do
@@ -221,6 +272,122 @@ module MemberTracker
         redirect "/list/members"
       end
     end
+    ################### START MEMBER MGR ##################
+    get '/reset_password/:id' do
+      @mbr = Member.select(:id, :fname, :lname, :callsign).where(id: params[:id]).first
+      erb :reset_password, :layout => :layout_w_logout
+    end
+    post '/reset_password' do
+      @auth_user.update(params[:password], params[:mbr_id])
+      session.clear
+      session[:msg] = 'Password successfully reset, please login with your new password'
+      redirect '/login'
+    end
+    ################### START ADMIN #######################
+    get '/admin/list_auth_users' do
+      @au_list = []
+      #get a 2D array of [[mbr_id, auth_user_id]] for each auth_user
+      #except for currently logged in admin
+      au = Auth_user.exclude(id: session[:auth_user_id]).select(:id, :mbr_id).map(){|x| [x.mbr_id, x.id]}
+      #fill this array with additional info
+      au.each do |u|
+        au_hash = Hash.new
+        m = Member.select(:id, :fname, :lname, :callsign).where(id: u[0]).first
+        au_hash["mbr_id"] = m.values[:id]
+        au_hash["fname"] = m.values[:fname]
+        au_hash["lname"] = m.values[:lname]
+        au_hash["callsign"] = m.values[:callsign]
+        au_hash["roles"] = []
+        
+        Auth_user[u[1]].roles.each do |r|
+          au_hash["roles"] << r.desc
+        end
+        @au_list << au_hash
+      end
+      @au_list
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
+      erb :list_auth_users, :layout => :layout_w_logout
+    end
+    get '/admin/update_au_roles/:id' do
+      @mbr_to_update = Member.select(:id, :fname, :lname, :callsign, :email)[params[:id].to_i]
+      #build 2D array of [role_id, role_desc, au_has_role]
+      @au_roles = Role.map(){|x| [x.id, x.desc]}
+      au = Auth_user.where(mbr_id: params[:id]).first
+      Auth_user[au.values[:id]].roles.each do |r|
+        count = 0
+        @au_roles.each do |au_role|
+          if au_role[0] == r.id
+            #this au has this role
+            @au_roles[count] << 1
+          end
+          count += 1
+        end
+      end
+      count = 0
+      #fill the cases where au has no role
+      @au_roles.each do |au_role|
+        if au_role.length < 3
+          @au_roles[count] << 0
+        end
+        count += 1
+      end
+      erb :update_au_roles, :layout => :layout_w_logout
+    end
+    post '/admin/update_auth_user' do
+      mbr_id = params[:mbr_id]
+      roles = params[:roles]
+      #need to remove all existing roles before updating with new
+      au = Auth_user.where(mbr_id: mbr_id).first
+      au.remove_all_roles
+      roles.each do |k,v|
+        au.add_role(Role[k.to_i])
+      end
+      session[:auth_user_roles] = roles
+      redirect '/admin/list_auth_users'
+    end
+    get '/admin/set_au_roles/:id' do
+      @sel_au_mbr = Member.select(:id, :fname, :lname, :callsign, :email)[params[:id].to_i]
+      @roles = Role.all
+      erb :set_au_roles, :layout => :layout_w_logout
+    end
+    get '/admin/create_auth_user' do
+      #first, remove current user from this list
+      mbr_id = Auth_user[session[:auth_user_id]].mbr_id
+      @sel_au_from_mbrs = Member.exclude(id: mbr_id).select(:id, :fname, :lname, :callsign, :email).all
+      erb :create_au, :layout => :layout_w_logout
+    end
+    post '/admin/create_auth_user' do
+      mbr_id = params[:mbr_id]
+      roles = params[:roles]
+      email = Member.select(:email)[mbr_id.to_i].email
+      result = @auth_user.create(mbr_id, roles, email)
+      if result["success"]
+        session[:msg] = result["message"]
+      else
+        session[:msg] = "there was an error: " + result["message"] + " member id: " + result["mbr_id"]
+      end
+      redirect "/admin/list_auth_users"
+    end
+    get '/admin/delete_auth_user/:id' do
+      mbr_id = params[:id]
+      au = Auth_user.where(mbr_id: mbr_id).first
+      au.remove_all_roles
+      au.delete
+      redirect '/admin/list_auth_users'
+    end
+    get '/test_role' do
+      before do
+        #check authorization
+        if session[:auth_user_roles].include?('admin')
+          #allow
+        else
+          #block this user with message
+          redirect '/'
+        end
+      end
+    end
+    #################### END ADMIN #############################
     #################### start from test environment ##########
     get '/members/:name', :provides => 'json' do
       JSON.generate(@member.members_with_lastname(params[:name]))
@@ -239,7 +406,7 @@ module MemberTracker
         JSON.generate('member_id' => result.member_id)
       else
         status 422
-        JSON.generate('error' => result.error_message)
+        JSON.generate('error' => result.message)
       end
     end
     #################### end from test environment ##########

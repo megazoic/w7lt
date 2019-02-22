@@ -15,8 +15,16 @@
 	<a href="/query">Query the member data</a><br />
 	<a href="/list/members">List members</a><br />
 	<a href="/new/member">Add a new member</a><br />
-	<a href="/groupsio">Check Groups.io email list</a><br />
+	<%if session[:auth_user_roles].include?('auth_u')%>
+		<a href="/admin/list_auth_users">List administrators</a><br />
+		<a href="/admin/create_auth_user">Add an administrator</a><br />
+	<%end%>
 	<br />
     <%= yield %>
+	<% if @tmp_msg %>
+		<div id="alert">
+			<%= @tmp_msg %>
+		</div>
+	<% end %>
   </body>
 </html>

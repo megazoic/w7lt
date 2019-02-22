@@ -1,0 +1,23 @@
+<h3>Authorized Users</h3>
+<br/>
+<div>
+	<table>
+		<tr>
+			<th>First Name</th>
+			<th>Last Name</th>
+			<th>call</th>
+			<th>Authorized to:</th>
+			<th></th>
+		</tr>
+		<% for au in @au_list %>
+		<tr>
+		<td><%=au["fname"]%></td>
+		<td><%=au["lname"]%></td>
+		<td><%=au["callsign"]%></td>
+		<td><%=au["roles"].join("<br>")%></td>
+		<td><a href="/admin/update_au_roles/<%= au['mbr_id']%>">Re-assign</a> |
+		<a href="/admin/delete_auth_user/<%= au['mbr_id']%>" class="confirm">Remove</a></td>
+		</tr>
+		<% end %>
+	</table>
+</div>

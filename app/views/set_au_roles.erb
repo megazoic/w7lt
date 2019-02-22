@@ -1,0 +1,10 @@
+<h3>Set Roles for <%="#{@sel_au_mbr[:fname]} #{@sel_au_mbr[:lname]}, #{@sel_au_mbr[:callsign]}: #{@sel_au_mbr[:email]}"%></h3>
+<form action="/admin/create_auth_user" method="POST" name="auRoles" onsubmit="return validateAssignRoleForm();">
+	<input type="hidden" name="mbr_id" value=<%=@sel_au_mbr[:id]%>>
+	<% for role in @roles%>
+		<input type="checkbox" name=<%="roles[#{role[:id]}]"%> id=<%="#{role[:id]}"%> value=1>
+		<label for=<%="#{role[:id]}"%>><%=role[:desc]%></label>
+	<% end %>
+	<br/>
+	<input type="submit" value="Submit" onsubmit="validateAssignRoleForm()">
+</form>

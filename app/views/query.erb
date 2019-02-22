@@ -1,20 +1,63 @@
 <h3>Use this form to select members by...</h3>
 <form acton="/query" method="POST">
- <select id="query_select" name="query_type">
-  <option value="dummy">Pick one</option>
-  <optgroup label="Dues Status">
-    <option value="paid">Dues Paid</option>
-    <option value="unpaid">Dues Unpaid</option>
-  </optgroup>
-  <optgroup label="Membership Type">
-    <option value="full">Full</option>
-    <option value="student">Student</option>
-    <option value="family">Family</option>
-    <option value="honorary">Honorary</option>
-  </optgroup>
-  <option value="arrl">ARRL Members</option>
-  <option value="ares">ARES</option>
-  <option value="ve">VE</option>
- </select>
+<ul>
+  <li>Membership status</li>
+  <li>
+    <select id="dues_status" name="dues_status">
+      <option value="">Pick one</option>
+      <option value="1">Dues Paid</option>
+      <option value="0">Dues Unpaid</option>
+    </select>
+  </li>
+  <li>Membership Type</li>
+  <ul>
+  <li>
+  <input type="radio" name="membership" id="mbr_full" value="full" />
+  <label for="full">Full</label>
+  </li>
+  <li>
+  <input type="radio" name="membership" id="mbr_student" value="student" />
+  <label for="student">Student</label>
+  </li>
+  <li>
+  <input type="radio" name="membership" id="mbr_family" value="family" />
+  <label for="family">Family</label>
+  </li>
+  <li>
+  <input type="radio" name="membership" id="mbr_honorary" value="honorary" />
+  <label for="honorary">Honorary</label>
+  </li>
+  <li>
+  <input type="radio" name="membership" id="mbr_none" value="" />
+  <label for="honorary">Not a member</label>
+  </li>
+  </ul>
+  <li>Club or Association</li>
+  <ul>
+  <li>
+  <input type="checkbox" name="arrl" id="arrl" value="1" />
+  <label for="arrl">ARRL</label>
+  </li>
+  <li>
+  <input type="checkbox" name="ares" id="ares" value="1" />
+  <label for="ares">ARES</label>
+  </li>
+  <li>
+  <input type="checkbox" name="pdxnet" id="pdxnet" value="1" />
+  <label for="pdxnet">Portland NET</label>
+  </li>
+  </ul>
+  <li>Mentor</li>
+  <ul>
+  <li>
+  <input type="checkbox" name="ve" id="ve" value="1" />
+  <label for="ve">VE</label>
+  </li>
+  <li>
+  <input type="checkbox" name="elmer" id="elmer" value="1" />
+  <label for="elmer">Elmer</label>
+  </li>
+  </ul>
+</ul>
  <input type="submit" value="Submit">
 </form>
