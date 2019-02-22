@@ -45,6 +45,13 @@ module MemberTracker
             auth_user.remove_all_roles
             auth_user.delete
           else
+            #this is a new user that needs to change password
+            #first get their roles
+            au_roles = []
+            auth_user.roles.each do |r|
+              au_roles << r.name
+            end
+            message['auth_user_roles'] = au_roles
             message['error'] = 'new_user'
           end
           message['auth_user_id'] = auth_user.id

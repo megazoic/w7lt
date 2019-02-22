@@ -199,6 +199,7 @@ module MemberTracker
       elsif auth_user_result['error'] == 'new_user'
         #need to reset password
         session[:auth_user_id] = auth_user_result['auth_user_id']
+        session[:auth_user_roles] = auth_user_result['auth_user_roles']
         mbr_id = Auth_user[auth_user_result['auth_user_id']].mbr_id
         redirect "/reset_password/#{mbr_id}"
       elsif auth_user_result.has_key?('auth_user_id')
