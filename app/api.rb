@@ -182,6 +182,7 @@ module MemberTracker
     end
     get '/login' do
       @tmp_msg = session[:msg]
+      session[:msg] = nil
       erb :login, :layout => :layout
     end
     post '/login' do
