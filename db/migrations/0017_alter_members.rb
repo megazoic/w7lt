@@ -3,7 +3,7 @@ Sequel.migration do
     alter_table(:members) do
       drop_column :mbr_type
     end
-    alter_table(:auth_users) do
+    alter_table(:roles) do
       drop_column :desc
       add_column :description, String
     end
