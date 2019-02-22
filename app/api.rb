@@ -300,7 +300,7 @@ module MemberTracker
         au_hash["roles"] = []
         
         Auth_user[u[1]].roles.each do |r|
-          au_hash["roles"] << r.desc
+          au_hash["roles"] << r.description
         end
         @au_list << au_hash
       end
@@ -311,8 +311,8 @@ module MemberTracker
     end
     get '/admin/update_au_roles/:id' do
       @mbr_to_update = Member.select(:id, :fname, :lname, :callsign, :email)[params[:id].to_i]
-      #build 2D array of [role_id, role_desc, au_has_role]
-      @au_roles = Role.map(){|x| [x.id, x.desc]}
+      #build 2D array of [role_id, role_description, au_has_role]
+      @au_roles = Role.map(){|x| [x.id, x.description]}
       au = Auth_user.where(mbr_id: params[:id]).first
       Auth_user[au.values[:id]].roles.each do |r|
         count = 0

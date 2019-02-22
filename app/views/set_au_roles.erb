@@ -3,7 +3,7 @@
 	<input type="hidden" name="mbr_id" value=<%=@sel_au_mbr[:id]%>>
 	<% for role in @roles%>
 		<input type="checkbox" name=<%="roles[#{role[:id]}]"%> id=<%="#{role[:id]}"%> value=1>
-		<label for=<%="#{role[:id]}"%>><%=role[:desc]%></label>
+		<label for=<%="#{role[:id]}"%>><%=role[:description]%></label>
 	<% end %>
 	<br/>
 	<input type="submit" value="Submit" onsubmit="validateAssignRoleForm()">
