@@ -191,7 +191,6 @@ module MemberTracker
       #for RSpec test JSON.parse() request.body.read )
       auth_user_credentials = params
       auth_user_result = @auth_user.authenticate(auth_user_credentials)
-      puts auth_user_result
       if auth_user_result['error'] == 'expired'
         #this auth_user has been removed and needs to be reset by admin
         session.clear
