@@ -43,15 +43,22 @@ go through the whole thing and look for exampe like apt
 	<label for="phm_pub">Publish?</label>
 	<input type="hidden" name="phm_pub" value="0">
 	<input type="checkbox" name="phm_pub" id="phm_pub" value="1" <%=@member[:phm_pub]==1  ? "check='checked'" : nil%>><br />
-<%# :license_class	:mbr_type	:paid_up	:arrl
-:arrl_expire	:ares	:net	:ve	:elmer%>
-	License_class <select id="license_class" name="license_class">
+	License class <select id="license_class" name="license_class">
 		<option value="tech" <%=@member[:license_class] == 'full' ? "selected" : nil%>>Tech</option>
 		<option value="general" <%=@member[:license_class] == 'general' ? "selected" : nil%>>General</option>
 		<option value="extra" <%=@member[:license_class] == 'extra' ? "selected" : nil%>>Extra</option>
 		<option value="none" <%=@member[:license_class] == '' ? "selected" : nil%>>None</option>
 	</select>
 	<br />
+	Member type <select id="mbr_type" name="mbr_type">
+		<option value="full" <%=@member[:mbr_type] == 'full' ? "selected" : nil%>>Full</option>
+		<option value="family" <%=@member[:mbr_type] == 'family' ? "selected" : nil%>>Family</option>
+		<option value="student" <%=@member[:mbr_type] == 'student' ? "selected" : nil%>>Student</option>
+		<option value="honorary" <%=@member[:mbr_type] == 'honorary' ? "selected" : nil%>>Honorary</option>
+		<option value="none" <%=@member[:mbr_type] == 'none' ? "selected" : nil%>>None</option>
+	</select>
+	<br />
+  
 	<p>Other Affiliations and Volunteering</p>
 	<label for="arrl">ARRL</label>
 	<input type="hidden" name="arrl" value="0">

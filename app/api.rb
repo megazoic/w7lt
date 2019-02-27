@@ -304,6 +304,9 @@ module MemberTracker
       redirect '/login'
     end
     ################### START ADMIN #######################
+    get '/admin/view_log' do
+      @logs = Log.all
+    end
     get '/admin/log/' do
       @mbr_list = Member.select(:id, :fname, :lname, :callsign).all
       erb :log_action, :layout => :layout_w_logout
@@ -316,7 +319,15 @@ module MemberTracker
       puts "in member pay"
       puts params
       #need to create a log for this transaction
-      l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, notes: params[:notes])
+      augmented_notes = params[:notes]
+      l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now)
+      if params[:paid_yr] != params[:mbr_paid_up_old]
+        augmented_notes << "\n**** Paid_up changed from #{params[:mbr_paid_up_old]} to #{params[:paid_yr]}"
+      end
+      if params[:mbr_type] != params[:mbr_type_old]
+        augmented_notes << "\n**** Member type changed from #{params[:mbr_type_old]} to #{params[:mbr_type]}"
+      end
+      l.notes = augmented_notes
       m = Member[params[:mbr_id]]
       m.paid_up = params[:paid_yr]
       m.mbr_type = params[:mbr_type]
