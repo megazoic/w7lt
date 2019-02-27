@@ -3,6 +3,7 @@ require_relative '../config/sequel'
 module MemberTracker
   class Member < Sequel::Model
     one_to_one :auth_user
+    one_to_many :log
     def record(member_data)
       unless member_data.key?('lname')
         message = 'Invalid member: \'lname\' is required'

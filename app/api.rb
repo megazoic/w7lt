@@ -4,6 +4,8 @@ require_relative 'member'
 require_relative 'auth_user'
 require_relative 'groups_sync'
 require_relative 'role'
+require_relative 'action'
+require_relative 'log'
 
 module MemberTracker
   #using modular (cf classical) approach (see https://www.toptal.com/ruby/api-with-sinatra-and-sequel-ruby-tutorial)
@@ -13,6 +15,8 @@ module MemberTracker
       @member = Member.new
       @auth_user = Auth_user.new
       @role = Role.new
+      @log = Log.new
+      @action = Action.new
       super()
     end
     enable :sessions
@@ -114,37 +118,50 @@ module MemberTracker
       erb :query, :layout => :layout_w_logout
     end
     post '/query' do
-      query_keys = Hash["dues_status", :dues_status,
-        "mbr_full", :mbr_full, "mbr_student", :mbr_student, "mbr_family", :mbr_family,
-        "mbr_honorary", :mbr_honorary, "arrl", :arrl, "ares", :ares, "pdxnet", :pdxnet,
-        "ve", :ve, "elmer", :elmer]
-        @qset = Hash.new
-        query_keys.each do |k,v|
-          if ["", nil].include?(params[v])
-            #skip
-          else
-            case k
-            when "dues_status"
-              @qset[:paid_up] = params[v]
-            when "arrl"
-              @qset[:arrl] = 1
-            when "ares"
-              @qset[:ares] = 1
-            when "membership"
-              @qset[:mbr_type] = params[v]
-            when "pdxnet"
-              @qset[:net] = 1
-            when "elmer"
-              @qset[:elmer] = 1
-            when "ve"
-              @qset[:ve] = 1
+      #param keys can be... "dues_status", :dues_status,
+      #  "mbr_full", :mbr_full, "mbr_student", :mbr_student, :mbr_family,
+      #  ":mbr_honorary, "arrl", :arrl, "ares", :ares, "pdxnet", :pdxnet,
+      #  "ve", :ve, "elmer", :elmer
+      query_keys = [:paid_up, :mbr_full, :mbr_student, :mbr_family,
+        :mbr_honorary, :mbr_none, :arrl, :ares, :pdxnet, :ve, :elmer, :sota]
+      @qset = Hash.new
+      @qset[:mbr_type] = []
+      query_keys.each do |k|
+        if ["", nil].include?(params[k])
+          #skip
+        else
+          case k
+          when :paid_up
+            if params[k] == 0
+              @qset[:paid_up] = 0
             else
-              puts "error"
+              @qset[:paid_up] = 1
             end
+          when  :arrl
+            @qset[:arrl] = 1
+          when  :ares
+            @qset[:ares] = 1
+          when  :mbr_full, :mbr_student, :mbr_family, :mbr_honorary, :mbr_none
+            @qset[:mbr_type] << params[k]
+          when  :pdxnet
+            @qset[:net] = 1
+          when  :elmer
+            @qset[:elmer] = 1
+          when  :ve
+            @qset[:ve] = 1
+          when  :sota
+            @qset[:sota] = 1
+          else
+            puts "error"
           end
         end
-        @member = Member.where(@qset)
-        erb :m_list, :layout => :layout_w_logout
+      end
+      puts "qset is..."
+      puts @qset
+      puts "params are..."
+      puts params
+      #@member = Member.where(@qset)
+      #erb :m_list, :layout => :layout_w_logout
     end
     post '/query2' do
       case params[:query_type]
@@ -228,6 +245,8 @@ module MemberTracker
     end
     get '/list/members' do
       @member = Member.all
+      @tmp_msg = session[:msg]
+      session[:msg] = ''
       erb :m_list, :layout => :layout_w_logout
     end
     get '/show/member/:id' do
@@ -285,6 +304,34 @@ module MemberTracker
       redirect '/login'
     end
     ################### START ADMIN #######################
+    get '/admin/log/' do
+      @mbr_list = Member.select(:id, :fname, :lname, :callsign).all
+      erb :log_action, :layout => :layout_w_logout
+    end
+    get '/admin/member/pay/:id' do
+      @mbr_pay = Member.select(:id, :fname, :lname, :callsign, :paid_up, :mbr_type)[params[:id].to_i]
+      erb :mbr_payment, :layout => :layout_w_logout
+    end
+    post '/admin/member/pay' do
+      puts "in member pay"
+      puts params
+      #need to create a log for this transaction
+      l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, notes: params[:notes])
+      m = Member[params[:mbr_id]]
+      m.paid_up = params[:paid_yr]
+      m.mbr_type = params[:mbr_type]
+      begin
+        DB.transaction do
+          m.save
+          l.save
+          l.add_action(Action.where(type: 'mbr_renew').first.id)
+        end
+        session[:msg] = 'Payment was successfully recorded'
+      rescue StandardError => e
+        session[:msg] = "The data was not entered successfully\n#{e}"
+      end
+      redirect "/list/members"
+    end
     get '/admin/list_auth_users' do
       @au_list = []
       #get a 2D array of [[mbr_id, auth_user_id]] for each auth_user

@@ -5,7 +5,7 @@ require 'securerandom'
 module MemberTracker
   class Auth_user < Sequel::Model
     many_to_many :roles, left_key: :user_id, right_key: :role_id, join_table: :roles_users
-    many_to_one :member, key: :mbr_id
+    one_to_one :member, key: :mbr_id
     
     def authenticate(auth_user_credentials)
       #returns a hash with 'auth_user_id' and 'auth_user_authority' keys

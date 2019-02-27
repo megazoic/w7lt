@@ -2,8 +2,8 @@
 :fname	:lname	:email	:apt	:city	:street
 :zip	:state	:callsign	:phm	:phm_pub
 :phh	:phh_pub	:phw	:phw_pub
-:license_class	:mbr_type	:paid_up	:arrl
-:arrl_expire	:ares	:net	:ve	:elmer
+:license_class	:arrl
+:arrl_expire	:ares	:net	:ve	:elmer :sota
 go through the whole thing and look for exampe like apt
 %>
 <h3>Edit Member <span class="textColor"><%="#{@member[:fname]} #{@member[:lname]}"%></span></h3>
@@ -45,13 +45,6 @@ go through the whole thing and look for exampe like apt
 	<input type="checkbox" name="phm_pub" id="phm_pub" value="1" <%=@member[:phm_pub]==1  ? "check='checked'" : nil%>><br />
 <%# :license_class	:mbr_type	:paid_up	:arrl
 :arrl_expire	:ares	:net	:ve	:elmer%>
-	<p>Membership status</p>
-	Member Type: <select id="mbr_type" name="mbr_type">
-		<option value="full" <%=@member[:mbr_type] == 'full' ? "selected" : nil%>>Full</option>
-		<option value="student" <%=@member[:mbr_type] == 'student' ? "selected" : nil%>>Student</option>
-		<option value="family" <%=@member[:mbr_type] == 'family' ? "selected" : nil%>>Family</option>
-		<option value="honorary" <%=@member[:mbr_type] == 'honorary' ? "selected" : nil%>>Honorary</option>
-	</select>
 	License_class <select id="license_class" name="license_class">
 		<option value="tech" <%=@member[:license_class] == 'full' ? "selected" : nil%>>Tech</option>
 		<option value="general" <%=@member[:license_class] == 'general' ? "selected" : nil%>>General</option>
@@ -59,9 +52,6 @@ go through the whole thing and look for exampe like apt
 		<option value="none" <%=@member[:license_class] == '' ? "selected" : nil%>>None</option>
 	</select>
 	<br />
-	<label for="paid_up">Paid through <%=Time.new.year%></label>
-	<input type="hidden" name="paid_up" value="0">
-	<input type="checkbox" name="paid_up" id="paid_up" value="1" <%=@member[:paid_up] == 1  ? "checked='checked'" : nil%>>
 	<p>Other Affiliations and Volunteering</p>
 	<label for="arrl">ARRL</label>
 	<input type="hidden" name="arrl" value="0">

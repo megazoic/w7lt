@@ -102,6 +102,16 @@ function validateAssignRoleForm(){
 		return false;
 	}
 }
+function validateMbrPayForm(){
+	var paid_up = $("paid_yr_field").value;
+	var mbr_type = $("mbr_type").value;
+	yes = confirm("Is this correct?\n\n" + "Member type " + mbr_type + "\nPaid through " + paid_up);
+	if (yes){
+		return true;
+	}else{
+		return false;
+	}
+}
 function validateMbrForm(){
 	var arrlDate = $("arrl_expire").getAttribute('isInValid');
 	var phoneHome = $("phh").getAttribute('isInValid');

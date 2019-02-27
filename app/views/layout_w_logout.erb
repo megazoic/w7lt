@@ -18,13 +18,14 @@
 	<%if session[:auth_user_roles].include?('auth_u')%>
 		<a href="/admin/list_auth_users">List administrators</a><br />
 		<a href="/admin/create_auth_user">Add an administrator</a><br />
+    <a href="/admin/log/">Record action in log (payment)</a><br />
 	<%end%>
 	<br />
-    <%= yield %>
 	<% if @tmp_msg %>
 		<div id="alert">
 			<%= @tmp_msg %>
 		</div>
 	<% end %>
-  </body>
+     <%= yield %>
+ </body>
 </html>

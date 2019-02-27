@@ -3,7 +3,7 @@
 <ul>
   <li>Membership status</li>
   <li>
-    <select id="dues_status" name="dues_status">
+    <select id="paid_up" name="paid_up">
       <option value="">Pick one</option>
       <option value="1">Dues Paid</option>
       <option value="0">Dues Unpaid</option>
@@ -12,23 +12,23 @@
   <li>Membership Type</li>
   <ul>
   <li>
-  <input type="radio" name="membership" id="mbr_full" value="full" />
+  <input type="checkbox" name="mbr_full" id="mbr_full" value="full" />
   <label for="full">Full</label>
   </li>
   <li>
-  <input type="radio" name="membership" id="mbr_student" value="student" />
+  <input type="checkbox" name="mbr_student" id="mbr_student" value="student" />
   <label for="student">Student</label>
   </li>
   <li>
-  <input type="radio" name="membership" id="mbr_family" value="family" />
+  <input type="checkbox" name="mbr_family" id="mbr_family" value="family" />
   <label for="family">Family</label>
   </li>
   <li>
-  <input type="radio" name="membership" id="mbr_honorary" value="honorary" />
+  <input type="checkbox" name="mbr_honorary" id="mbr_honorary" value="honorary" />
   <label for="honorary">Honorary</label>
   </li>
   <li>
-  <input type="radio" name="membership" id="mbr_none" value="" />
+  <input type="checkbox" name="mbr_none" id="mbr_none" value="" />
   <label for="honorary">Not a member</label>
   </li>
   </ul>
@@ -45,6 +45,10 @@
   <li>
   <input type="checkbox" name="pdxnet" id="pdxnet" value="1" />
   <label for="pdxnet">Portland NET</label>
+  </li>
+  <li>
+  <input type="checkbox" name="sota" id="sota" value="1" />
+  <label for="sota">SOTA</label>
   </li>
   </ul>
   <li>Mentor</li>
