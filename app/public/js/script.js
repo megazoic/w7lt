@@ -20,7 +20,26 @@ function arrlSet(cb){
 		arrl_expire.setAttribute('isInValid','');
 	}
 }
-
+function validateFirstName(textbox){
+	var tb = textbox.value;
+	if (tb == ''){
+		textbox.style.borderColor = 'red';
+		textbox.setAttribute('isInValid','invalid');
+	} else {
+		textbox.style.borderColor = 'black';
+		textbox.setAttribute('isInValid','');
+	}
+}
+function validateLastName(textbox){
+	var tb = textbox.value;
+	if (tb == ''){
+		textbox.style.borderColor = 'red';
+		textbox.setAttribute('isInValid','invalid');
+	} else {
+		textbox.style.borderColor = 'black';
+		textbox.setAttribute('isInValid','');
+	}
+}
 function validateArrlExpDate(textbox){
 	var date = textbox.value.trim();
 	var datePattern = /^\d{4}-\d{2}-\d{2}$/
@@ -63,6 +82,31 @@ function validateZip(textbox){
 		textbox.style.borderColor = 'black';
 		textbox.setAttribute('isInValid','');
 	}
+}
+function validateMbrSince(textbox){
+	var mbr_since = textbox.value.trim();
+	//date pattern YYYY-MM
+	var mbr_sincePattern = /^[12]\d{3,3}-(1[0-2]|0[1-9])$/;
+	if (mbr_sincePattern.test(mbr_since)){
+		//test for date < today && date > club formed
+		var mon = mbr_since.substr(5,2);
+		var yr = mbr_since.substr(0,4);
+		var m = parseInt(mon) - 1; //JS is 0 based month
+		var y = parseInt(yr);
+		var enteredDate = new Date(y,m);
+		var today = new Date();
+		var parcFormed = new Date(1941, 0);
+		var acceptableDate = today - parcFormed;
+		var dateToTest = enteredDate - parcFormed;
+		if (dateToTest > 0 && dateToTest < acceptableDate){
+			//we're good
+			textbox.style.borderColor = 'black';
+			textbox.setAttribute('isInValid','');
+			return 0;
+		}
+	}
+	textbox.style.borderColor = 'red';
+	textbox.setAttribute('isInValid','invalid');
 }
 function validateEmail(textbox){
 	var email = textbox.value.trim();
@@ -113,6 +157,14 @@ function validateMbrPayForm(){
 	}
 }
 function validateMbrForm(){
+	//first handle must haves
+	var firstName = $("fname").getAttribute('isInValid');
+	var lastName = $("lname").getAttribute('isInValid');
+	var mbr_since = $("mbr_since").getAttribute('isInValid');
+	if (firstName == 'invalid' || lastName == 'invalid' || mbr_since == 'invalid'){
+		alert("Please be sure to include a first and\nlast name as well as proper date format\nbefore submitting this form")
+		return false;
+	}
 	var arrlDate = $("arrl_expire").getAttribute('isInValid');
 	var phoneHome = $("phh").getAttribute('isInValid');
 	var phoneWork = $("phw").getAttribute('isInValid');

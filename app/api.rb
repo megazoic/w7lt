@@ -244,12 +244,14 @@ module MemberTracker
       redirect '/login'
     end
     get '/list/members' do
-      @member = Member.all
+      @member = DB[:members].select(:id, :lname, :fname, :callsign, :paid_up).order(:lname, :fname).all
       @tmp_msg = session[:msg]
       session[:msg] = ''
       erb :m_list, :layout => :layout_w_logout
     end
     get '/show/member/:id' do
+      @tmp_msg = session[:msg]
+      session[:msg] = ''
       @member = Member[params[:id].to_i]
       erb :m_show, :layout => :layout_w_logout
     end
@@ -258,28 +260,67 @@ module MemberTracker
       erb :m_edit, :layout => :layout_w_logout
     end
     get '/new/member' do
-      @record = {:fname => '', :lname => '', :email => '', :apt => '',
-        :city => '', :street => '', :zip => '', :state => '', :callsign => '',
-        :phm => '', :phm_pub => '', :phh => '', :phh_pub => '',
-        :phw => '', :phw_pub => '', :license_class => '', :mbr_type => '',
-        :paid_up => '', :arrl => '', :arrl_expire => '', :ares => '',
-        :net => '', :ve => '', :elmer => ''}
+      @member = {:lname => ''}
       erb :m_edit, :layout => :layout_w_logout
     end
     post '/save/member' do
+      #this route used to update an existing member or save a new member
+      #this action is also logged
       mbr_id = params[:id]
+      #save notes for log
+      notes = params[:notes]
+      params.reject!{|k,v| k == 'notes'}
+      logPayment = params[:payment]
+      params.reject!{|k,v| k == 'payment'}
       #the js form validator that uses regex inserts a captures key
       #in the returning params. need to pull this out too
       params.reject!{|k,v| k == "captures"}
+      #this could be a new member or existing member
       if mbr_id == ''
+        #new member
         params.reject!{|k,v| k == "id"}
+        #the start date has been set in the erb file
+        params["mbr_since"] = Date.strptime(params["mbr_since"], '%Y-%m')
         mbr_record = Member.new(params)
-        mbr = mbr_record.save
-        mbr_id = mbr.id
+        begin
+          DB.transaction do
+            #save the new member
+            mbr = mbr_record.save
+            mbr_id = mbr.id
+            #log the action
+            augmented_notes = "**** New Member entry\n#{notes}"
+            l = Log.new(mbr_id: mbr_id, a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes)
+            l.save
+            l.add_action(Action.where(type: 'mbr_edit').first.id)
+          end
+          session[:msg] = "The new member was successfully entered"
+        rescue StandardError => e
+          session[:msg] = "The new member could not be created\n#{e}"
+        end
       else
+        #existing member
         mbr_record = Member[params[:id].to_i]
         params.reject!{|k,v| k == "id"}
-        mbr_record.update(params)
+        params["mbr_since"] = Date.strptime(params["mbr_since"], '%Y-%m')
+        begin
+          DB.transaction do
+            mbr_record.update(params)
+            augmented_notes = "**** Existing Member update\n#{notes}"
+            l = Log.new(mbr_id: mbr_record.id, a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes)
+            l.save
+            l.add_action(Action.where(type: 'mbr_edit').first.id)
+          end
+          session[:msg] = "The existing member was successfully updated"
+        rescue StandardError => e
+          session[:msg] = "The existing member could not be updated\n#{e}"
+        end
+      end
+      if logPayment == "1"
+        if session[:auth_user_roles].include?('auth_u')
+          redirect "/admin/member/pay/#{mbr_id}"
+        else
+          session[:msg] << "\nyou need to be an admin to add a payment record"
+        end
       end
       redirect "/show/member/#{mbr_id}"
     end
@@ -304,20 +345,30 @@ module MemberTracker
       redirect '/login'
     end
     ################### START ADMIN #######################
-    get '/admin/view_log' do
-      @logs = Log.all
+    get '/admin/view_log/:type' do
+      if params[:type] == "auth_user"
+        #need to build dataset
+        log_dataset = Log.association_join(:actions)
+        @this_aus_log_dataset = log_dataset.select(:mbr_id, :ts, :notes, :type).where(a_user_id: session[:auth_user_id]).all
+        #get member info
+        @this_aus_log_dataset.each do |log|
+          log.values[:fname] = Member.select(:fname)[log.values[:mbr_id]][:fname]
+          log.values[:lname] = Member.select(:lname)[log.values[:mbr_id]][:lname]
+        end
+      end
+      erb :list_logs, :layout => :layout_w_logout
     end
     get '/admin/log/' do
-      @mbr_list = Member.select(:id, :fname, :lname, :callsign).all
+      @mbr_list = DB[:members].select(:id, :fname, :lname, :callsign).order(:lname, :fname).all
       erb :log_action, :layout => :layout_w_logout
     end
     get '/admin/member/pay/:id' do
+      @tmp_msg = session[:msg]
+      session[:msg] = ''
       @mbr_pay = Member.select(:id, :fname, :lname, :callsign, :paid_up, :mbr_type)[params[:id].to_i]
       erb :mbr_payment, :layout => :layout_w_logout
     end
     post '/admin/member/pay' do
-      puts "in member pay"
-      puts params
       #need to create a log for this transaction
       augmented_notes = params[:notes]
       l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now)

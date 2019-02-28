@@ -1,0 +1,22 @@
+<h3>Logs you created</h3>
+<br/>
+<div>
+	<table>
+		<tr>
+			<th>First Name</th>
+			<th>Last Name</th>
+			<th>Time</th>
+			<th>Type</th>
+			<th>Notes</th>
+		</tr>
+		<% for log in @this_aus_log_dataset %>
+		<tr>
+		<td><%=log[:fname]%></td>
+		<td><%=log[:lname]%></td>
+		<td><%=log[:ts]%></td>
+		<td><%=log[:type]%></td>
+		<td><%=log[:notes]%></td>
+		</tr>
+		<% end %>
+	</table>
+</div>

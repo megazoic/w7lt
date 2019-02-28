@@ -6,12 +6,15 @@
 :arrl_expire	:ares	:net	:ve	:elmer :sota
 go through the whole thing and look for exampe like apt
 %>
-<h3>Edit Member <span class="textColor"><%="#{@member[:fname]} #{@member[:lname]}"%></span></h3>
+<h3>Edit existing OR add new member<span class="textColor"><%="#{@member[:fname]} #{@member[:lname]}"%></span></h3>
 <form action='/save/member' method='POST' name="mbrVitals" onsubmit="return validateMbrForm();">
+  <label for="payment_field">Need to submit payment information for this member?</label>
+  <input type="checkbox" name="payment" id="payment_field" value="1" />
+  <br />
 	<label for="fname">First*</label>
-	<input type="text" name="fname" value="<%=@member[:fname]%>" id="fname">
+	<input type="text" name="fname" value="<%=@member[:fname]%>" id="fname" onfocusout="validateFirstName(this)">
 	<label for="lname">Last*</label>
-	<input type="text" name="lname" value="<%=@member[:lname]%>" id="lname">
+	<input type="text" name="lname" value="<%=@member[:lname]%>" id="lname" onfocusout="validateLastName(this)">
 	<label for="callsign">Callsign</label>
 	<input type="text" name="callsign" value="<%=@member[:callsign]%>" id="callsign" size="10"><br />
 	<p>Address:</p>
@@ -50,15 +53,13 @@ go through the whole thing and look for exampe like apt
 		<option value="none" <%=@member[:license_class] == '' ? "selected" : nil%>>None</option>
 	</select>
 	<br />
-	Member type <select id="mbr_type" name="mbr_type">
-		<option value="full" <%=@member[:mbr_type] == 'full' ? "selected" : nil%>>Full</option>
-		<option value="family" <%=@member[:mbr_type] == 'family' ? "selected" : nil%>>Family</option>
-		<option value="student" <%=@member[:mbr_type] == 'student' ? "selected" : nil%>>Student</option>
-		<option value="honorary" <%=@member[:mbr_type] == 'honorary' ? "selected" : nil%>>Honorary</option>
-		<option value="none" <%=@member[:mbr_type] == 'none' ? "selected" : nil%>>None</option>
-	</select>
-	<br />
-  
+  Member since: (YYYY-MM) format
+  <input type="text" name="mbr_since" id="mbr_since" onfocusout="validateMbrSince(this)"
+    value=<%=@member[:lname] == '' ? Time.now.strftime("%Y-%m") : @member[:mbr_since].strftime("%Y-%m")%>>
+  <br />
+  <label for="notes_field">Leave notes for this member here</label>
+  <textarea name="notes" id="notes_field" rows="3" cols="65"></textarea>
+  <br />
 	<p>Other Affiliations and Volunteering</p>
 	<label for="arrl">ARRL</label>
 	<input type="hidden" name="arrl" value="0">
