@@ -362,13 +362,13 @@ module MemberTracker
       @mbr_list = DB[:members].select(:id, :fname, :lname, :callsign).order(:lname, :fname).all
       erb :log_action, :layout => :layout_w_logout
     end
-    get '/admin/member/pay/:id' do
+    get '/admin/member/renew/:id' do
       @tmp_msg = session[:msg]
       session[:msg] = ''
       @mbr_pay = Member.select(:id, :fname, :lname, :callsign, :paid_up, :mbr_type)[params[:id].to_i]
-      erb :mbr_payment, :layout => :layout_w_logout
+      erb :m_renew, :layout => :layout_w_logout
     end
-    post '/admin/member/pay' do
+    post '/admin/member/renew' do
       #need to create a log for this transaction
       augmented_notes = params[:notes]
       l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now)
@@ -445,15 +445,42 @@ module MemberTracker
       erb :update_au_roles, :layout => :layout_w_logout
     end
     post '/admin/update_auth_user' do
-      mbr_id = params[:mbr_id]
-      roles = params[:roles]
       #need to remove all existing roles before updating with new
-      au = Auth_user.where(mbr_id: mbr_id).first
-      au.remove_all_roles
-      roles.each do |k,v|
-        au.add_role(Role[k.to_i])
+      #example params[:roles]
+      #{"1"=>"1", "2"=>"1"} where both roles were selected 
+      #that needs to change currently, role 1 is auth_u and 2 mbr_mgr
+      au = Auth_user.where(mbr_id: params[:mbr_id]).first
+      l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now)
+      #if there's something in notes put a newline after it and add it to the log
+      l.notes = params[:notes] == '' ? '' : "#{params[:notes]}\n"
+      #store this users roles in case the transaction fails, then can add them back
+      mbrs_roles = au.roles
+      begin
+        DB.transaction do
+          diff_roles = 'Old roles: '
+          au.roles.each {|r| diff_roles << "#{r.name}, "}
+          diff_roles.chomp!(", ")
+          diff_roles << 'New roles: '
+          au.remove_all_roles
+          roles = []
+          params[:roles].each do |k,v|
+            au.add_role(Role[k.to_i])
+            roles << Role[k.to_i].name
+          end
+          roles.each {|r| diff_roles << "#{r}, "}
+          diff_roles.chomp!(", ")
+          l.notes << diff_roles
+          l.save
+          l.add_action(Action.where(type: 'auth_u').first.id)
+          session[:auth_user_roles] = roles
+        end
+      rescue StandardError => e
+        #restore roles to this member
+        mbrs_roles.each do |r|
+          au.add_role(r)
+        end
+        session[:msg] = "The data was not entered successfully\n#{e}"
       end
-      session[:auth_user_roles] = roles
       redirect '/admin/list_auth_users'
     end
     get '/admin/set_au_roles/:id' do
@@ -468,14 +495,19 @@ module MemberTracker
       erb :create_au, :layout => :layout_w_logout
     end
     post '/admin/create_auth_user' do
-      mbr_id = params[:mbr_id]
       roles = params[:roles]
-      email = Member.select(:email)[mbr_id.to_i].email
-      result = @auth_user.create(mbr_id, roles, email)
-      if result["success"]
-        session[:msg] = result["message"]
-      else
-        session[:msg] = "there was an error: " + result["message"] + " member id: " + result["mbr_id"]
+      email = Member.select(:email)[params[:mbr_id].to_i].email
+      l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now)
+      l.notes = "New authorized user added\n" + params[:notes]
+      begin
+        DB.transaction do
+          @auth_user.create(params[:mbr_id], roles, email)
+          l.save
+          l.add_action(Action.where(type: 'auth_u').first.id)
+          session[:msg] = "Authorized user successfully created"
+        end
+      rescue StandardError => e
+        session[:msg] = "there was an error:\n#{e}"
       end
       redirect "/admin/list_auth_users"
     end

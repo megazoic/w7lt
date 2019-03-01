@@ -6,6 +6,9 @@
 		<%= role[2] == 1 ? "checked": nil %>>
 		<label for=<%="#{role[0]}"%>><%=role[1]%></label>
 	<% end %>
-	<br/>
+  <br />
+  <label for="notes_field">Leave notes for this change in roles here</label>
+  <textarea name="notes" id="notes_field" rows="3" cols="65"></textarea>
+  <br />
 	<input type="submit" value="Submit" onsubmit="validateAssignRoleForm()">
 </form>
