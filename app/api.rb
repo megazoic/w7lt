@@ -346,15 +346,27 @@ module MemberTracker
     end
     ################### START ADMIN #######################
     get '/admin/view_log/:type' do
-      if params[:type] == "auth_user"
-        #need to build dataset
+      case params[:type]
+      when "auth_user"
+        @type = "auth_user"
         log_dataset = Log.association_join(:actions)
-        @this_aus_log_dataset = log_dataset.select(:mbr_id, :ts, :notes, :type).where(a_user_id: session[:auth_user_id]).all
+        @log_dataset = log_dataset.select(:mbr_id, :ts, :notes, :type).where(a_user_id: session[:auth_user_id]).all
         #get member info
-        @this_aus_log_dataset.each do |log|
-          log.values[:fname] = Member.select(:fname)[log.values[:mbr_id]][:fname]
-          log.values[:lname] = Member.select(:lname)[log.values[:mbr_id]][:lname]
+        @log_dataset.each do |log|
+          log.values[:name] = "#{Member[log.values[:mbr_id]][:fname]} #{Member[log.values[:mbr_id]][:lname]}"
         end
+      when "all"
+        @type = "all"
+        log_dataset = Log.association_join(:actions)
+        @log_dataset = log_dataset.select(:mbr_id, :ts, :notes, :type, :a_user_id).all
+        #get member and auth_user names
+        @log_dataset.each do |log|
+          log.values[:name] = "#{Member[log.values[:mbr_id]][:fname]} #{Member[log.values[:mbr_id]][:lname]}"
+          au_id = Auth_user[log.values[:a_user_id]][:mbr_id]
+          log.values[:au_name] = "#{Member[au_id].fname} #{ Member[au_id].lname}"
+        end
+      else
+        #shouldn't be here
       end
       erb :list_logs, :layout => :layout_w_logout
     end

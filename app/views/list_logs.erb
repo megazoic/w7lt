@@ -1,21 +1,29 @@
-<h3>Logs you created</h3>
+<%case @type%>
+<%when 'auth_user'%><h3>Logs you created</h3>
+<%when 'all'%><h3>All logs</h3>
+<%else%>
+<%end%>
 <br/>
 <div>
 	<table>
 		<tr>
-			<th>First Name</th>
-			<th>Last Name</th>
+			<th>Member</th>
 			<th>Time</th>
 			<th>Type</th>
 			<th>Notes</th>
+      <% if @log_dataset[0].values.key?(:au_name) %>
+        <th>Auth_user</th>
+      <% end %>
 		</tr>
-		<% for log in @this_aus_log_dataset %>
+		<% for log in @log_dataset %>
 		<tr>
-		<td><%=log[:fname]%></td>
-		<td><%=log[:lname]%></td>
+		<td><%=log[:name]%></td>
 		<td><%=log[:ts]%></td>
 		<td><%=log[:type]%></td>
 		<td><%=log[:notes]%></td>
+    <% if @log_dataset[0].values.key?(:au_name) %>
+      <td><%=log[:au_name]%></td>
+    <% end %>
 		</tr>
 		<% end %>
 	</table>
