@@ -2,8 +2,8 @@ require_relative '../../../app/auth_user'
 
 module MemberTracker
   #:aggregate_failures allows muclitple failures to be recorded p87
-  RSpec.describe Auth_user, :aggregate_failures, :db do
-    let(:auth_user) {Auth_user.new}
+  RSpec.describe AuthUser, :aggregate_failures, :db do
+    let(:auth_user) {AuthUser.new}
     let(:auth_user_credentials) { {'email' => '456@789.com', 'password' => 'ab*dEF4b'} }
     let(:valid_new_auth_user_data) { { 'fname' => 'fname',
       'lname' => 'lname',

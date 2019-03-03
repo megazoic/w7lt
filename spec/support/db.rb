@@ -8,6 +8,6 @@ RSpec.configure do |c|
     Sequel.extension :migration
     Sequel::Migrator.run(DB, './db/migrations')
     DB[:members].truncate
-    DB[:auth_users].truncate
+    DB[:authUsers].truncate
   end
 end

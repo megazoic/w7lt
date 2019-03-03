@@ -11,17 +11,17 @@
 			<th>Time</th>
 			<th>Type</th>
 			<th>Notes</th>
-      <% if @log_dataset[0].values.key?(:au_name) %>
+      <% if @logs[0].key?(:au_name) %>
         <th>Auth_user</th>
       <% end %>
 		</tr>
-		<% for log in @log_dataset %>
+		<% for log in @logs %>
 		<tr>
-		<td><%=log[:name]%></td>
-		<td><%=log[:ts]%></td>
-		<td><%=log[:type]%></td>
+		<td><%=log[:mbr_name]%></td>
+		<td><%=log[:time]%></td>
+		<td><%=log[:action]%></td>
 		<td><%=log[:notes]%></td>
-    <% if @log_dataset[0].values.key?(:au_name) %>
+    <% if @logs[0].key?(:au_name) %>
       <td><%=log[:au_name]%></td>
     <% end %>
 		</tr>

@@ -1,5 +1,6 @@
 require 'sinatra/base'
 require 'json'
+require 'bcrypt'
 require_relative 'member'
 require_relative 'auth_user'
 require_relative 'groups_sync'
@@ -269,6 +270,13 @@ module MemberTracker
       mbr_id = params[:id]
       #save notes for log
       notes = params[:notes]
+      #get action id
+      action_id = nil
+      Action.select(:id, :type).map(){|x|
+        if x.type == "mbr_edit"
+          action_id = x.id
+        end
+      }
       params.reject!{|k,v| k == 'notes'}
       logPayment = params[:payment]
       params.reject!{|k,v| k == 'payment'}
@@ -289,9 +297,8 @@ module MemberTracker
             mbr_id = mbr.id
             #log the action
             augmented_notes = "**** New Member entry\n#{notes}"
-            l = Log.new(mbr_id: mbr_id, a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes)
+            l = Log.new(mbr_id: mbr_id, a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: action_id)
             l.save
-            l.add_action(Action.where(type: 'mbr_edit').first.id)
           end
           session[:msg] = "The new member was successfully entered"
         rescue StandardError => e
@@ -306,9 +313,8 @@ module MemberTracker
           DB.transaction do
             mbr_record.update(params)
             augmented_notes = "**** Existing Member update\n#{notes}"
-            l = Log.new(mbr_id: mbr_record.id, a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes)
+            l = Log.new(mbr_id: mbr_record.id, a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: action_id)
             l.save
-            l.add_action(Action.where(type: 'mbr_edit').first.id)
           end
           session[:msg] = "The existing member was successfully updated"
         rescue StandardError => e
@@ -324,15 +330,6 @@ module MemberTracker
       end
       redirect "/show/member/#{mbr_id}"
     end
-    post '/destroy/member/:id' do
-      mbr_record = Member[params[:id].to_i]
-      mbr_result = mbr_record.destroy
-      if mbr_result.exists?
-        redirect "/show/member/#{mbr_result.id}"
-      else
-        redirect "/list/members"
-      end
-    end
     ################### START MEMBER MGR ##################
     get '/reset_password/:id' do
       @mbr = Member.select(:id, :fname, :lname, :callsign).where(id: params[:id]).first
@@ -346,24 +343,36 @@ module MemberTracker
     end
     ################### START ADMIN #######################
     get '/admin/view_log/:type' do
+      #returns current auth_user's logs
       case params[:type]
       when "auth_user"
         @type = "auth_user"
-        log_dataset = Log.association_join(:actions)
-        @log_dataset = log_dataset.select(:mbr_id, :ts, :notes, :type).where(a_user_id: session[:auth_user_id]).all
-        #get member info
-        @log_dataset.each do |log|
-          log.values[:name] = "#{Member[log.values[:mbr_id]][:fname]} #{Member[log.values[:mbr_id]][:lname]}"
+        @logs = []
+        au = Auth_user[session[:auth_user_id]]
+        au.logs.each do |l|
+          h = Hash.new
+          h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"
+          ts = l.ts.strftime("%m-%d-%Y")
+          h[:time] = "#{ts}"
+          h[:notes] = l.notes
+          h[:action] = l.action.type
+          @logs << h
         end
       when "all"
         @type = "all"
-        log_dataset = Log.association_join(:actions)
-        @log_dataset = log_dataset.select(:mbr_id, :ts, :notes, :type, :a_user_id).all
-        #get member and auth_user names
-        @log_dataset.each do |log|
-          log.values[:name] = "#{Member[log.values[:mbr_id]][:fname]} #{Member[log.values[:mbr_id]][:lname]}"
-          au_id = Auth_user[log.values[:a_user_id]][:mbr_id]
-          log.values[:au_name] = "#{Member[au_id].fname} #{ Member[au_id].lname}"
+        aus = Auth_user.all
+        @logs = []
+        aus.each do |au|
+          au.logs.each do |l|
+            h = Hash.new
+            h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"
+            ts = l.ts.strftime("%m-%d-%Y")
+            h[:time] = "#{ts}"
+            h[:notes] = l.notes
+            h[:action] = l.action.type
+            h[:au_name] = "#{l.auth_user.member.fname} #{l.auth_user.member.lname}"
+            @logs << h
+          end
         end
       else
         #shouldn't be here
@@ -382,8 +391,12 @@ module MemberTracker
     end
     post '/admin/member/renew' do
       #need to create a log for this transaction
+      #first get action id
+      actions = {}
+      Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
+      action_id = actions["mbr_renew"]
       augmented_notes = params[:notes]
-      l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now)
+      l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
       if params[:paid_yr] != params[:mbr_paid_up_old]
         augmented_notes << "\n**** Paid_up changed from #{params[:mbr_paid_up_old]} to #{params[:paid_yr]}"
       end
@@ -398,7 +411,6 @@ module MemberTracker
         DB.transaction do
           m.save
           l.save
-          l.add_action(Action.where(type: 'mbr_renew').first.id)
         end
         session[:msg] = 'Payment was successfully recorded'
       rescue StandardError => e
@@ -457,12 +469,20 @@ module MemberTracker
       erb :update_au_roles, :layout => :layout_w_logout
     end
     post '/admin/update_auth_user' do
+      #get action_id
+      #get action id
+      action_id = nil
+      Action.select(:id, :type).map(){|x|
+        if x.type == "auth_u"
+          action_id = x.id
+        end
+      }
       #need to remove all existing roles before updating with new
       #example params[:roles]
       #{"1"=>"1", "2"=>"1"} where both roles were selected 
       #that needs to change currently, role 1 is auth_u and 2 mbr_mgr
       au = Auth_user.where(mbr_id: params[:mbr_id]).first
-      l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now)
+      l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
       #if there's something in notes put a newline after it and add it to the log
       l.notes = params[:notes] == '' ? '' : "#{params[:notes]}\n"
       #store this users roles in case the transaction fails, then can add them back
@@ -483,7 +503,6 @@ module MemberTracker
           diff_roles.chomp!(", ")
           l.notes << diff_roles
           l.save
-          l.add_action(Action.where(type: 'auth_u').first.id)
           session[:auth_user_roles] = roles
         end
       rescue StandardError => e
@@ -502,32 +521,91 @@ module MemberTracker
     end
     get '/admin/create_auth_user' do
       #first, remove current user from this list
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
       mbr_id = Auth_user[session[:auth_user_id]].mbr_id
       @sel_au_from_mbrs = Member.exclude(id: mbr_id).select(:id, :fname, :lname, :callsign, :email).all
       erb :create_au, :layout => :layout_w_logout
     end
     post '/admin/create_auth_user' do
-      roles = params[:roles]
-      email = Member.select(:email)[params[:mbr_id].to_i].email
-      l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now)
-      l.notes = "New authorized user added\n" + params[:notes]
+      #expecting params keys :notes, :mbr_id, :roles
+      email = Member[params[:mbr_id].to_i].email
+      #test for existing user with these credentials
+      existing_auth_user = Auth_user.first(mbr_id: params[:mbr_id])
+      if !existing_auth_user.nil?
+        session[:msg] = 'this auth_user already exists, select update instead of create new'
+        redirect "/admin/create_auth_user"
+      end
+      #test for duplicate emails in members table for this user
+      member_set = Member.select(:id, :fname, :lname, :callsign, :email).where(email: email).all
+      if member_set.length > 1
+        puts "there is more than one member with this email"
+        mbrs_w_same_email = ""
+        member_set.each do |m|
+          mbrs_w_same_email << "#{m.fname} #{m.lname}, #{m.callsign}\n"
+          puts "#{m.fname} #{m.lname}, #{m.callsign}, #{m.email}"
+        end
+        mbrs_w_same_email.chomp!()
+        session[:msg] = "this auth_user shares email (#{email}) with\n#{mbrs_w_same_email}"
+        redirect "/admin/create_auth_user"
+      end
+      #all criteria are passing, go ahead and save this auth_user
+      password = SecureRandom.hex[0,6]
+      encrypted_pwd = BCrypt::Password.create(password)
+      #get action id
+      action_id = nil
+      Action.select(:id, :type).map(){|x|
+        if x.type == "auth_u"
+          action_id = x.id
+        end
+      }
+      roles = ""
+      params[:roles].each do |k,v|
+        roles << "#{Role[k].name}, "
+      end
+      roles.chomp!(', ')
+      role_names = []
       begin
         DB.transaction do
-          @auth_user.create(params[:mbr_id], roles, email)
+          auth_user = Auth_user.new(:password => encrypted_pwd, :mbr_id => params[:mbr_id].to_i, :time_pwd_set => Time.now, :new_login => 1)
+          auth_user.save
+          l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
+          l.notes = "New authorized user added\nwith following roles#{roles}\n#{params[:notes]}"
           l.save
-          l.add_action(Action.where(type: 'auth_u').first.id)
-          session[:msg] = "Authorized user successfully created"
+          #set the the roles for this user
+          params[:roles].each do |k,v|
+            auth_user.add_role(Role[k.to_i])
+          end
         end
+        msg = "temp password for member #{member_set[0].values[:callsign]} is #{password}"
+        session[:msg] = "Authorized user successfully created\n#{msg}"
+        redirect "/admin/list_auth_users"
       rescue StandardError => e
-        session[:msg] = "there was an error:\n#{e}"
+        session[:msg] = "error: could not create authorized user.\n#{e}"
+        redirect "/admin/create_auth_user"
       end
-      redirect "/admin/list_auth_users"
     end
     get '/admin/delete_auth_user/:id' do
+      #get action id
+      action_id = nil
+      Action.select(:id, :type).map(){|x|
+        if x.type == "auth_u"
+          action_id = x.id
+        end
+      }
       mbr_id = params[:id]
-      au = Auth_user.where(mbr_id: mbr_id).first
-      au.remove_all_roles
-      au.delete
+      begin
+        DB.transaction do
+          l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
+          l.notes = "Authorized user has been removed"
+          au = Auth_user.where(mbr_id: mbr_id).first
+          au.remove_all_roles
+          au.delete
+          session[:msg] = "The Auth_user was successfully removed"
+        end
+      rescue StandardError => e
+        session[:msg] = "The Auth_user could not be removed\n#{e.message}"
+      end
       redirect '/admin/list_auth_users'
     end
     get '/test_role' do

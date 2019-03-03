@@ -6,10 +6,12 @@
 :arrl_expire	:ares	:net	:ve	:elmer :sota
 go through the whole thing and look for exampe like apt
 %>
-<h3>Edit existing OR add new member<span class="textColor"><%="#{@member[:fname]} #{@member[:lname]}"%></span></h3>
+<h3>Edit existing OR add new member: <span class="textColor"><%="#{@member[:fname]} #{@member[:lname]}"%></span></h3>
 <form action='/save/member' method='POST' name="mbrVitals" onsubmit="return validateMbrForm();">
+  <%if session[:auth_user_roles].include?('auth_u')%>
   <label for="payment_field">Need to submit payment information for this member?</label>
   <input type="checkbox" name="payment" id="payment_field" value="1" />
+  <% end %>
   <br />
 	<label for="fname">First*</label>
 	<input type="text" name="fname" value="<%=@member[:fname]%>" id="fname" onfocusout="validateFirstName(this)">
