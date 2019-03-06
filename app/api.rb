@@ -368,6 +368,8 @@ module MemberTracker
         aus = Auth_user.all
         @logs = []
         aus.each do |au|
+          #temporary fix to cache referencing AuthUser instead of Auth_user
+          au.logs(:reload => true)
           au.logs.each do |l|
             h = Hash.new
             h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"
