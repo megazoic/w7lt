@@ -20,5 +20,4 @@ Other affiliations:<br />ARRL: <span class="highlight"><%=@member[:arrl].to_i ==
 Volunteer:<br />VE <span class="highlight"><%=@member[:ve].to_i == 0 ? "N" : "Y"%></span> | Elmer <span class="highlight"><%=@member[:elmer].to_i == 0 ? "N" : "Y"%></span> | SOTA <span class="highlight"><%=@member[:sota].to_i == 0 ? "N" : "Y"%></span></p>
 
 	 
-<a href="/edit/member/<%= @member[:id]%>">Edit</a><form action="/destroy/member/<%= @member[:id]%>" method="post">
-	<input type="submit" value="Delete Member?" class="confirm"></form>
+<a href="/edit/member/<%= @member[:id]%>">Edit</a>

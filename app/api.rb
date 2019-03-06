@@ -221,6 +221,10 @@ module MemberTracker
         session[:auth_user_roles] = auth_user_result['auth_user_roles']
         mbr_id = Auth_user[auth_user_result['auth_user_id']].mbr_id
         redirect "/reset_password/#{mbr_id}"
+      elsif auth_user_result['error']== 'inactive'
+        session.clear
+        session[:msg] = "Please contact admin, your account has been deactivated."
+        redirect "/login"
       elsif auth_user_result.has_key?('auth_user_id')
         ######begin for rack testing ########
         #response.set_cookie "auth_user_id", :value => auth_user_result['auth_user_id']
@@ -323,7 +327,7 @@ module MemberTracker
       end
       if logPayment == "1"
         if session[:auth_user_roles].include?('auth_u')
-          redirect "/admin/member/pay/#{mbr_id}"
+          redirect "/admin/member/renew/#{mbr_id}"
         else
           session[:msg] << "\nyou need to be an admin to add a payment record"
         end
@@ -422,7 +426,7 @@ module MemberTracker
       @au_list = []
       #get a 2D array of [[mbr_id, auth_user_id]] for each auth_user
       #except for currently logged in admin
-      au = Auth_user.exclude(id: session[:auth_user_id]).select(:id, :mbr_id).map(){|x| [x.mbr_id, x.id]}
+      au = Auth_user.exclude(id: session[:auth_user_id]).select(:id, :mbr_id, :active).map(){|x| [x.mbr_id, x.id, x.active]}
       #fill this array with additional info
       au.each do |u|
         au_hash = Hash.new
@@ -431,8 +435,8 @@ module MemberTracker
         au_hash["fname"] = m.values[:fname]
         au_hash["lname"] = m.values[:lname]
         au_hash["callsign"] = m.values[:callsign]
+        au_hash["active"] = u[2]
         au_hash["roles"] = []
-        
         Auth_user[u[1]].roles.each do |r|
           au_hash["roles"] << r.description
         end
@@ -448,6 +452,9 @@ module MemberTracker
       #build 2D array of [role_id, role_description, au_has_role]
       @au_roles = Role.map(){|x| [x.id, x.description]}
       au = Auth_user.where(mbr_id: params[:id]).first
+      #see if this is an active member
+      @mbr_to_update[:active] = au.active
+      #need to fill out au_has_role with 0 or 1 for :update_au_roles erb
       Auth_user[au.values[:id]].roles.each do |r|
         count = 0
         @au_roles.each do |au_role|
@@ -470,40 +477,60 @@ module MemberTracker
     end
     post '/admin/update_auth_user' do
       #get action_id
-      #get action id
       action_id = nil
       Action.select(:id, :type).map(){|x|
         if x.type == "auth_u"
           action_id = x.id
         end
       }
+      #start building the log string
+      l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
+      au = Auth_user.where(mbr_id: params[:mbr_id]).first
+      #if there's something in notes put a newline after it and add it to the log
+      l.notes = params[:notes] == '' ? '' : "#{params[:notes]}\n"
+      #test for change in status
+      deactivate = false
+      if (params[:status] == '0' && au.active == 0) || (params[:status] == '1' && au.active == 1)
+        #no change
+      elsif params[:status] == '0' && au.active == 1
+        #set auth_user.active to false
+        deactivate = true
+        l.notes << "Auth User was DEactivated\n"
+      else
+        l.notes << "Auth User was Activated\n"
+      end
+      au.active = params[:status].to_i
       #need to remove all existing roles before updating with new
       #example params[:roles]
       #{"1"=>"1", "2"=>"1"} where both roles were selected 
       #that needs to change currently, role 1 is auth_u and 2 mbr_mgr
-      au = Auth_user.where(mbr_id: params[:mbr_id]).first
-      l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
-      #if there's something in notes put a newline after it and add it to the log
-      l.notes = params[:notes] == '' ? '' : "#{params[:notes]}\n"
       #store this users roles in case the transaction fails, then can add them back
       mbrs_roles = au.roles
       begin
         DB.transaction do
-          diff_roles = 'Old roles: '
-          au.roles.each {|r| diff_roles << "#{r.name}, "}
-          diff_roles.chomp!(", ")
-          diff_roles << 'New roles: '
-          au.remove_all_roles
           roles = []
-          params[:roles].each do |k,v|
-            au.add_role(Role[k.to_i])
-            roles << Role[k.to_i].name
+          #dont need to add to the log anything about old roles if this user was inactive
+          diff_roles = ''
+          if !au.roles.empty?
+            diff_roles = 'Old roles: '
+            au.roles.each {|r| diff_roles << "#{r.name}, "}
+            diff_roles.chomp!(", ")
+            au.remove_all_roles
           end
-          roles.each {|r| diff_roles << "#{r}, "}
-          diff_roles.chomp!(", ")
-          l.notes << diff_roles
+          if deactivate == false
+            diff_roles << 'New roles: '
+            params[:roles].each do |k,v|
+              au.add_role(Role[k.to_i])
+              roles << Role[k.to_i].name
+            end
+            roles.each {|r| diff_roles << "#{r}, "}
+            diff_roles.chomp!(", ")
+            l.notes << diff_roles
+          else
+            l.notes << diff_roles
+          end
           l.save
-          session[:auth_user_roles] = roles
+          au.save
         end
       rescue StandardError => e
         #restore roles to this member
@@ -567,10 +594,11 @@ module MemberTracker
       role_names = []
       begin
         DB.transaction do
-          auth_user = Auth_user.new(:password => encrypted_pwd, :mbr_id => params[:mbr_id].to_i, :time_pwd_set => Time.now, :new_login => 1)
+          auth_user = Auth_user.new(:password => encrypted_pwd, :mbr_id => params[:mbr_id].to_i,
+            :time_pwd_set => Time.now, :new_login => 1, :active => 1, :last_login => Time.now)
           auth_user.save
           l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
-          l.notes = "New authorized user added\nwith following roles#{roles}\n#{params[:notes]}"
+          l.notes = "New authorized user added\nwith following roles #{roles}\nNotes: #{params[:notes]}"
           l.save
           #set the the roles for this user
           params[:roles].each do |k,v|
@@ -584,29 +612,6 @@ module MemberTracker
         session[:msg] = "error: could not create authorized user.\n#{e}"
         redirect "/admin/create_auth_user"
       end
-    end
-    get '/admin/delete_auth_user/:id' do
-      #get action id
-      action_id = nil
-      Action.select(:id, :type).map(){|x|
-        if x.type == "auth_u"
-          action_id = x.id
-        end
-      }
-      mbr_id = params[:id]
-      begin
-        DB.transaction do
-          l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
-          l.notes = "Authorized user has been removed"
-          au = Auth_user.where(mbr_id: mbr_id).first
-          au.remove_all_roles
-          au.delete
-          session[:msg] = "The Auth_user was successfully removed"
-        end
-      rescue StandardError => e
-        session[:msg] = "The Auth_user could not be removed\n#{e.message}"
-      end
-      redirect '/admin/list_auth_users'
     end
     get '/test_role' do
       before do

@@ -22,6 +22,10 @@ module MemberTracker
       #get auth_user, test password, if pass return array of [id, role1, role2, ...]
       #first, find member with this email, if more than one, need to iterate through :ids
       mbrs = Member.where(email: auth_user_credentials['email']).all
+      if mbrs.empty?
+        message['error'] = 'no such user'
+        return message
+      end
       mbr_id = 0
       if mbrs.count > 1
         mbrs.each do |m|
@@ -64,6 +68,16 @@ module MemberTracker
             au_roles << r.name
           end
           message['auth_user_roles'] = au_roles
+          #set last_login
+          auth_user.last_login = Time.now
+          auth_user.save
+          #log this login
+          l = Log.new(mbr_id: auth_user.mbr_id, a_user_id: auth_user.id, ts: Time.now, action_id: 6, notes: "login")
+          l.save
+          #check to see if this auth_user is active
+          if auth_user.active == 0
+            message['error'] = 'inactive'
+          end
         else
           message['error'] = 'password mismatch'
         end

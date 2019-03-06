@@ -140,10 +140,28 @@ function validateAssignRoleForm(){
 	//test to see if at least one checkbox is checked
 	var checkedOne = Array.prototype.slice.call(roles).some(x => x.checked);
 	if (checkedOne){//$("roles").length > 0
-		document.auRoles.submit();
+		//document.auRoles.submit();
+		return true;
 	} else {
+		//could be status was inactive when loaded
+		var au_status = $("inactive").checked
+		if (au_status == true){
+			//ok, allow submission of form
+			return true;
+		}
 		alert("At least one Role must be selected");
 		return false;
+	}
+}
+function auStatus(){
+	//one of these two has to be checked
+	var inactive = $("inactive").checked;
+	if (inactive) {
+		$("roles").style.display = "none";
+		$("active_notice").style.display = "block";
+	} else {
+		$("roles").style.display = "block";
+		$("active_notice").style.display = "none";
 	}
 }
 function validateMbrPayForm(){
@@ -194,6 +212,7 @@ function validateMbrForm(){
 }
 
 window.onload = function (){
+	//*************** MISC *************************//
 	var elems = document.getElementsByClassName('confirm');
 	var confirmIt = function (e) {
 		if (!confirm('Are you sure?')) e.preventDefault();
@@ -201,6 +220,8 @@ window.onload = function (){
 	for (var i = 0, l = elems.length; i < l; i++) {
 		elems[i].addEventListener('click', confirmIt, false);
 	}
+	// test for inactive Auth User status
+	auStatus();
 	//************** VALIDATION ********************//
 	function validatePassword(){
 		var password = $("password"),
