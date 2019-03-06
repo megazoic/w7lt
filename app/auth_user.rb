@@ -9,6 +9,7 @@ module MemberTracker
     one_to_many :logs, key: :a_user_id
     
     def authenticate(auth_user_credentials)
+      #auth_user_credentials are :email, :password
       #returns a hash with 'auth_user_id' and 'auth_user_authority' keys
       #if passed and 'error' key if fail
       message = Hash.new
@@ -30,13 +31,13 @@ module MemberTracker
       if mbrs.count > 1
         mbrs.each do |m|
           #look through the auth_user table to find corresponding member
-          auth_user = Auth_user.find(mbr_id: m.id)
+          auth_user = Auth_user.first(mbr_id: m.id)
           if !auth_user.nil?
             break
           end
         end
       else
-        auth_user= Auth_user.find(mbr_id: mbrs[0].id)
+        auth_user = Auth_user.first(mbr_id: mbrs[0].id)
       end
       if !auth_user.nil?
         #check to see if first time login

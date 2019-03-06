@@ -347,9 +347,8 @@ module MemberTracker
     end
     ################### START ADMIN #######################
     get '/admin/view_log/:type' do
-      #returns current auth_user's logs
       case params[:type]
-      when "auth_user"
+      when "auth_user" #view only current logged in users logs
         @type = "auth_user"
         @logs = []
         au = Auth_user[session[:auth_user_id]]
