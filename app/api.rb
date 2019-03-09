@@ -3,7 +3,7 @@ require 'json'
 require 'bcrypt'
 require_relative 'member'
 require_relative 'auth_user'
-require_relative 'groups_sync'
+require_relative 'groupsIoData'
 require_relative 'role'
 require_relative 'action'
 require_relative 'log'
@@ -352,8 +352,11 @@ module MemberTracker
         @type = "auth_user"
         @logs = []
         au = Auth_user[session[:auth_user_id]]
-        #temporary fix to cache referencing AuthUser instead of Auth_user
-        au.logs(:reload => true)
+        #are there any logs for this auth_user?
+        if au.length == 0
+          session[:msg] = "there are no logs to view"
+          redirect '/home'
+        end
         au.logs.each do |l|
           h = Hash.new
           h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"
@@ -367,9 +370,11 @@ module MemberTracker
         @type = "all"
         aus = Auth_user.all
         @logs = []
+        no_logs = true
         aus.each do |au|
-          #temporary fix to cache referencing AuthUser instead of Auth_user
-          au.logs(:reload => true)
+          if au.logs.length > 0
+            no_logs = false
+          end
           au.logs.each do |l|
             h = Hash.new
             h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"
@@ -380,6 +385,10 @@ module MemberTracker
             h[:au_name] = "#{l.auth_user.member.fname} #{l.auth_user.member.lname}"
             @logs << h
           end
+        end
+        if no_logs == true
+          session[:msg] = "there are no logs to view"
+          redirect '/home'
         end
       else
         #shouldn't be here

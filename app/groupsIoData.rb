@@ -15,7 +15,7 @@ module MemberTracker
       @body = ''
       #array of arrays [{parc-mbr hash}:, {groups.io hash}]
       #where the groups.io hash has keys "gio_id" "gio_fn" "gio_email"
-      #where the parc_mbr hash has keys "id"", "fname", "lname", "callsign", "email"
+      #where the parc_mbr hash has keys "id", "fname", "lname", "callsign", "email"
       @unmatched = []
       @groupsIOError = {"errorCode" => 0, "errorMsg" => "success"}
     end
