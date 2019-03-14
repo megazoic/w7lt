@@ -20,6 +20,17 @@ function arrlSet(cb){
 		arrl_expire.setAttribute('isInValid','');
 	}
 }
+function validatePayAmt(textbox){
+	var tb = textbox.value.trim();
+	var amtPattern = /^\d{1,}(\.\d{1,2})?$/
+	if(!tb.match(amtPattern) && tb != ''){
+		textbox.style.borderColor = 'red';
+		textbox.setAttribute('isInValid','invalid');
+	}else{
+		textbox.style.borderColor = 'black';
+		textbox.setAttribute('isInValid','');
+	}
+}
 function validateFirstName(textbox){
 	var tb = textbox.value;
 	if (tb == ''){
@@ -167,6 +178,13 @@ function auStatus(){
 function validateMbrPayForm(){
 	var paid_up = $("paid_yr_field").value;
 	var mbr_type = $("mbr_type").value;
+	var pay_amt = $("payment_amt_field").getAttribute('isInValid');
+	//cannot submit if payment field is invalid
+	if (pay_amt == 'invalid'){
+		alert("Please enter number in the amount field")
+		return false;
+	}
+
 	yes = confirm("Is this correct?\n\n" + "Member type " + mbr_type + "\nPaid through " + paid_up);
 	if (yes){
 		return true;

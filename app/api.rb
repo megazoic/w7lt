@@ -7,6 +7,9 @@ require_relative 'groupsIoData'
 require_relative 'role'
 require_relative 'action'
 require_relative 'log'
+require_relative 'payment'
+require_relative 'paymentType'
+require_relative 'paymentMethod'
 
 module MemberTracker
   #using modular (cf classical) approach (see https://www.toptal.com/ruby/api-with-sinatra-and-sequel-ruby-tutorial)
@@ -353,7 +356,7 @@ module MemberTracker
         @logs = []
         au = Auth_user[session[:auth_user_id]]
         #are there any logs for this auth_user?
-        if au.length == 0
+        if au.logs.length == 0
           session[:msg] = "there are no logs to view"
           redirect '/home'
         end
@@ -403,6 +406,8 @@ module MemberTracker
       @tmp_msg = session[:msg]
       session[:msg] = ''
       @mbr_pay = Member.select(:id, :fname, :lname, :callsign, :paid_up, :mbr_type)[params[:id].to_i]
+      @payType = PaymentType.all
+      @payMethod = PaymentMethod.all
       erb :m_renew, :layout => :layout_w_logout
     end
     post '/admin/member/renew' do
@@ -412,27 +417,52 @@ module MemberTracker
       Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
       action_id = actions["mbr_renew"]
       augmented_notes = params[:notes]
-      l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
       if params[:paid_yr] != params[:mbr_paid_up_old]
         augmented_notes << "\n**** Paid_up changed from #{params[:mbr_paid_up_old]} to #{params[:paid_yr]}"
       end
       if params[:mbr_type] != params[:mbr_type_old]
         augmented_notes << "\n**** Member type changed from #{params[:mbr_type_old]} to #{params[:mbr_type]}"
       end
+      l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
       l.notes = augmented_notes
       m = Member[params[:mbr_id]]
       m.paid_up = params[:paid_yr]
       m.mbr_type = params[:mbr_type]
+      pay = Payment.new(:mbr_id => params[:mbr_id], :a_user_id => session[:auth_user_id], :payment_type_id => params[:payment_type],
+        :payment_method_id => params[:payment_method], :payment_amount => params[:payment_amt], :ts => Time.now)
       begin
         DB.transaction do
           m.save
           l.save
+          #associate the log entry with this payment
+          pay[:log_id] = l.values[:id]
+          pay.save
         end
         session[:msg] = 'Payment was successfully recorded'
       rescue StandardError => e
         session[:msg] = "The data was not entered successfully\n#{e}"
       end
       redirect "/list/members"
+    end
+    get '/admin/payments/show' do
+      #build array of hashes to load payment data
+      @pay = []
+      pay = Payment.order(:ts, :a_user_id).all
+      pay.each do |pmt|
+        out = Hash.new
+        out[:mbr_name] = "#{pmt.member.fname} #{pmt.member.lname}"
+        out[:auth_name] = "#{pmt.auth_user.member.fname} #{pmt.auth_user.member.lname}"
+        out[:type] = pmt.paymentType.type
+        out[:method] = pmt.paymentMethod[:method]
+        out[:amount] = pmt.payment_amount
+        if !pmt.log_id.nil?
+          out[:notes] = pmt.log.notes
+        else
+          out[:notes] = "none"
+        end
+        @pay << out
+      end
+      erb :pay_show, :layout => :layout_w_logout
     end
     get '/admin/list_auth_users' do
       @au_list = []

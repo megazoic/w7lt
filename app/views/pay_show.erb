@@ -1,0 +1,25 @@
+<div>
+  <h3>Recent payments</h3>
+</div>
+<div>
+	<table>
+		<tr>
+			<th>Member Name</th>
+			<th>Admin Name</th>
+			<th>Pay Type</th>
+			<th>Pay Method</th>
+			<th>Pay Amount</th>
+			<th>Notes</th>
+		</tr>
+		<% for pay in @pay %>
+		<tr>
+		<td><%=pay[:mbr_name]%></td>
+		<td><%=pay[:auth_name]%></td>
+		<td><%=pay[:type]%></td>
+		<td><%=pay[:method]%></td>
+		<td><%=pay[:amount]%></td>
+		<td><%=pay[:notes]%></td>
+		</tr>
+		<% end %>
+	</table>
+</div>
