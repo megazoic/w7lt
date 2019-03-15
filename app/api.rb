@@ -14,6 +14,7 @@ require_relative 'paymentMethod'
 module MemberTracker
   #using modular (cf classical) approach (see https://www.toptal.com/ruby/api-with-sinatra-and-sequel-ruby-tutorial)
   RecordResult = Struct.new(:success?, :member_id, :message)
+  Paid_up = Struct.new(:active, :condition)
   class API < Sinatra::Base
     def initialize()
       @member = Member.new
@@ -128,44 +129,60 @@ module MemberTracker
       #  "ve", :ve, "elmer", :elmer
       query_keys = [:paid_up, :mbr_full, :mbr_student, :mbr_family,
         :mbr_honorary, :mbr_none, :arrl, :ares, :pdxnet, :ve, :elmer, :sota]
-      @qset = Hash.new
-      @qset[:mbr_type] = []
+      qset = Hash.new
+      qset[:mbr_type] = []
+      pu = Paid_up.new(false, false)
       query_keys.each do |k|
         if ["", nil].include?(params[k])
           #skip
         else
           case k
           when :paid_up
-            if params[k] == 0
-              @qset[:paid_up] = 0
+            if params[k] == '0'
+              #looking for members who are not paid up through current year
+              pu.active = true
+              pu.condition = false
             else
-              @qset[:paid_up] = 1
+              #looking for members who are paid up through current year
+              pu.active = true
+              pu.condition = true
             end
           when  :arrl
-            @qset[:arrl] = 1
+            qset[:arrl] = 1
           when  :ares
-            @qset[:ares] = 1
+            qset[:ares] = 1
           when  :mbr_full, :mbr_student, :mbr_family, :mbr_honorary, :mbr_none
-            @qset[:mbr_type] << params[k]
+            qset[:mbr_type] << params[k]
           when  :pdxnet
-            @qset[:net] = 1
+            qset[:net] = 1
           when  :elmer
-            @qset[:elmer] = 1
+            qset[:elmer] = 1
           when  :ve
-            @qset[:ve] = 1
+            qset[:ve] = 1
           when  :sota
-            @qset[:sota] = 1
+            qset[:sota] = 1
           else
             puts "error"
           end
         end
       end
-      puts "qset is..."
-      puts @qset
-      puts "params are..."
-      puts params
-      #@member = Member.where(@qset)
-      #erb :m_list, :layout => :layout_w_logout
+      if qset[:mbr_type].empty?
+        qset.delete(:mbr_type)
+      end
+      if pu.active == true
+        #there is a request for paid up status
+        if pu.condition == true
+          puts "in looking for paid up members"
+          #asking for members who are paid up through the current year
+          @member = Member.where(qset){paid_up >= Time.now.strftime("%Y").to_i}
+        else
+          #asking for members who are NOT paid up through the current year
+          @member = Member.where(qset){paid_up < Time.now.strftime("%Y").to_i}
+        end
+      else
+        @member = Member.where(qset)
+      end
+      erb :m_list, :layout => :layout_w_logout
     end
     post '/query2' do
       case params[:query_type]
