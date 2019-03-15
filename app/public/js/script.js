@@ -20,6 +20,17 @@ function arrlSet(cb){
 		arrl_expire.setAttribute('isInValid','');
 	}
 }
+function duesSet(selectElement){
+	//set visibility of elements in m_renew.rb related to dues/non-dues payment
+	//get the payment_type inner text
+	var seText = selectElement.options[selectElement.selectedIndex].text;
+	if (seText == 'Dues'){
+		$("message").style.display = "block";
+	}else{
+		$("message").style.display = "none";
+	}
+}
+//**************VALIDATORS*****************************
 function validatePayAmt(textbox){
 	var tb = textbox.value.trim();
 	var amtPattern = /^\d{1,}(\.\d{1,2})?$/
@@ -178,14 +189,27 @@ function auStatus(){
 function validateMbrPayForm(){
 	var paid_up = $("paid_yr_field").value;
 	var mbr_type = $("mbr_type").value;
-	var pay_amt = $("payment_amt_field").getAttribute('isInValid');
+	var pay_amt = $("payment_amt_field");
+	var pay_mthd = $("payment_method_field");
+	var pmText = pay_mthd.options[pay_mthd.selectedIndex].text
+	var pay_type = $("payment_type_field");
+	var ptText = pay_type.options[pay_type.selectedIndex].text;
 	//cannot submit if payment field is invalid
-	if (pay_amt == 'invalid'){
-		alert("Please enter number in the amount field")
+	if (pay_amt.getAttribute('isInValid') == 'invalid' || pay_amt.value == ''){
+		alert("Enter a number in the amount field");
 		return false;
 	}
-
-	yes = confirm("Is this correct?\n\n" + "Member type " + mbr_type + "\nPaid through " + paid_up);
+	//cannot submit if payment type, methods are not selected
+	if (pay_mthd.value == '' || pay_type.value == ''){
+		alert("You must select a payment type and method");
+		return false;
+	}
+	//need to taylor the confirm to dues/non-dues payments
+	if (ptText == 'Dues'){
+		yes = confirm("Is this correct?\n\n" + "Member type: " + mbr_type + "\nPaid through: " + paid_up);
+	}else{
+		yes = confirm("Is this correct?\n\n" + "Payment type: " + ptText + "\nMethod: " + pmText + "\nAmount: " + pay_amt.value);
+	}
 	if (yes){
 		return true;
 	}else{

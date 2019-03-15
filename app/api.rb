@@ -417,22 +417,28 @@ module MemberTracker
       Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
       action_id = actions["mbr_renew"]
       augmented_notes = params[:notes]
-      if params[:paid_yr] != params[:mbr_paid_up_old]
-        augmented_notes << "\n**** Paid_up changed from #{params[:mbr_paid_up_old]} to #{params[:paid_yr]}"
-      end
-      if params[:mbr_type] != params[:mbr_type_old]
-        augmented_notes << "\n**** Member type changed from #{params[:mbr_type_old]} to #{params[:mbr_type]}"
-      end
       l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
+      #check to see if 'dues' is selected as :payment_type
+      if PaymentType[params[:payment_type]].type == 'Dues'
+        m = Member[params[:mbr_id]]
+        m.paid_up = params[:paid_yr]
+        m.mbr_type = params[:mbr_type]
+        #if params[:mbr_paid_up_old] != params[:paid_yr]
+        if params[:paid_yr] != params[:mbr_paid_up_old]
+          augmented_notes << "\n**** Paid_up changed from #{params[:mbr_paid_up_old]} to #{params[:paid_yr]}"
+        end
+        if params[:mbr_type] != params[:mbr_type_old]
+          augmented_notes << "\n**** Member type changed from #{params[:mbr_type_old]} to #{params[:mbr_type]}"
+        end
+      end
       l.notes = augmented_notes
-      m = Member[params[:mbr_id]]
-      m.paid_up = params[:paid_yr]
-      m.mbr_type = params[:mbr_type]
       pay = Payment.new(:mbr_id => params[:mbr_id], :a_user_id => session[:auth_user_id], :payment_type_id => params[:payment_type],
         :payment_method_id => params[:payment_method], :payment_amount => params[:payment_amt], :ts => Time.now)
       begin
         DB.transaction do
-          m.save
+          if PaymentType[params[:payment_type]].type == 'Dues'
+            m.save
+          end
           l.save
           #associate the log entry with this payment
           pay[:log_id] = l.values[:id]
@@ -460,6 +466,7 @@ module MemberTracker
         else
           out[:notes] = "none"
         end
+        out[:ts] = pmt.ts.strftime("%d-%m-%Y")
         @pay << out
       end
       erb :pay_show, :layout => :layout_w_logout

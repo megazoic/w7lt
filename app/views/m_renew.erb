@@ -1,39 +1,40 @@
 <h3>Add a payment for member <span class="textColor"><%="#{@mbr_pay[:fname]} #{@mbr_pay[:lname]}, #{@mbr_pay[:callsign]}"%></span></h3>
-
+<br />
 <form action='/admin/member/renew' method='POST' name="mbrPay" onsubmit="return validateMbrPayForm();">
   <input type="hidden" name="mbr_id" value=<%=@mbr_pay[:id]%>>
   <input type="hidden" name="mbr_type_old" value=<%=@mbr_pay[:mbr_type]%>>
   <input type="hidden" name="mbr_paid_up_old" value=<%=@mbr_pay[:paid_up]%>>
-  <p>Membership status</p>
-  Member Type:
-  <select id="mbr_type" name="mbr_type">
-	  <option value="full" <%=@mbr_pay[:mbr_type] == 'full' ? "selected" : nil%>>Full</option>
-	  <option value="student" <%=@mbr_pay[:mbr_type] == 'student' ? "selected" : nil%>>Student</option>
-	  <option value="family" <%=@mbr_pay[:mbr_type] == 'family' ? "selected" : nil%>>Family</option>
-	  <option value="honorary" <%=@mbr_pay[:mbr_type] == 'honorary' ? "selected" : nil%>>Honorary</option>
-  </select>
-  <br/>
-  <p><%="#{@mbr_pay[:fname]} #{@mbr_pay[:lname]} is currently paid through #{@mbr_pay[:paid_up]}"%><br/><br/>
-  <label for="paid_yr_field">Select a year that this member will be paid up through </label>
-  <select name="paid_yr" id="paid_yr_field">
-  <%currentYr = Time.new.year%>
-  <%(0..5).each do |yr|%>
-    <option><%=currentYr > @mbr_pay[:paid_up] ? currentYr + yr : @mbr_pay[:paid_up] + yr +1%></option>
-  <% end %>
-  </select>
-  <br/>
-  <label for="payment_method_field">Payment method is </label>
-  <select name="payment_method" id="payment_method_field">
-    <% @payMethod.each do |m| %>
-      <option value=<%="#{m.values[:id]}"%>><%=m.values[:method]%></option>
-    <% end %>
-  </select>
-  <br/>
   <label for="payment_type_field">Payment type is </label>
-  <select name="payment_type" id="payment_type_field">
+  <select name="payment_type" id="payment_type_field" onchange="duesSet(this)">
     <option value="">--Choose type--</option>
     <% @payType.each do |t| %>
       <option value=<%="#{t.values[:id]}"%>><%=t.values[:type]%></option>
+    <% end %>
+  </select>
+  <br />
+  <div id="message">
+    Member Type:
+    <select id="mbr_type" name="mbr_type">
+	    <option value="full" <%=@mbr_pay[:mbr_type] == 'full' ? "selected" : nil%>>Full</option>
+	    <option value="student" <%=@mbr_pay[:mbr_type] == 'student' ? "selected" : nil%>>Student</option>
+	    <option value="family" <%=@mbr_pay[:mbr_type] == 'family' ? "selected" : nil%>>Family</option>
+	    <option value="honorary" <%=@mbr_pay[:mbr_type] == 'honorary' ? "selected" : nil%>>Honorary</option>
+    </select>
+    <br/>
+    <p><%="#{@mbr_pay[:fname]} #{@mbr_pay[:lname]} is currently paid through #{@mbr_pay[:paid_up]}"%><br/><br/>
+    <label for="paid_yr_field">Select a year that this member will be paid up through </label>
+    <select name="paid_yr" id="paid_yr_field">
+      <%(1..5).each do |yr|%>
+        <option><%=@mbr_pay[:paid_up] + yr%></option>
+      <% end %>
+    </select>
+  </div>
+  <br/>
+  <label for="payment_method_field">Payment method is </label>
+  <select name="payment_method" id="payment_method_field">
+  <option value="">--Choose method--</option>
+    <% @payMethod.each do |m| %>
+      <option value=<%="#{m.values[:id]}"%>><%=m.values[:method]%></option>
     <% end %>
   </select>
   <br/>

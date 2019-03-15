@@ -9,6 +9,7 @@
 			<th>Pay Type</th>
 			<th>Pay Method</th>
 			<th>Pay Amount</th>
+      <th>Date</th>
 			<th>Notes</th>
 		</tr>
 		<% for pay in @pay %>
@@ -18,6 +19,7 @@
 		<td><%=pay[:type]%></td>
 		<td><%=pay[:method]%></td>
 		<td><%=pay[:amount]%></td>
+		<td><%=pay[:ts]%></td>
 		<td><%=pay[:notes]%></td>
 		</tr>
 		<% end %>
