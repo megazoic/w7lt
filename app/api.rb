@@ -25,12 +25,14 @@ module MemberTracker
       super()
     end
     enable :sessions
+=begin
     before do # need to comment this for RSpec
       next if request.path_info == '/login'
       if session[:auth_user_id].nil?
         redirect '/login'
       end
     end
+=end
     before '/admin/*' do
       authorize!("auth_u")
     end

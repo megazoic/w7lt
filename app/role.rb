@@ -1,4 +1,5 @@
 require_relative '../config/sequel'
+#roles auth_u mbr_mgr
 
 module MemberTracker
   class Role < Sequel::Model

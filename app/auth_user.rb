@@ -73,7 +73,14 @@ module MemberTracker
           auth_user.last_login = Time.now
           auth_user.save
           #log this login
-          l = Log.new(mbr_id: auth_user.mbr_id, a_user_id: auth_user.id, ts: Time.now, action_id: 6, notes: "login")
+          #get action id
+          action_id = nil
+          Action.select(:id, :type).map(){|x|
+            if x.type == "login"
+              action_id = x.id
+            end
+          }
+          l = Log.new(mbr_id: auth_user.mbr_id, a_user_id: auth_user.id, ts: Time.now, action_id: action_id, notes: "login")
           l.save
           #check to see if this auth_user is active
           if auth_user.active == 0
