@@ -29,3 +29,6 @@ loadsequel.rb
 [0-9]
 .rspec
 .rvmrc
+
+#vi
+*~

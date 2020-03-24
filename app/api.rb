@@ -125,7 +125,7 @@ module MemberTracker
       erb :query, :layout => :layout_w_logout
     end
     post '/query' do
-      #param keys can be... "dues_status", :dues_status,
+      #param keys can be... "paid_up", :paid_up,
       #  "mbr_full", :mbr_full, "mbr_student", :mbr_student, :mbr_family,
       #  ":mbr_honorary, "arrl", :arrl, "ares", :ares, "pdxnet", :pdxnet,
       #  "ve", :ve, "elmer", :elmer
@@ -140,14 +140,17 @@ module MemberTracker
         else
           case k
           when :paid_up
+            #values can be '0', '1', or '' empty string
             if params[k] == '0'
               #looking for members who are not paid up through current year
               pu.active = true
               pu.condition = false
-            else
+            elsif params[k] == '1'
               #looking for members who are paid up through current year
               pu.active = true
               pu.condition = true
+            else
+              #keep default pu values (false,false)
             end
           when  :arrl
             qset[:arrl] = 1
@@ -182,6 +185,7 @@ module MemberTracker
           @member = Member.where(qset){paid_up < Time.now.strftime("%Y").to_i}
         end
       else
+        #asking for all recorded members
         @member = Member.where(qset)
       end
       erb :m_list, :layout => :layout_w_logout
