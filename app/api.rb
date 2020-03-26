@@ -125,11 +125,11 @@ module MemberTracker
       erb :query, :layout => :layout_w_logout
     end
     post '/query' do
-      #param keys can be... "paid_up", :paid_up,
+      #param keys can be... "paid_up_q", :paid_up_q,
       #  "mbr_full", :mbr_full, "mbr_student", :mbr_student, :mbr_family,
       #  ":mbr_honorary, "arrl", :arrl, "ares", :ares, "pdxnet", :pdxnet,
       #  "ve", :ve, "elmer", :elmer
-      query_keys = [:paid_up, :mbr_full, :mbr_student, :mbr_family,
+      query_keys = [:paid_up_q, :mbr_full, :mbr_student, :mbr_family,
         :mbr_honorary, :mbr_none, :arrl, :ares, :pdxnet, :ve, :elmer, :sota]
       qset = Hash.new
       qset[:mbr_type] = []
@@ -139,7 +139,7 @@ module MemberTracker
           #skip
         else
           case k
-          when :paid_up
+          when :paid_up_q
             #values can be '0', '1', or '' empty string
             if params[k] == '0'
               #looking for members who are not paid up through current year
