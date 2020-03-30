@@ -67,7 +67,8 @@ module MemberTracker
     end
     get '/groupsio' do
       #get members who have no Groups.io account record
-      @mbrs_wo_gio = Member.select(:id, :fname, :lname).where(Sequel.lit('gio_id IS NULL')).all
+      @mbrs_wo_gio = Member.select(:id, :fname, :lname).where(Sequel.lit('gio_id IS NULL')).order(:lname).all
+      count_gio_noparc = 0
       gio = GroupsioData.new
       if gio.setToken == 0
         #success, retrieve data
@@ -107,7 +108,7 @@ module MemberTracker
               end
             else #this is a parc-mbr database id use key to get member
               mbr = Member[k.to_i]
-              mbr.email = v
+              mbr.email = v.upcase
               if mbr.save
                 mbrs << k.to_i
               end
@@ -319,6 +320,10 @@ module MemberTracker
         params.reject!{|k,v| k == "id"}
         #the start date has been set in the erb file
         params["mbr_since"] = Date.strptime(params["mbr_since"], '%Y-%m')
+        #set the character case to upper for name and email
+        params["fname"] = params["fname"].upcase
+        params["lname"] = params["lname"].upcase
+        params["email"] = params["email"].upcase
         mbr_record = Member.new(params)
         begin
           DB.transaction do
@@ -339,6 +344,10 @@ module MemberTracker
         mbr_record = Member[params[:id].to_i]
         params.reject!{|k,v| k == "id"}
         params["mbr_since"] = Date.strptime(params["mbr_since"], '%Y-%m')
+        #set the character case to upper for name and email
+        params["fname"] = params["fname"].upcase
+        params["lname"] = params["lname"].upcase
+        params["email"] = params["email"].upcase
         begin
           DB.transaction do
             mbr_record.update(params)

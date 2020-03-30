@@ -24,8 +24,8 @@
     <p><%="#{@mbr_pay[:fname]} #{@mbr_pay[:lname]} is currently paid through #{@mbr_pay[:paid_up]}"%><br/><br/>
     <label for="paid_yr_field">Select a year that this member will be paid up through </label>
     <select name="paid_yr" id="paid_yr_field">
-      <%(1..5).each do |yr|%>
-        <option><%=@mbr_pay[:paid_up] + yr%></option>
+      <%(0..4).each do |yr|%>
+        <option><%=Time.now.year + yr%></option>
       <% end %>
     </select>
   </div>

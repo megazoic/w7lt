@@ -25,38 +25,21 @@ module MemberTracker
       path = ''
       if @auth != ''
         # use AUTH_TOKEN
-        path = '/v1/getmembers'
+        path = '/api/v1/getmembers'
         query = "group_name=#{ENV['PARCGIOGROUP']}"
         @auth = @api_token
       else
         #call login, use api_key and get AUTH_TOKEN
-        path = '/v1/login'
-        query = "email=#{ENV['PARCGIOUSER']}&password=#{ENV['PARCGIOPWD']}"
+        path = '/api/v1/login'
+        query = "email=#{ENV['PARCGIOUSER']}&password=#{ENV['PARCGIOPWD']}&token=true"
         @auth = @api_key
       end
       if @page_token.nil? == false
         #include page_token in request
         query << "&page_token=#{@page_token}"
       end
-      URI::HTTPS.build({:host => 'api.groups.io', :path => path,
+      URI::HTTPS.build({:host => 'groups.io', :path => path,
         :query => query})
-    end
-    def extractMbrData(jsonResp)
-      #return an array of hashes containing groups.io
-      #id, full_name, email held in @mbr_array
-    
-      mbrRaw = JSON.parse(jsonResp)
-      #first build out vars for next request
-      if mbrRaw["has_more"] == true
-        @page_token = mbrRaw["next_page_token"]
-      else
-        @has_more = false
-      end
-      #build out array of groups.io member hashes
-      mbrRaw["data"].each {|mbr|
-        gio_hash = {"gio_id" => mbr["id"], "gio_fn" => mbr["full_name"], "gio_email" => mbr["email"]}
-        @mbr_array << gio_hash
-      }
     end
     def setToken
       uri = setURI
@@ -75,13 +58,30 @@ module MemberTracker
         @groupsIOError["errorMsg"] = "unable to get API Token from Groups.io"
       end
     end
+    def extractMbrData(jsonResp)
+      #return an array of hashes containing groups.io
+      #id, full_name, email held in @mbr_array
+    
+      mbrRaw = JSON.parse(jsonResp)
+      #first build out vars for next request
+      if mbrRaw["has_more"] == true
+        @page_token = mbrRaw["next_page_token"]
+      else
+        @has_more = false
+      end
+      #build out array of groups.io member hashes
+      mbrRaw["data"].each {|mbr|
+        gio_hash = {"gio_id" => mbr["id"], "gio_fn" => mbr["full_name"].upcase, "gio_email" => mbr["email"].upcase}
+        @mbr_array << gio_hash
+      }
+    end
     def getMbrData
       while @has_more == true && @resStatus < 400
         uri = setURI
         req = Net::HTTP::Get.new(uri)
         req.basic_auth @auth, ''
 
-        res = Net::HTTP.start(uri.hostname, 443, :use_ssl => true) {|http|
+        res = Net::HTTP.start(uri.hostname, uri.port, :use_ssl => true) {|http|
           http.request(req)
         }
         @resStatus = res.code.to_i

@@ -1,5 +1,5 @@
 <%#
-:fname	:lname	:email	:apt	:city	:street
+:fname	:lname	:email	:city	:street
 :zip	:state	:callsign	:phm	:phm_pub
 :phh	:phh_pub	:phw	:phw_pub
 :license_class	:arrl
@@ -24,8 +24,6 @@ go through the whole thing and look for exampe like apt
 	<input type="text" name="email" value="<%=@member[:email]%>" id="email" onfocusout="validateEmail(this)">
 	<label for="street">Street</label>
 	<input type="text" name="street" value="<%=@member[:street]%>" id="street">
-	<label for="apt">Appartment</label>
-	<input type="text" name="apt" value="<%=@member[:apt]%>" id="apt"><br />
 	<label for="city">City</label>
 	<input type="text" name="city" value="<%=@member[:city]%>" id="city">
 	<label for="state">State</label>
@@ -49,10 +47,10 @@ go through the whole thing and look for exampe like apt
 	<input type="hidden" name="phm_pub" value="0">
 	<input type="checkbox" name="phm_pub" id="phm_pub" value="1" <%=@member[:phm_pub]==1  ? "check='checked'" : nil%>><br />
 	License class <select id="license_class" name="license_class">
-		<option value="tech" <%=@member[:license_class] == 'full' ? "selected" : nil%>>Tech</option>
+		<option value="tech" <%=@member[:license_class] == 'tech' ? "selected" : nil%>>Tech</option>
 		<option value="general" <%=@member[:license_class] == 'general' ? "selected" : nil%>>General</option>
 		<option value="extra" <%=@member[:license_class] == 'extra' ? "selected" : nil%>>Extra</option>
-		<option value="none" <%=@member[:license_class] == '' ? "selected" : nil%>>None</option>
+		<option value="none" <%=@member[:license_class] == 'none' ? "selected" : nil%>>None</option>
 	</select>
 	<br />
   Member since: (YYYY-MM) format

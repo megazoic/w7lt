@@ -5,13 +5,12 @@ require 'sequel'
 #DB = Sequel.sqlite("./db/development.db")
 DB = Sequel.connect('postgres://dev-mbr:4hamD3v@localhost:5432/mbr-devdb')
 
-colnames = [:phw, :phw_pub, :phh, :phh_pub, :phm, :phm_pub, :fname, :lname, :email, 
-:apt, :city, :street, :zip, :state, :callsign, :paid_up, :arrl, :ares, 
-:net, :ve, :elmer, :arrl_expire, :license_class, :mbr_type, :gio_id, :sota, :mbr_since]
+@colnames = [:fname, :lname, :callsign, :license_class, :email, :gio_id, :phh, :phm_pub, 
+:phw_pub, :phh_pub, :street, :city, :state, :zip, :paid_up]
 
-dataType_string =[1,0,1,0,1,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1]
-colData = []
-arrayOfRecords = CSV.read("./mydata.txt")
+dataType_string =[1,1,1,1,1,0,1,0,0,0,1,1,1,1,0]
+@colData = []
+arrayOfRecords = CSV.read("./db/2020-03-28_mbrs_tbl.csv")
 arrayOfRecords.each do |record|
   temp = []
   count = 0
@@ -23,8 +22,8 @@ arrayOfRecords.each do |record|
     end
     count = count + 1
   }
-  colData << temp
+  @colData << temp
 end
 
 
-DB[:members].import(colnames, colData)
+#DB[:members].import(colnames, colData)

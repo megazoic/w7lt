@@ -7,6 +7,9 @@
 Icon
 
 #misc
+*.ods
+gio_out.txt
+members_fields.txt
 curlOut.txt
 app/scripts/*
 scripts/*
