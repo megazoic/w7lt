@@ -277,9 +277,14 @@ function validateUnitEditForm(){
 	return true;
 }
 function validateUnitNewForm(){
+	//unit type needs to be selected
 	//need to make sure > 1 mbr in a unit; 1 and only elmer in unit elmer
 	var checkedBoxes = document.querySelectorAll("input[name*=\'id:\']:checked");
 	var is_elmer_unit = document.getElementById('unit_type').value;
+	if (is_elmer_unit == 'none') {
+		alert("please select unit type");
+		return false;
+	}
 	var have_elmer = 0;
 	var mbrs = checkedBoxes.length;
 	if (is_elmer_unit == "3"){
