@@ -698,7 +698,7 @@ module MemberTracker
             #load names other than the current member
             mbr_family << f_member.id if f_member.id != params[:id].to_i
           end
-        elsif params[:mbr_type_old] = 'family'
+        elsif params[:mbr_type_old] == 'family'
           #check to see if member was previously in a family unit but no longer is paying as one
           #breaking from unit by either leaving an active unit or deactivating unit
           if m.paid_up < Time.now.year
