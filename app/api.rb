@@ -698,44 +698,42 @@ module MemberTracker
             #load names other than the current member
             mbr_family << f_member.id if f_member.id != params[:id].to_i
           end
-        else
+        elsif params[:mbr_type_old] = 'family'
           #check to see if member was previously in a family unit but no longer is paying as one
-          if params[:mbr_type_old] = 'family'
-            #breaking from unit by either leaving an active unit or deactivating unit
-            if m.paid_up < Time.now.year
-              #unit hasn't paid (yet), find unit
-              m.units.each do |mu|
-                if mu.unit_type_id == UnitType.where(:type => 'family').first.id
-                  mbr_family_unit_id = mu.id
-                end
+          #breaking from unit by either leaving an active unit or deactivating unit
+          if m.paid_up < Time.now.year
+            #unit hasn't paid (yet), find unit
+            m.units.each do |mu|
+              if mu.unit_type_id == UnitType.where(:type => 'family').first.id
+                mbr_family_unit_id = mu.id
               end
-              #change unit active to 0 (inactive)
-              u = Unit[mbr_family_unit_id]
-              u.active = 0
-              u.save
-              #remove this member from the unit if there are more than 2 members of this unit
-              if u.members.length > 2
-                u.remove_member(m)
-              end #otherwise, just leave unit inactive and have unit members with diff mbr_type
-            else#family already paid up but maybe family member splitting off?
-              #check to see if there are only 2 members of this unit
-              m.units.each do |mu|
-                if mu.unit_type_id == UnitType.where(:type => 'family').first.id
-                  mbr_family_unit_id = mu.id
-                end
+            end
+            #change unit active to 0 (inactive)
+            u = Unit[mbr_family_unit_id]
+            u.active = 0
+            u.save
+            #remove this member from the unit if there are more than 2 members of this unit
+            if u.members.length > 2
+              u.remove_member(m)
+            end #otherwise, just leave unit inactive and have unit members with diff mbr_type
+          else#family already paid up but maybe family member splitting off?
+            #check to see if there are only 2 members of this unit
+            m.units.each do |mu|
+              if mu.unit_type_id == UnitType.where(:type => 'family').first.id
+                mbr_family_unit_id = mu.id
               end
-              if Unit[mbr_family_unit_id].members.length < 3
-                #unlikely event and cause this to fail
-                augmented_notes << "\n****member currently paid up is trying to pay again*****\nRecord NOT updated"
-                session[:msg] = "The data was not entered successfully\nthis member in fam unit that already paid"
-                l.notes = augmented_notes
-                l.save
-                redirect "/list/members"
-              else
-                #remove this member from unit it is assumed they are too old to use family membership
-                augmented_notes << "\n****member currently paid up is trying to pay again*****\nwill remove from fam unit"
-                Unit[mbr_family_unit_id].remove_member(m)
-              end
+            end
+            if Unit[mbr_family_unit_id].members.length < 3
+              #unlikely event and cause this to fail
+              augmented_notes << "\n****member currently paid up is trying to pay again*****\nRecord NOT updated"
+              session[:msg] = "The data was not entered successfully\nthis member in fam unit that already paid"
+              l.notes = augmented_notes
+              l.save
+              redirect "/list/members"
+            else
+              #remove this member from unit it is assumed they are too old to use family membership
+              augmented_notes << "\n****member currently paid up is trying to pay again*****\nwill remove from fam unit"
+              Unit[mbr_family_unit_id].remove_member(m)
             end
           end
         end #if mbr_type is family
