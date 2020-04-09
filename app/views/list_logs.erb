@@ -17,7 +17,7 @@
 		</tr>
 		<% for log in @logs %>
 		<tr>
-		<td><%=log[:mbr_name]%></td>
+		<td><%if log.has_key?(:mbr_name)%><%=log[:mbr_name]%><%else%><%='N/A'%><%end%></td>
 		<td><%=log[:time]%></td>
 		<td><%=log[:action]%></td>
 		<td><%=log[:notes]%></td>

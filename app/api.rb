@@ -617,23 +617,28 @@ module MemberTracker
           @logs << h
         end
       when "all"
+        puts "in logs all"
         @type = "all"
         aus = Auth_user.all
         @logs = []
         no_logs = true
         aus.each do |au|
           if au.logs.length > 0
+            puts "logs length is not 0 and au id is #{au.id}"
             no_logs = false
-          end
-          au.logs.each do |l|
-            h = Hash.new
-            h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"
-            ts = l.ts.strftime("%m-%d-%Y")
-            h[:time] = "#{ts}"
-            h[:notes] = l.notes
-            h[:action] = l.action.type
-            h[:au_name] = "#{l.auth_user.member.fname} #{l.auth_user.member.lname}"
-            @logs << h
+            au.logs.each do |l|
+              puts "log id is #{l.id}"
+              h = Hash.new
+              if !l.member.nil?
+                h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"
+              end
+              ts = l.ts.strftime("%m-%d-%Y")
+              h[:time] = "#{ts}"
+              h[:notes] = l.notes
+              h[:action] = l.action.type
+              h[:au_name] = "#{l.auth_user.member.fname} #{l.auth_user.member.lname}"
+              @logs << h
+            end
           end
         end
         if no_logs == true
