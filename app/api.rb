@@ -401,7 +401,7 @@ module MemberTracker
         elsif @u_c[0] == 'family' || unit_meta[:unit_type] == 'family'
           unit_meta[:unit_notes] = "Paid_up: #{Member[u.members.first.id].paid_up}"
         else
-          unit_meta[:unit_notes] = "N/A"
+          (!u.name.nil? && u.name != '') ? unit_meta[:unit_notes] = "#{u.name}" : unit_meta[:unit_notes] = "N/A"
         end
         unit_array << unit_meta
         unit_array << u.id
@@ -439,6 +439,9 @@ module MemberTracker
       UnitType.select(:id, :type).map(){|x| units[x.type] = x.id}
       unit_id = units[unit_type_name]
       params.reject!{|k,v| k == 'unit_type'}
+      #get name field
+      unit_name = params[:unit_name]
+      params.reject!{|k,v| k == 'unit_name'}
       #get member ids for this unit
       mbrs = []
       params.each do |k,v|
@@ -457,7 +460,7 @@ module MemberTracker
       l.notes = "creating new unit of type #{unit_type_name} with members #{mbr_names[0...-2]}"
       #build unit
       creator_mbr_id = Auth_user[session[:auth_user_id]].mbr_id
-      u = Unit.new(:unit_type_id => unit_id, :active => 1, :created_by_id => creator_mbr_id, :ts => Time.now)
+      u = Unit.new(:unit_type_id => unit_id, :active => 1, :name => unit_name, :created_by_id => creator_mbr_id, :ts => Time.now)
       begin
         DB.transaction do
           u.save
@@ -627,7 +630,6 @@ module MemberTracker
             puts "logs length is not 0 and au id is #{au.id}"
             no_logs = false
             au.logs.each do |l|
-              puts "log id is #{l.id}"
               h = Hash.new
               if !l.member.nil?
                 h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"

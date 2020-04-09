@@ -32,17 +32,17 @@
 	<p>Phone: XXX-XXX-XXXX Format</p>
 	<label for="phh">Home</label>
 	<input type="text" name="phh" value="<%=@member[:phh]%>" id="phh" onfocusout="validatePh(this)">
-	<label for="phh_pub">Publish?</label>
+	<label for="phh_pub">Ok to Publish? (check if Yes)</label>
 	<input type="hidden" name="phh_pub" value="0">
 	<input type="checkbox" name="phh_pub" id="phh_pub" value="1" <%=@member[:phh_pub]==1  ? "check='checked'" : nil%>><br />
 	<label for="phw">Work</label>
 	<input type="text" name="phw" value="<%=@member[:phw]%>" id="phw"  onfocusout="validatePh(this)">
-	<label for="phw_pub">Publish?</label>
+	<label for="phw_pub">Ok to Publish?</label>
 	<input type="hidden" name="phw_pub" value="0">
 	<input type="checkbox" name="phw_pub" id="phw_pub" value="1" <%=@member[:phw_pub]==1  ? "check='checked'" : nil%>><br />
 	<label for="phm">Mobile</label>
 	<input type="text" name="phm" value="<%=@member[:phm]%>" id="phm"  onfocusout="validatePh(this)">
-	<label for="phm_pub">Publish?</label>
+	<label for="phm_pub">Ok to Publish?</label>
 	<input type="hidden" name="phm_pub" value="0">
 	<input type="checkbox" name="phm_pub" id="phm_pub" value="1" <%=@member[:phm_pub]==1  ? "check='checked'" : nil%>><br />
 	License class <select id="license_class" name="license_class">
@@ -54,7 +54,7 @@
 	<br />
   Member since: (YYYY-MM) format
   <input type="text" name="mbr_since" id="mbr_since" onfocusout="validateMbrSince(this)"
-    value=<%=@member[:lname] == '' ? Time.now.strftime("%Y-%m") : @member[:mbr_since].strftime("%Y-%m")%>>
+    value=<%=(@member[:mbr_since] == '' || @member[:mbr_since].nil?) ? Time.now.strftime("%Y-%m") : @member[:mbr_since].strftime("%Y-%m")%>>
   <br />
   <label for="notes_field">Leave notes for this member here</label>
   <textarea name="notes" id="notes_field" rows="3" cols="65"></textarea>
