@@ -3,9 +3,9 @@
 	<input type="hidden" name="mbr_id" value=<%=@mbr_to_update[:id]%>>
   <p>Authorized User Status:</p>
   <label for="active">Active</label>
-  <input type="radio" name="status" id="active" <% if @mbr_to_update[:active] == 1 %>checked<%end%> value="1" onchange="auStatus()">
+  <input type="radio" name="status" id="active" <% if @mbr_to_update[:active] == 1 %>checked<%end%> value="1" onchange="authUserStatusSet(this)">
   <label for="active">Inactive</label>
-  <input type="radio" name="status" id="inactive" <% if @mbr_to_update[:active] == 0 %>checked<%end%> value="0" onchange="auStatus()">
+  <input type="radio" name="status" id="inactive" <% if @mbr_to_update[:active] == 0 %>checked<%end%> value="0" onchange="authUserStatusSet(this)">
     <br />
   <%# expect @au_roles = [[:role_id, :role_description, :role_boolean],[]] %>
   <div id="roles">

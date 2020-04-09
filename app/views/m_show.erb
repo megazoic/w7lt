@@ -1,5 +1,5 @@
 <%#
-:fname	:lname	:email	:apt	:city	:street
+:fname	:lname	:email	:city	:street
 :zip	:state	:callsign	:phm	:phm_pub
 :phh	:phh_pub	:phw	:phw_pub
 :license_class	:mbr_type	:paid_up	:arrl
@@ -7,7 +7,7 @@
 :SOTA
 %>
 <h1>Member: <%="#{@member[:fname]} #{@member[:lname]}, #{@member[:callsign]}"%></h1>
-<p>Address: <%="#{@member[:street]} #{@member[:apt]}"%><br />
+<p>Address: <%="#{@member[:street]}"%><br />
 	<%="#{@member[:city]} #{@member[:state]} #{@member[:zip]}"%><br /></p>
 	<p>Email: <%=@member[:email]%>
 <p>Phone:<br /><span class="textColor">Home</span> <%="#{@member[:phh]} publish? "%><span class="highlight"><%=@member[:phh_pub].to_i == 0 ? "N" : "Y"%></span><br />

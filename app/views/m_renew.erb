@@ -20,6 +20,9 @@
 	    <option value="family" <%=@mbr_pay[:mbr_type] == 'family' ? "selected" : nil%>>Family</option>
 	    <option value="honorary" <%=@mbr_pay[:mbr_type] == 'honorary' ? "selected" : nil%>>Honorary</option>
     </select>
+    <%if @mbr_pay[:mbr_type] == 'family'%>
+      <br/><%@mbr_family.each {|mbr|%><%="#{mbr} "%><%}%>membership will also be renewed
+    <%end%>
     <br/>
     <p><%="#{@mbr_pay[:fname]} #{@mbr_pay[:lname]} is currently paid through #{@mbr_pay[:paid_up]}"%><br/><br/>
     <label for="paid_yr_field">Select a year that this member will be paid up through </label>

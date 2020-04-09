@@ -6,23 +6,22 @@
     <link rel="stylesheet" type="text/css" href="/stylesheets/style.css" />
 	<script type="text/javascript" src="/js/script.js"></script>
   </head>
-  <body>
+  <body <%if @is_pwdreset%>id="PwdReset"<%end%>>
     <form action="/logout" method="POST">
       <input type="submit" value="Sign Out" />
     </form>
 	<br />
-	<a href="/dump/mbr">Dump the member table</a><br />
-	<a href="/query">Query the member data</a><br />
-	<a href="/list/members">List members</a><br />
-	<a href="/new/member">Add a new member</a><br />
+  <table>
+  <tr><td><a href="/dump/mbr">Dump the member table</a></td><td><a href="/query">Query the member data</a></td></tr>
+  <tr><td><a href="/list/members">List members</a></td><td><a href="/new/member">Add a new member</a></td></tr>
 	<%if session[:auth_user_roles].include?('auth_u')%>
-		<a href="/admin/list_auth_users">List administrators</a><br />
-		<a href="/admin/create_auth_user">Add an administrator</a><br />
-    <a href="/admin/log/">Record payment</a><br />
-    <a href="/admin/view_log/auth_user">View your logs</a><br />
-    <a href="/admin/view_log/all">View all logs</a><br />
-    <a href="/admin/payments/show">View payments</a><br />
+    <tr><td><a href="/admin/list_auth_users">List administrators</a></td><td><a href="/admin/create_auth_user">Add an administrator</a></td></tr>
+    <tr><td><a href="/admin/log/">Record payment</a></td><td><a href="/admin/view_log/auth_user">View your logs</a></td></tr>
+    <tr><td><a href="/admin/view_log/all">View all logs</a></td><td><a href="/admin/payments/show">View payments</a></td></tr>
+    <tr><td><a href='/list/units/all'>List all units</a></td><td><a href='/new/unit'>Create a new Unit</a></td></tr>
+    <tr><td><a href='/groupsio'>Synch with Groups.io</a></td><td></td></tr>
 	<%end%>
+  </table
 	<br />
 	<% if @tmp_msg %>
 		<div id="alert">

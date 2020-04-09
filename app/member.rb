@@ -4,6 +4,7 @@ module MemberTracker
   class Member < Sequel::Model
     one_to_one :auth_user, :class=>"MemberTracker::Auth_user", key: :a_user_id
     one_to_many :logs, :class=>"MemberTracker::Log", key: :mbr_id
+    many_to_many :units, left_key: :mbr_id, right_key: :unit_id, join_table: :members_units
     def record(member_data)
       unless member_data.key?('lname')
         message = 'Invalid member: \'lname\' is required'

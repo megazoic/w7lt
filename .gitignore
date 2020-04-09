@@ -20,6 +20,10 @@ design/*
 *.csv*
 *.xlsx
 
+#to get data into db
+load_units.rb
+script_units.rb
+
 *.sqlite3
 *.db
 mydata.*

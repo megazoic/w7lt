@@ -1,0 +1,30 @@
+<%u_type=@u_c.shift%>
+
+<h3>Units List: <%=u_type.capitalize%></h3>
+<table>
+<tr>
+  <%if u_type == 'all'%>
+    <th>Unit Type</th>
+  <%end%>
+	<th>Unit Creator</th>
+	<th>Creation Date</th>
+	<th>Active</th>
+  <th>Notes</th>
+  <th>Members</th>
+  <th>Edit</th>
+</tr>
+<%@u_c.each do |unit|%>
+  <%meta=unit[0]%>
+		<tr>
+    <%if u_type == 'all'%>
+      <td><%=meta[:unit_type]%></td>
+    <%end%>
+		<td><%=meta[:unit_creator]%></td>
+		<td><%=meta[:unit_created_at]%></td>
+		<td><%if meta[:unit_active] == 1%>Yes<%else%>No<%end%></td>
+    <td><%=meta[:unit_notes]%></td>
+    <td><%=unit[2]%></td>
+    <td><a href="/edit/unit/<%=unit[1]%>">edit</a></td>
+		</tr>
+<%end%>
+</table>

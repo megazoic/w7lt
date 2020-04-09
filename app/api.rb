@@ -2,6 +2,8 @@ require 'sinatra/base'
 require 'json'
 require 'bcrypt'
 require_relative 'member'
+require_relative 'unit'
+require_relative 'unitType'
 require_relative 'auth_user'
 require_relative 'groupsIoData'
 require_relative 'role'
@@ -369,8 +371,214 @@ module MemberTracker
       end
       redirect "/show/member/#{mbr_id}"
     end
+    get '/list/units/:unit_type' do
+      @tmp_msg = session[:msg]
+      units = nil
+      if params[:unit_type] == 'all'
+        units = Unit.reverse_order(:active).all
+      else
+        units = Unit.where(:unit_type_id => UnitType.where(:type => params[:unit_type]).first.id).reverse_order(:active).all
+      end
+      #iterate through array of Unit objects pulling out meta data and member names
+      #put this in a unit container @u_c
+      @u_c = [params[:unit_type]]
+      units.each do |u|
+        elmer_mbr = "N/A"
+        elmer_id = nil
+        unit_array = []
+        unit_meta = {unit_creator: Member[u.created_by_id].callsign, unit_created_at: u.ts.strftime("%m-%d-%y"),
+          unit_active: u.active, unit_type: u.unit_type.type}
+        #check if listing elmer or family units; need to add info specific to these
+        if @u_c[0] == 'elmer' || unit_meta[:unit_type] == 'elmer'
+          #find elmer
+          u.members.each do |mbr|
+            if mbr.elmer == 1
+              elmer_mbr = "#{mbr.fname} #{mbr.lname}: #{mbr.callsign}"
+              elmer_id = mbr.id
+            end
+          end
+          unit_meta[:unit_notes] = "Elmer: #{elmer_mbr}"
+        elsif @u_c[0] == 'family' || unit_meta[:unit_type] == 'family'
+          unit_meta[:unit_notes] = "Paid_up: #{Member[u.members.first.id].paid_up}"
+        else
+          unit_meta[:unit_notes] = "N/A"
+        end
+        unit_array << unit_meta
+        unit_array << u.id
+        #load the members of this unit (excluding elmer if unit is elmer)
+        mbrs_list = ""
+        u.members.each do |mbr|
+          #if elmer, don't want in unit_array bc already in unit_meta
+          unless elmer_id == mbr.id
+            mbrs_list << "#{mbr.fname} #{mbr.lname}: #{mbr.callsign}, "
+          end
+        end
+        #add list of member to the array
+        unit_array << mbrs_list[0...-2]
+        @u_c << unit_array
+      end
+      erb :u_list, :layout => :layout_w_logout
+    end
+    get '/new/unit' do
+      @unit_type = DB[:unit_types].select(:id, :type, :desc).all
+      @member = DB[:members].select(:id, :lname, :fname, :callsign, :elmer).order(:lname, :fname).all
+      @member.each do |mbr|
+        if mbr[:elmer] == 1
+          mbr[:elmer] = 'Yes'
+        else
+          mbr[:elmer] = 'No'
+        end
+      end
+      erb :u_new, :layout => :layout_w_logout
+    end
+    post '/new/unit' do
+      ut = params[:unit_type]
+      params.reject!{|k,v| k == 'unit_type'}
+      #get member ids for this unit
+      mbrs = []
+      params.each do |k,v|
+        mbrs << /id:(\d+)/.match(k)[1]
+      end
+      #need to create a log for this transaction
+      #first get action id
+      actions = {}
+      Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
+      action_id = actions["unit"]
+      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
+      mbr_names = ""
+      mbrs.each do |mbr_id|
+        mbr_names << "#{Member[mbr_id].fname} #{Member[mbr_id].lname}, "
+      end
+      l.notes = "creating new unit of type #{UnitType[ut].type} with members #{mbr_names[0...-2]}"
+      #build unit
+      creator_mbr_id = Auth_user[session[:auth_user_id]].mbr_id
+      u = Unit.new(:unit_type_id => ut, :active => 1, :created_by_id => creator_mbr_id, :ts => Time.now)
+      begin
+        DB.transaction do
+          u.save
+          mbrs.each do |mbr|
+            m = Member[mbr.to_i]
+            m.add_unit(u)
+          end
+        end
+        session[:msg] = "The unit was successfully created"
+        l.save
+        redirect "/list/units/#{UnitType[ut].type}"
+      rescue StandardError => e
+        session[:msg] = "The unit could not be created\n#{e}"
+        redirect '/home'
+      end
+    end
+    get '/edit/unit/:id' do
+      response['Cache-Control'] = "public, max-age=0, must-revalidate"
+      @unit = Unit[params[:id].to_i]
+      @unit_creator = Unit[params[:id].to_i].member.callsign
+      #get a list of member ids that belong to this unit
+      #also, if the unit is an elmer, find that elmer member
+      unit_mbrs = []
+      @unit_elmer = nil
+      @unit.members.each do |mbr|
+        if @unit.unit_type.type == "elmer"
+          if mbr.elmer == 1
+            @unit_elmer = mbr.callsign
+          end
+        end
+        unit_mbrs << mbr.id
+      end
+      @member = DB[:members].select(:id, :lname, :fname, :callsign, :elmer).order(:lname, :fname).all
+      @member.each do |mbr|
+        if mbr[:elmer] == 1
+          mbr[:elmer] = 'Yes'
+        else
+          mbr[:elmer] = 'No'
+        end
+        #add key for member's inclusion in this unit
+        if unit_mbrs.include?(mbr[:id])
+          mbr[:included] = '1'
+        else
+          mbr[:included] = '0'
+        end
+      end
+      erb :u_edit, :layout => :layout_w_logout
+    end
+    post '/update/unit' do
+      #expecting keys "unit_id", "name", some mbrs like {"id:nnn" => 1, ...} where nnn is the member id
+      #if :active is missing is then 0
+      #save notes for log
+      notes = params["unit_notes"]
+      params.reject!{|k,v| k == "unit_notes"}
+      #get action id
+      action_id = nil
+      Action.select(:id, :type).map(){|x|
+        if x.type == "unit"
+          action_id = x.id
+        end
+      }
+      #load unit and check values
+      unit = Unit[params["unit_id"].to_i]
+      #need to treat elmer unit special
+      is_elmer = false
+      unit.unit_type.type == 'elmer' ? is_elmer = true : nil
+      augmented_notes = "updating unit_id:#{params["unit_id"]}\n"
+      augmented_notes << "from AuthUser #{notes}\n" if !notes.nil?
+      mbrs_new = []
+      params.each do |k,v|
+        mbr = /id:(\d+)/.match(k)
+        if !mbr.nil?
+          mbrs_new << mbr[1].to_i
+        end
+      end
+      #build a list of old members
+      mbrs_old = []
+      unit.members.each do |mbr|
+        mbrs_old << mbr.id
+        #add elmer from this unit to mbrs_new since not found in params
+        if is_elmer && mbr.elmer == 1
+          mbrs_new << mbr.id
+        end
+      end
+      #compare the two sets of members
+      mbrs_old_out = mbrs_old - mbrs_new #these have been removed
+      mbrs_new_in = mbrs_new - mbrs_old #these have been added
+      augmented_notes << "members removed from unit: #{mbrs_old_out}\nmembers added to unit: #{mbrs_new_in}"
+      #look at changes in active status and name of unit
+      name_new = params["name"]
+      if name_new != unit.name
+        unit.name = name_new
+        augmented_notes << "\nname changed from #{unit.name} to #{name_new}"
+      end
+      active_new = params["active"].nil? ? 0 : 1
+      if active_new != unit.active
+        unit.active = active_new
+        augmented_notes << "\nactive status changed from #{unit.active.to_s} to #{active_new.to_s}"
+      end
+      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: action_id)
+      #build new unit and change members in the unit
+      mbrs_old_out.each do |mbr|
+        unit.remove_member(mbr)
+      end
+      mbrs_new_in.each do |mbr|
+        unit.add_member(mbr)
+      end
+      begin
+        DB.transaction do
+          unit.save
+          l.save
+          session[:msg] = "The existing unit was successfully updated"
+          #need to build this route
+          #redirect "/show/unit/#{unit.id}"
+          redirect "/list/units/#{unit.unit_type.type}"
+        end
+      rescue StandardError => e
+        session[:msg] = "The existing unit could not be updated\n#{e}"
+        redirect "/list/units/all"
+      end
+    end
+    
     ################### START MEMBER MGR ##################
     get '/reset_password/:id' do
+      #use @is_pwdreset to load password script from script.js by setting <body id="PwdReset"> in layout
+      @is_pwdreset = true;
       @mbr = Member.select(:id, :fname, :lname, :callsign).where(id: params[:id]).first
       erb :reset_password, :layout => :layout_w_logout
     end
@@ -394,7 +602,9 @@ module MemberTracker
         end
         au.logs.each do |l|
           h = Hash.new
-          h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"
+          if !l.member.nil?
+            h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"
+          end
           ts = l.ts.strftime("%m-%d-%Y")
           h[:time] = "#{ts}"
           h[:notes] = l.notes
@@ -438,6 +648,24 @@ module MemberTracker
       @tmp_msg = session[:msg]
       session[:msg] = ''
       @mbr_pay = Member.select(:id, :fname, :lname, :callsign, :paid_up, :mbr_type)[params[:id].to_i]
+      #if mbr_type is 'family' then count all family members that will be updated
+      @mbr_family = []
+      if @mbr_pay.mbr_type == 'family'
+        #find the id for the family unit
+        fu_id = nil
+        @mbr_pay.units.each do |mu|
+          if mu.unit_type_id == UnitType.where(:type => 'family').first.id
+            fu_id = mu.id
+          end
+        end
+        #load members in this family
+        Unit[fu_id].members.each do |f_member|
+          #load names other than the current member
+          if f_member.id != params[:id].to_i
+            @mbr_family << "#{f_member.fname} #{f_member.lname}"
+          end
+        end
+      end
       @payType = PaymentType.all
       @payMethod = PaymentMethod.all
       erb :m_renew, :layout => :layout_w_logout
@@ -451,8 +679,66 @@ module MemberTracker
       augmented_notes = params[:notes]
       l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
       #check to see if 'dues' is selected as :payment_type
+      #to store family ids
+      mbr_family = []
+      mbr_family_unit_id = nil
       if PaymentType[params[:payment_type]].type == 'Dues'
         m = Member[params[:mbr_id]]
+        if params[:mbr_type] == 'family'
+          #get other family members
+          #find the id for the family unit
+          fu_id = nil
+          m.units.each do |mu|
+            if mu.unit_type_id == UnitType.where(:type => 'family').first.id
+              mbr_family_unit_id = mu.id
+            end
+          end
+          #load members in this family
+          Unit[mbr_family_unit_id].members.each do |f_member|
+            #load names other than the current member
+            mbr_family << f_member.id if f_member.id != params[:id].to_i
+          end
+        else
+          #check to see if member was previously in a family unit but no longer is paying as one
+          if params[:mbr_type_old] = 'family'
+            #breaking from unit by either leaving an active unit or deactivating unit
+            if m.paid_up < Time.now.year
+              #unit hasn't paid (yet), find unit
+              m.units.each do |mu|
+                if mu.unit_type_id == UnitType.where(:type => 'family').first.id
+                  mbr_family_unit_id = mu.id
+                end
+              end
+              #change unit active to 0 (inactive)
+              u = Unit[mbr_family_unit_id]
+              u.active = 0
+              u.save
+              #remove this member from the unit if there are more than 2 members of this unit
+              if u.members.length > 2
+                u.remove_member(m)
+              end #otherwise, just leave unit inactive and have unit members with diff mbr_type
+            else#family already paid up but maybe family member splitting off?
+              #check to see if there are only 2 members of this unit
+              m.units.each do |mu|
+                if mu.unit_type_id == UnitType.where(:type => 'family').first.id
+                  mbr_family_unit_id = mu.id
+                end
+              end
+              if Unit[mbr_family_unit_id].members.length < 3
+                #unlikely event and cause this to fail
+                augmented_notes << "\n****member currently paid up is trying to pay again*****\nRecord NOT updated"
+                session[:msg] = "The data was not entered successfully\nthis member in fam unit that already paid"
+                l.notes = augmented_notes
+                l.save
+                redirect "/list/members"
+              else
+                #remove this member from unit it is assumed they are too old to use family membership
+                augmented_notes << "\n****member currently paid up is trying to pay again*****\nwill remove from fam unit"
+                Unit[mbr_family_unit_id].remove_member(m)
+              end
+            end
+          end
+        end #if mbr_type is family
         m.paid_up = params[:paid_yr]
         m.mbr_type = params[:mbr_type]
         #if params[:mbr_paid_up_old] != params[:paid_yr]
@@ -462,7 +748,7 @@ module MemberTracker
         if params[:mbr_type] != params[:mbr_type_old]
           augmented_notes << "\n**** Member type changed from #{params[:mbr_type_old]} to #{params[:mbr_type]}"
         end
-      end
+      end #if Dues
       l.notes = augmented_notes
       pay = Payment.new(:mbr_id => params[:mbr_id], :a_user_id => session[:auth_user_id], :payment_type_id => params[:payment_type],
         :payment_method_id => params[:payment_method], :payment_amount => params[:payment_amt], :ts => Time.now)
@@ -470,6 +756,23 @@ module MemberTracker
         DB.transaction do
           if PaymentType[params[:payment_type]].type == 'Dues'
             m.save
+            if params[:mbr_type] == 'family'
+              #update other family members
+              fam_names = ""
+              mbr_family.each do |mbr_id|
+                fm = Member[mbr_id]
+                fm.paid_up = params[:paid_yr]
+                fm.mbr_type = 'family'
+                fm.save
+                fam_names << "\nmbr_id#:#{fm.id}, #{fm.fname}, #{fm.lname}"
+              end
+              #add names to log
+              l.notes << "#{fam_names} were also updated"
+              #make sure family unit is active
+              fu = Unit[mbr_family_unit_id]
+              fu.active = 1
+              fu.save
+            end
           end
           l.save
           #associate the log entry with this payment

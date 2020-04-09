@@ -1,8 +1,6 @@
 function $(id){
 	return document.getElementById(id)
 }
-
-
 //************** ON CHANGE EVENTS ***************//
 function queryType(){
 	var x = $("query_select").value;
@@ -28,6 +26,15 @@ function duesSet(selectElement){
 		$("message").style.display = "block";
 	}else{
 		$("message").style.display = "none";
+	}
+}
+function authUserStatusSet(inputElement){
+	//set visibility of authorized user roles based on their status
+	var ieValue = inputElement.value;
+	if (ieValue == "1") {
+		$("roles").style.display = "block";
+	} else {
+		$("roles").style.display = "none";
 	}
 }
 //**************VALIDATORS*****************************
@@ -175,17 +182,6 @@ function validateAssignRoleForm(){
 		return false;
 	}
 }
-function auStatus(){
-	//one of these two has to be checked
-	var inactive = $("inactive").checked;
-	if (inactive) {
-		$("roles").style.display = "none";
-		$("active_notice").style.display = "block";
-	} else {
-		$("roles").style.display = "block";
-		$("active_notice").style.display = "none";
-	}
-}
 function validateMbrPayForm(){
 	var paid_up = $("paid_yr_field").value;
 	var mbr_type = $("mbr_type").value;
@@ -252,90 +248,138 @@ function validateMbrForm(){
 		}
 	}
 }
+function validateUnitEditForm(){
+	//need to make sure >1 mbr in a unit;
+	//if unit is elmer, 1 or more mbrs; no elmers selected (already have one)
+	var checkedBoxes = document.querySelectorAll("input[name*=\'id:\']:checked");
+	var is_elmer_unit = document.getElementById('elmer').value;
+	var have_elmer = "N";
+	var mbrs = checkedBoxes.length;
+	if (is_elmer_unit == "1"){
+		for (var i = 0; i < checkedBoxes.length; i++){
+			var m = checkedBoxes[i].name.match(/\d+:([NY])/);
+			if (m[1] == "Y") have_elmer = "Y";
+		}
+		if (mbrs > 0){
+			if (have_elmer == "Y"){
+				alert("you have 2 elmers. if you need to change elmers, create new unit");
+				return false;
+			}//else Ok to submit form
+		} else {
+			alert("you need to have one non-elmer member of this unit");
+			return false;
+		}
+	}
+	else if (mbrs < 2){
+		alert("you need at least 2 members in a unit");
+		return false;
+	}
+	return true;
+}
+function validateUnitNewForm(){
+	//need to make sure > 1 mbr in a unit; 1 and only elmer in unit elmer
+	var checkedBoxes = document.querySelectorAll("input[name*=\'id:\']:checked");
+	var is_elmer_unit = document.getElementById('unit_type').value;
+	var have_elmer = 0;
+	var mbrs = checkedBoxes.length;
+	if (is_elmer_unit == "3"){
+		for (var i = 0; i < checkedBoxes.length; i++){
+			var m = checkedBoxes[i].name.match(/\d+:([NY])/);
+			if (m[1] == "Y") have_elmer = have_elmer + 1;
+		}
+		if (mbrs > 1){
+			if (have_elmer > 1 || have_elmer == 0){
+				alert("too many elmers, please choose one and only one elmer");
+				return false;
+			}//else Ok to submit form
+		} else {
+			alert("you need at least 2 members in this unit");
+			return false;
+		}
+	}
+	else if (mbrs < 2){
+		alert("you need at least 2 members in a unit");
+		return false;
+	}
+	return true;
+}
 
 window.onload = function (){
-	//*************** MISC *************************//
-	var elems = document.getElementsByClassName('confirm');
-	var confirmIt = function (e) {
-		if (!confirm('Are you sure?')) e.preventDefault();
-	};
-	for (var i = 0, l = elems.length; i < l; i++) {
-		elems[i].addEventListener('click', confirmIt, false);
-	}
-	// test for inactive Auth User status
-	auStatus();
-	//************** VALIDATION ********************//
-	function validatePassword(){
+	//load only if using password reset page
+	if (document.body.id == "PwdReset"){
+		//************** VALIDATION ********************//
 		var password = $("password"),
 		confirm_password = $("confirm_password");
-		var ok = true;
-		if(password.value != confirm_password.value){
-			confirm_password.setCustomValidity("Passwords don't match");
-			ok = false;
-		} else {
-			confirm_password.setCustomValidity("");
+		function validatePassword(){
+			var ok = true;
+			if(password.value != confirm_password.value){
+				confirm_password.setCustomValidity("Passwords don't match");
+				ok = false;
+			} else {
+				confirm_password.setCustomValidity("");
+			}
+			return ok;
 		}
-		return ok;
+		password.onchange = validatePassword();
+		confirm_password.onkeyup = validatePassword;
+		//*************** from w3 schools ***************//
+		//https://www.w3schools.com/howto/howto_js_password_validation.asp
+		var letter = $("letter");
+		var capital = $("capital");
+		var number = $("number");
+		var length = $("length");
+
+		//When the user clicks on the password field, show the message box
+		password.onfocus = function() {
+		  $("message").style.display = "block";
+		}
+
+		//When the user clicks outside of the password field, hide the message box
+		password.onblur = function() {
+		  $("message").style.display = "none";
+		}
+
+		// When the user starts to type something inside the password field
+		password.onkeyup = function() {
+		  // Validate lowercase letters
+		  var lowerCaseLetters = /[a-z]/g;
+		  if(password.value.match(lowerCaseLetters)) {
+		    letter.classList.remove("invalid");
+		    letter.classList.add("valid");
+		  } else {
+		    letter.classList.remove("valid");
+		    letter.classList.add("invalid");
+		  }
+
+		  // Validate capital letters
+		  var upperCaseLetters = /[A-Z]/g;
+		  if(password.value.match(upperCaseLetters)) {
+		    capital.classList.remove("invalid");
+		    capital.classList.add("valid");
+		  } else {
+		    capital.classList.remove("valid");
+		    capital.classList.add("invalid");
+		  }
+
+		  // Validate numbers
+		  var numbers = /[0-9]/g;
+		  if(password.value.match(numbers)) {
+		    number.classList.remove("invalid");
+		    number.classList.add("valid");
+		  } else {
+		    number.classList.remove("valid");
+		    number.classList.add("invalid");
+		  }
+
+		  // Validate length
+		  if(password.value.length >= 8) {
+		    length.classList.remove("invalid");
+		    length.classList.add("valid");
+		  } else {
+		    length.classList.remove("valid");
+		    length.classList.add("invalid");
+		  }
+		}
+		//*************** end w3 schools ****************//
 	}
-	password.onchange = validatePassword();
-	confirm_password.onkeyup = validatePassword;
-	//*************** from w3 schools ***************//
-	//https://www.w3schools.com/howto/howto_js_password_validation.asp
-	var letter = $("letter");
-	var capital = $("capital");
-	var number = $("number");
-	var length = $("length");
-
-	// When the user clicks on the password field, show the message box
-	password.onfocus = function() {
-	  $("message").style.display = "block";
-	}
-
-	// When the user clicks outside of the password field, hide the message box
-	password.onblur = function() {
-	  $("message").style.display = "none";
-	}
-
-	// When the user starts to type something inside the password field
-	password.onkeyup = function() {
-	  // Validate lowercase letters
-	  var lowerCaseLetters = /[a-z]/g;
-	  if(password.value.match(lowerCaseLetters)) {
-	    letter.classList.remove("invalid");
-	    letter.classList.add("valid");
-	  } else {
-	    letter.classList.remove("valid");
-	    letter.classList.add("invalid");
-	  }
-
-	  // Validate capital letters
-	  var upperCaseLetters = /[A-Z]/g;
-	  if(password.value.match(upperCaseLetters)) {
-	    capital.classList.remove("invalid");
-	    capital.classList.add("valid");
-	  } else {
-	    capital.classList.remove("valid");
-	    capital.classList.add("invalid");
-	  }
-
-	  // Validate numbers
-	  var numbers = /[0-9]/g;
-	  if(password.value.match(numbers)) {
-	    number.classList.remove("invalid");
-	    number.classList.add("valid");
-	  } else {
-	    number.classList.remove("valid");
-	    number.classList.add("invalid");
-	  }
-
-	  // Validate length
-	  if(password.value.length >= 8) {
-	    length.classList.remove("invalid");
-	    length.classList.add("valid");
-	  } else {
-	    length.classList.remove("valid");
-	    length.classList.add("invalid");
-	  }
-	}
-	//*************** end w3 schools ****************//
 }
