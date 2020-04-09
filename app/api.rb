@@ -432,7 +432,12 @@ module MemberTracker
       erb :u_new, :layout => :layout_w_logout
     end
     post '/new/unit' do
-      ut = params[:unit_type]
+      #get the string unit_type
+      unit_type_name = params[:unit_type]
+      #convert to id
+      units = {}
+      UnitType.select(:id, :type).map(){|x| units[x.type] = x.id}
+      unit_id = units[unit_type_name]
       params.reject!{|k,v| k == 'unit_type'}
       #get member ids for this unit
       mbrs = []
@@ -449,10 +454,10 @@ module MemberTracker
       mbrs.each do |mbr_id|
         mbr_names << "#{Member[mbr_id].fname} #{Member[mbr_id].lname}, "
       end
-      l.notes = "creating new unit of type #{UnitType[ut].type} with members #{mbr_names[0...-2]}"
+      l.notes = "creating new unit of type #{unit_type_name} with members #{mbr_names[0...-2]}"
       #build unit
       creator_mbr_id = Auth_user[session[:auth_user_id]].mbr_id
-      u = Unit.new(:unit_type_id => ut, :active => 1, :created_by_id => creator_mbr_id, :ts => Time.now)
+      u = Unit.new(:unit_type_id => unit_id, :active => 1, :created_by_id => creator_mbr_id, :ts => Time.now)
       begin
         DB.transaction do
           u.save
@@ -463,7 +468,7 @@ module MemberTracker
         end
         session[:msg] = "The unit was successfully created"
         l.save
-        redirect "/list/units/#{UnitType[ut].type}"
+        redirect "/list/units/#{unit_type_name}"
       rescue StandardError => e
         session[:msg] = "The unit could not be created\n#{e}"
         redirect '/home'

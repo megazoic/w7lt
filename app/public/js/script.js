@@ -287,7 +287,7 @@ function validateUnitNewForm(){
 	}
 	var have_elmer = 0;
 	var mbrs = checkedBoxes.length;
-	if (is_elmer_unit == "3"){
+	if (is_elmer_unit == "elmer"){
 		for (var i = 0; i < checkedBoxes.length; i++){
 			var m = checkedBoxes[i].name.match(/\d+:([NY])/);
 			if (m[1] == "Y") have_elmer = have_elmer + 1;
