@@ -1,0 +1,27 @@
+</br><h3>Edit Existing Unit Types</h3>
+<%if @unit_types.length < 5%>
+  <%@unit_types.each do |ut|%>
+    <a href="/admin/edit_unit_type/<%=ut.id%>"><%=ut.type%></a></br>
+  <%end%>
+<%else%>
+  <table>
+    <%@unit_types.each_slice(2) do |ut|%>
+      <tr><td><a href="/admin/create_unit_type/<%=ut[0].id%>"><%=ut[0].type%></a></td>
+      <%if ut.length == 2%>
+        <td><a href="/admin/create_unit_type/<%=ut[1].id%>"><%=ut[1].type%></a></td></tr>
+      <%else%>
+        <td></td></tr>
+      <%end%>
+    <%end%>
+  </table>
+<%end%>
+
+</br><h3>Create/Edit New Unit Type</h3>
+<form action='/admin/create_unit_type/<% if !@edit_unit_type.nil?%><%=@edit_unit_type.id%><%end%>' method='POST' name='new_unit_type'>
+<br/><input type='text' name='unit_type_name' <% if !@edit_unit_type.nil?%>value='<%=@edit_unit_type.type%>'<%end%>>
+<label for="unit_name">Short Name of Type</label>
+<br/><input type='text' name='unit_type_descr' <% if !@edit_unit_type.nil?%>value='<%=@edit_unit_type.descr%>'<%end%>>
+<label for="unit_name">Description of type</label>
+<br/>
+<input type='submit' value='Submit'/> | <a href="/admin/list_unit_types">Cancel</a>
+</form>    

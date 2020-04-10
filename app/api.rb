@@ -420,7 +420,7 @@ module MemberTracker
       erb :u_list, :layout => :layout_w_logout
     end
     get '/new/unit' do
-      @unit_type = DB[:unit_types].select(:id, :type, :desc).all
+      @unit_type = DB[:unit_types].select(:id, :type).all
       @member = DB[:members].select(:id, :lname, :fname, :callsign, :elmer).order(:lname, :fname).all
       @member.each do |mbr|
         if mbr[:elmer] == 1
@@ -949,7 +949,7 @@ module MemberTracker
       erb :create_au, :layout => :layout_w_logout
     end
     post '/admin/create_auth_user' do
-      #expecting params keys :notes, :mbr_id, :roles
+      #expecting params keys :notes, :mbr_id, :roles (a hash)
       email = Member[params[:mbr_id].to_i].email
       #test for existing user with these credentials
       existing_auth_user = Auth_user.first(mbr_id: params[:mbr_id])
@@ -1006,6 +1006,46 @@ module MemberTracker
         session[:msg] = "error: could not create authorized user.\n#{e}"
         redirect "/admin/create_auth_user"
       end
+    end
+    get '/admin/create_unit_type/:id?' do
+      @edit_unit_type = nil
+      if params[:id] != 'null'
+        @edit_unit_type = UnitType[params[:id]]
+      end
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
+      @unit_types = UnitType.all
+      erb :create_unit_type, :layout => :layout_w_logout
+    end
+    post '/admin/create_unit_type/:id?' do
+      #expecting {"unit_type_name"=>"type5", "unit_type_descr"=>"a new type"}
+      if params[:id].nil?
+        #creating new type
+        ut = UnitType.new(:type => params["unit_type_name"], :descr => params["unit_type_descr"])
+      else
+        #updating existing type
+        ut = UnitType[params[:id]]
+        ut.type = params["unit_type_name"]
+        ut.descr = params["unit_type_descr"]
+      end
+      #need to create a log for this transaction
+      #first get action id
+      actions = {}
+      Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
+      action_id = actions["unit"]
+      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
+      l.notes = "creating new unit type: #{params["unit_type_name"]}"
+      begin
+        DB.transaction do
+          ut.save
+          l.save
+        end
+        session[:msg] = "The unit type was successfully created"
+        l.save
+      rescue StandardError => e
+        session[:msg] = "Error; the unit type could not be created\n#{e}"
+      end
+      redirect '/admin/create_unit_type/'
     end
     get '/test_role' do
       before do
