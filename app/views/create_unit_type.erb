@@ -1,7 +1,7 @@
 </br><h3>Edit Existing Unit Types</h3>
 <%if @unit_types.length < 5%>
   <%@unit_types.each do |ut|%>
-    <a href="/admin/edit_unit_type/<%=ut.id%>"><%=ut.type%></a></br>
+    <a href="/admin/create_unit_type/<%=ut.id%>"><%=ut.type%></a></br>
   <%end%>
 <%else%>
   <table>
