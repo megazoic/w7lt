@@ -312,18 +312,20 @@ function validateUnitTypeForm(){
 	//don't want type field empty and cannot have same type as existing unit type
 	var old_type_names = $('old_type_names').value;
 	var new_type_name = $('new_type_name').value;
+	var edit_old_type = $('editing_old_type').value;
+	console.log("e o t is " + edit_old_type);
 	if (new_type_name == ''){
 		alert("please give this unit type a name");
 		return false;
 	}
-	console.log("old " + old_type_names);
-	console.log("new" + new_type_name);
-	var old_type_names_array = old_type_names.split(",");
-	//from script in create_unit_type.erb
-	for (var i = 0; i < old_type_names_array.length; i++){
-		if (old_type_names_array[i] == new_type_name){
-			alert("there is already a unit type with this name, please use that one");
-			return false;
+	if (edit_old_type == '0'){
+		var old_type_names_array = old_type_names.split(",");
+		//from script in create_unit_type.erb
+		for (var i = 0; i < old_type_names_array.length; i++){
+			if (old_type_names_array[i] == new_type_name){
+				alert("there is already a unit type with this name, please use that one");
+				return false;
+			}
 		}
 	}
 	return true;
