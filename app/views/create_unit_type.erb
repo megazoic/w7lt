@@ -17,8 +17,9 @@
 <%end%>
 
 </br><h3>Create/Edit New Unit Type</h3>
-<form action='/admin/create_unit_type/<% if !@edit_unit_type.nil?%><%=@edit_unit_type.id%><%end%>' method='POST' name='new_unit_type'>
-<br/><input type='text' name='unit_type_name' <% if !@edit_unit_type.nil?%>value='<%=@edit_unit_type.type%>'<%end%>>
+<form action='/admin/create_unit_type/<% if !@edit_unit_type.nil?%><%=@edit_unit_type.id%><%end%>' method='POST' name='new_unit_type' onsubmit="return validateUnitTypeForm()">
+<input type='hidden' id='old_type_names' value='<%=@old_type_names%>'>
+<br/><input type='text' name='unit_type_name' id='new_type_name' <% if !@edit_unit_type.nil?%>value='<%=@edit_unit_type.type%>'<%end%>>
 <label for="unit_name">Short Name of Type</label>
 <br/><input type='text' name='unit_type_descr' <% if !@edit_unit_type.nil?%>value='<%=@edit_unit_type.descr%>'<%end%>>
 <label for="unit_name">Description of type</label>

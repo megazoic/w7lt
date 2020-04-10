@@ -1008,13 +1008,19 @@ module MemberTracker
       end
     end
     get '/admin/create_unit_type/:id?' do
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
       @edit_unit_type = nil
       if params[:id] != 'null'
         @edit_unit_type = UnitType[params[:id]]
       end
-      @tmp_msg = session[:msg]
-      session[:msg] = nil
       @unit_types = UnitType.all
+      #build a list of existing unit type names to validate duplicates
+      @old_type_names = ""
+      @unit_types.each do |ut|
+        @old_type_names << "#{ut.type},"
+      end
+      @old_type_names = @old_type_names[0...-1]
       erb :create_unit_type, :layout => :layout_w_logout
     end
     post '/admin/create_unit_type/:id?' do
