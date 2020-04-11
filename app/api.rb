@@ -512,8 +512,9 @@ module MemberTracker
       #expecting keys "unit_id", "name", some mbrs like {"id:nnn" => 1, ...} where nnn is the member id
       #if :active is missing is then 0
       #save notes for log
-      notes = params["unit_notes"]
-      params.reject!{|k,v| k == "unit_notes"}
+      puts params
+      notes = params["notes"]
+      params.reject!{|k,v| k == "notes"}
       #get action id
       action_id = nil
       Action.select(:id, :type).map(){|x|
@@ -554,10 +555,10 @@ module MemberTracker
         unit.name = name_new
         augmented_notes << "\nname changed from #{unit.name} to #{name_new}"
       end
-      active_new = params["active"].nil? ? 0 : 1
+      active_new = params.has_key?("active") ? 1 : 0
       if active_new != unit.active
-        unit.active = active_new
         augmented_notes << "\nactive status changed from #{unit.active.to_s} to #{active_new.to_s}"
+        unit.active = active_new
       end
       l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: action_id)
       #build new unit and change members in the unit
