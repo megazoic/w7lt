@@ -421,7 +421,6 @@ module MemberTracker
     end
     get '/new/unit' do
       @unit_type = DB[:unit_types].select(:id, :type).all
-      puts @unit_type
       @member = DB[:members].select(:id, :lname, :fname, :callsign, :elmer).order(:lname, :fname).all
       @member.each do |mbr|
         if mbr[:elmer] == 1
@@ -434,20 +433,14 @@ module MemberTracker
     end
     post '/new/unit' do
       #get the string unit_type
-      unit_type_name = params[:unit_type]
-      puts "in post /new/unit and ut name is #{unit_type_name}"
-      #convert to id
-      units = {}
-      UnitType.select(:id, :type).map(){|x| units[x.type] = x.id}
-      unit_id = units[unit_type_name].to_i
-      puts "in post /new/unit and ut id is #{unit_id}"
-      params.reject!{|k,v| k == 'unit_type'}
+      unit_type_id = params[:unit_type_id].to_i
+      unit_type_name = UnitType[unit_type_id].type
+      params.reject!{|k,v| k == 'unit_type_id'}
       #get name field
       unit_name = params[:unit_name]
       params.reject!{|k,v| k == 'unit_name'}
       #get member ids for this unit
       mbrs = []
-      puts "in post /new/unit params should only contain mbers #{params}"
       params.each do |k,v|
         mbrs << /id:(\d+)/.match(k)[1]
       end
@@ -464,7 +457,7 @@ module MemberTracker
       l.notes = "creating new unit of type #{unit_type_name} with members #{mbr_names[0...-2]}"
       #build unit
       creator_mbr_id = Auth_user[session[:auth_user_id]].mbr_id
-      u = Unit.new(:unit_type_id => unit_id, :active => 1, :name => unit_name, :created_by_id => creator_mbr_id, :ts => Time.now)
+      u = Unit.new(:unit_type_id => unit_type_id, :active => 1, :name => unit_name, :created_by_id => creator_mbr_id, :ts => Time.now)
       begin
         DB.transaction do
           u.save

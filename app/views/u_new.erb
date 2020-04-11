@@ -1,10 +1,10 @@
 <h3>Build a new unit</h3>
 <form action='/new/unit' method='POST' name='new_unit' onSubmit="return validateUnitNewForm()">
 Unit Type:
-<select id="unit_type" name="unit_type">
+<select id="unit_type" name="unit_type_id">
   <option value="none" selected>Select unit type</option>
   <% for unit_type in @unit_type %>
-    <option value=<%=unit_type[:type]%>><%=unit_type[:type]%></option>
+    <option value=<%=unit_type[:id]%>><%=unit_type[:type]%></option>
   <%end%>
 </select>
 <div>
