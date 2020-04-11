@@ -6,7 +6,7 @@
     <link rel="stylesheet" type="text/css" href="/stylesheets/style.css" />
 	<script type="text/javascript" src="/js/script.js"></script>
   </head>
-  <body>
+  <body <%if @is_pwdreset%>id="PwdReset"<%end%>>
     <%= yield %>
 	<% if @tmp_msg %>
 		<div id="alert">

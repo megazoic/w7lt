@@ -27,14 +27,14 @@ module MemberTracker
       super()
     end
     enable :sessions
-=begin
     before do # need to comment this for RSpec
       next if request.path_info == '/login'
       if session[:auth_user_id].nil?
         redirect '/login'
+        #elsif session[:auth_user_id] == 'reset'
+        #redirect "/reset_password/#{XXX}"
       end
     end
-=end
     before '/admin/*' do
       authorize!("auth_u")
     end
@@ -43,7 +43,7 @@ module MemberTracker
     end
     def authorize!(role)
       if !session[:auth_user_roles].include?(role)
-        session[:flash_msg] = "Sorry, you don't have permission"
+        session[:msg] = "Sorry, you don't have permission"
         redirect '/home'
       end
     end
@@ -237,8 +237,7 @@ module MemberTracker
       #puts "request body is #{request.body.read}"
       #puts "params pwd is #{params[:password]} and email is #{params[:email]}"
       #for RSpec test JSON.parse() request.body.read )
-      auth_user_credentials = params
-      auth_user_result = @auth_user.authenticate(auth_user_credentials)
+      auth_user_result = @auth_user.authenticate(params)
       if auth_user_result['error'] == 'expired'
         #this auth_user has been removed and needs to be reset by admin
         session.clear
@@ -585,7 +584,7 @@ module MemberTracker
       #use @is_pwdreset to load password script from script.js by setting <body id="PwdReset"> in layout
       @is_pwdreset = true;
       @mbr = Member.select(:id, :fname, :lname, :callsign).where(id: params[:id]).first
-      erb :reset_password, :layout => :layout_w_logout
+      erb :reset_password, :layout => :layout
     end
     post '/reset_password' do
       @auth_user.update(params[:password], params[:mbr_id])
@@ -996,8 +995,7 @@ module MemberTracker
             auth_user.add_role(Role[k.to_i])
           end
         end
-        msg = "temp password for member #{member_set[0].values[:callsign]} is #{password}"
-        session[:msg] = "Authorized user successfully created\n#{msg}"
+        session[:msg] = "Success; temp password for member #{member_set[0].values[:callsign]} and username #{member_set[0].values[:email]} is #{password}"
         redirect "/admin/list_auth_users"
       rescue StandardError => e
         session[:msg] = "error: could not create authorized user.\n#{e}"

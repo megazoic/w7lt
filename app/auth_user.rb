@@ -44,7 +44,6 @@ module MemberTracker
         if auth_user.new_login == 1
           t = Time.now
           #give the new authorized user 2 days to login
-          puts "time is #{auth_user.time_pwd_set}"
           if t - auth_user.time_pwd_set > 172800
             message['error'] = 'expired'
             #remove auth_user as time as expired
