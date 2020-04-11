@@ -421,6 +421,7 @@ module MemberTracker
     end
     get '/new/unit' do
       @unit_type = DB[:unit_types].select(:id, :type).all
+      puts @unit_type
       @member = DB[:members].select(:id, :lname, :fname, :callsign, :elmer).order(:lname, :fname).all
       @member.each do |mbr|
         if mbr[:elmer] == 1
@@ -434,16 +435,19 @@ module MemberTracker
     post '/new/unit' do
       #get the string unit_type
       unit_type_name = params[:unit_type]
+      puts "in post /new/unit and ut name is #{unit_type_name}"
       #convert to id
       units = {}
       UnitType.select(:id, :type).map(){|x| units[x.type] = x.id}
-      unit_id = units[unit_type_name]
+      unit_id = units[unit_type_name].to_i
+      puts "in post /new/unit and ut id is #{unit_id}"
       params.reject!{|k,v| k == 'unit_type'}
       #get name field
       unit_name = params[:unit_name]
       params.reject!{|k,v| k == 'unit_name'}
       #get member ids for this unit
       mbrs = []
+      puts "in post /new/unit params should only contain mbers #{params}"
       params.each do |k,v|
         mbrs << /id:(\d+)/.match(k)[1]
       end
