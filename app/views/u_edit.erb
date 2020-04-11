@@ -3,11 +3,11 @@
   <%="Unit Type: #{@unit.unit_type.type.capitalize}"%><%if !@unit_elmer.nil?%><%=" | Elmer Call: #{@unit_elmer}"%><%end%>
 </span>
 </h3>
-Created on <%=@unit.ts%> by <%=@unit_creator%>
+Created on <%=@unit.ts%> by <%=@unit.member.callsign%>
 <form action='/update/unit' method='POST' name="unitVitals" onSubmit="return validateUnitEditForm()" >
-<input type="hidden" name="unit_id" value="<%=@unit.id%>"/>
-<input type="hidden" id="elmer" value=<%if !@unit_elmer.nil?%>"1"<%else%>"0"<%end%>
-<input type="checkbox" name="active" value="1" id="active_cb"<%=@unit.active == 1  ? "checked='checked'" : nil%>/>
+<input type="hidden" name="unit_id" value="<%=@unit.id%>">
+<input type="hidden" id="elmer" value=<%if !@unit_elmer.nil?%>"1"<%else%>"0"<%end%>>
+<input type="checkbox" name="active" value="1" id="active_cb"<%=@unit.active == 1  ? "checked='checked'" : nil%>>
 <label for="active_cb">Active</label>
 <br/><input type='text' name='name' id="unit_name" value="<%=@unit.name%>"/>
 <label for="unit_name">Name</label>

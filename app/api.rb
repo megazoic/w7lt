@@ -480,7 +480,6 @@ module MemberTracker
     get '/edit/unit/:id' do
       response['Cache-Control'] = "public, max-age=0, must-revalidate"
       @unit = Unit[params[:id].to_i]
-      @unit_creator = Unit[params[:id].to_i].member.callsign
       #get a list of member ids that belong to this unit
       #also, if the unit is an elmer, find that elmer member
       unit_mbrs = []
