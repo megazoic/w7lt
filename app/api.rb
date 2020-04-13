@@ -279,12 +279,12 @@ module MemberTracker
     get '/list/members' do
       @member = DB[:members].select(:id, :lname, :fname, :callsign, :paid_up).order(:lname, :fname).all
       @tmp_msg = session[:msg]
-      session[:msg] = ''
+      session[:msg] = nil
       erb :m_list, :layout => :layout_w_logout
     end
     get '/show/member/:id' do
       @tmp_msg = session[:msg]
-      session[:msg] = ''
+      session[:msg] = nil
       @member = Member[params[:id].to_i]
       erb :m_show, :layout => :layout_w_logout
     end
@@ -372,6 +372,7 @@ module MemberTracker
     end
     get '/list/units/:unit_type' do
       @tmp_msg = session[:msg]
+      session[:msg] = nil
       units = nil
       if params[:unit_type] == 'all'
         units = Unit.reverse_order(:active).all
@@ -654,7 +655,7 @@ module MemberTracker
     end
     get '/admin/member/renew/:id' do
       @tmp_msg = session[:msg]
-      session[:msg] = ''
+      session[:msg] = nil
       @mbr_pay = Member.select(:id, :fname, :lname, :callsign, :paid_up, :mbr_type)[params[:id].to_i]
       #if mbr_type is 'family' then count all family members that will be updated
       @mbr_family = []
