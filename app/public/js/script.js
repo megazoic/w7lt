@@ -303,8 +303,13 @@ function validateUnitNewForm(){
 		}
 	}
 	else if (mbrs < 2){
-		alert("you need at least 2 members in a unit");
-		return false;
+		//alert("you need at least 2 members in a unit");
+		var response = confirm("Proceed with only one member in this unit?")
+		if (response){
+			return true;
+		} else {
+			return false;
+		}
 	}
 	return true;
 }

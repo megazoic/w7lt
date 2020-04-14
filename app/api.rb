@@ -463,7 +463,13 @@ module MemberTracker
           u.save
           mbrs.each do |mbr|
             m = Member[mbr.to_i]
+            #family type also is related to member_type ('full', 'family', 'student', 'honorary')
+            #since this isn't a payment however, don't update paid_up status
+            if unit_type_name == 'family'
+              m.mbr_type = unit_type_name
+            end
             m.add_unit(u)
+            m.save
           end
         end
         session[:msg] = "The unit was successfully created"
@@ -680,7 +686,7 @@ module MemberTracker
       erb :m_renew, :layout => :layout_w_logout
     end
     post '/admin/member/renew' do
-      #need to create a log for this transaction
+      #{"mbr_id"=>"205", "mbr_type_old"=>"full", "mbr_paid_up_old"=>"2019", "payment_type"=>"2", "mbr_type"=>"full", "paid_yr"=>"2020", "payment_method"=>"1", "payment_amt"=>"50", "notes"=>""}      #need to create a log for this transaction
       #first get action id
       actions = {}
       Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
@@ -704,7 +710,7 @@ module MemberTracker
           end
           #load members in this family
           Unit[mbr_family_unit_id].members.each do |f_member|
-            #load names other than the current member
+            #load ids for all besides the current member
             mbr_family << f_member.id if f_member.id != params[:id].to_i
           end
         elsif params[:mbr_type_old] == 'family'
@@ -732,6 +738,9 @@ module MemberTracker
                 mbr_family_unit_id = mu.id
               end
             end
+            if augmented_notes != ''
+              augmented_notes << "\n"
+            end
             if Unit[mbr_family_unit_id].members.length < 3
               #unlikely event and cause this to fail
               augmented_notes << "\n****member currently paid up is trying to pay again*****\nRecord NOT updated"
@@ -746,14 +755,18 @@ module MemberTracker
             end
           end
         end #if mbr_type is family
+        #if family then the other family members paid_up status happens in the DB.transaction
         m.paid_up = params[:paid_yr]
         m.mbr_type = params[:mbr_type]
         #if params[:mbr_paid_up_old] != params[:paid_yr]
+        if augmented_notes != ''
+          augmented_notes << "\n"
+        end
         if params[:paid_yr] != params[:mbr_paid_up_old]
-          augmented_notes << "\n**** Paid_up changed from #{params[:mbr_paid_up_old]} to #{params[:paid_yr]}"
+          augmented_notes << "**** Paid_up changed from #{params[:mbr_paid_up_old]} to #{params[:paid_yr]}"
         end
         if params[:mbr_type] != params[:mbr_type_old]
-          augmented_notes << "\n**** Member type changed from #{params[:mbr_type_old]} to #{params[:mbr_type]}"
+          augmented_notes << "**** Member type changed from #{params[:mbr_type_old]} to #{params[:mbr_type]}"
         end
       end #if Dues
       l.notes = augmented_notes
@@ -766,6 +779,7 @@ module MemberTracker
             if params[:mbr_type] == 'family'
               #update other family members
               fam_names = ""
+              #if there is temporarily only one family member of this unit, this will be skipped
               mbr_family.each do |mbr_id|
                 fm = Member[mbr_id]
                 fm.paid_up = params[:paid_yr]
@@ -773,8 +787,12 @@ module MemberTracker
                 fm.save
                 fam_names << "\nmbr_id#:#{fm.id}, #{fm.fname}, #{fm.lname}"
               end
-              #add names to log
-              l.notes << "#{fam_names} were also updated"
+              if mbr_family.length == 0
+                l.notes << "there is only one member of this family, sad"
+              else
+                #add names to log
+                l.notes << "#{fam_names} were also updated"
+              end
               #make sure family unit is active
               fu = Unit[mbr_family_unit_id]
               fu.active = 1
