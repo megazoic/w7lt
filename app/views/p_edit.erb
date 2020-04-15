@@ -5,17 +5,15 @@
 <input type="hidden" name="pay_log_id" value=<%=@log[:id]%>>
 <label for="payment_type_field">Payment type is </label>
 <select name="payment_type" id="payment_type_field">
-<option value="">--Choose type--</option>
   <% @payType.each do |t| %>
-    <option value=<%="#{t.values[:id]}"%>><%=t.values[:type]%></option>
+    <option value=<%="#{t.values[:id]}"%><% if @pay[:payment_type_id] == t.values[:id] %> selected="selected" <%else%>nil<%end%>><%=t.values[:type]%></option>
   <% end %>
 </select>
 <br/>
 <label for="payment_method_field">Payment method is </label>
 <select name="payment_method" id="payment_method_field">
-<option value="">--Choose method--</option>
   <% @payMethod.each do |m| %>
-    <option value=<%="#{m.values[:id]}"%>><%=m.values[:method]%></option>
+    <option value=<%="#{m.values[:id]}"%> <% if @pay[:payment_method_id] == m.values[:id] %> selected="selected" <%else%>nil<%end%>><%=m.values[:method]%></option>
   <% end %>
 </select>
 <br/>
