@@ -420,6 +420,8 @@ module MemberTracker
       erb :u_list, :layout => :layout_w_logout
     end
     get '/new/unit' do
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
       @unit_type = DB[:unit_types].select(:id, :type).all
       @member = DB[:members].select(:id, :lname, :fname, :callsign, :elmer).order(:lname, :fname).all
       @member.each do |mbr|
@@ -700,15 +702,19 @@ module MemberTracker
       if PaymentType[params[:payment_type]].type == 'Dues'
         m = Member[params[:mbr_id]]
         if params[:mbr_type] == 'family'
-          #get other family members
-          #find the id for the family unit
-          fu_id = nil
+          #get other family members; find the id for the family unit
           m.units.each do |mu|
             if mu.unit_type_id == UnitType.where(:type => 'family').first.id
               mbr_family_unit_id = mu.id
             end
           end
+          #validate this member is already a member of a family, need to set that up first
+          if mbr_family_unit_id.nil?
+            session[:msg] = "Payment FAILED; please set up the family unit first"
+            redirect "/new/unit"
+          end
           #load members in this family
+          #first test for existance of this unit
           Unit[mbr_family_unit_id].members.each do |f_member|
             #load ids for all besides the current member
             mbr_family << f_member.id if f_member.id != params[:id].to_i
