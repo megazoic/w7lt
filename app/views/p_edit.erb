@@ -1,0 +1,29 @@
+<h3>Edit Payment</h3>
+<br/>
+<form action='/admin/payments/edit' method='POST' name="mbrPay">
+<input type="hidden" name="pay_id" value=<%=@pay[:id]%>>
+<input type="hidden" name="pay_log_id" value=<%=@log[:id]%>>
+<label for="payment_type_field">Payment type is </label>
+<select name="payment_type" id="payment_type_field">
+<option value="">--Choose type--</option>
+  <% @payType.each do |t| %>
+    <option value=<%="#{t.values[:id]}"%>><%=t.values[:type]%></option>
+  <% end %>
+</select>
+<br/>
+<label for="payment_method_field">Payment method is </label>
+<select name="payment_method" id="payment_method_field">
+<option value="">--Choose method--</option>
+  <% @payMethod.each do |m| %>
+    <option value=<%="#{m.values[:id]}"%>><%=m.values[:method]%></option>
+  <% end %>
+</select>
+<br/>
+<label for="payment_amt_field">Payment amount (with or without decimal eg 23.00 or 23)</label>
+<input type="text" name="payment_amt" id="payment_amt_field" value=<%=@pay[:payment_amount]%> onfocusout="validatePayAmt(this)"/>
+<br/>
+<label for="notes_field">Notes</label>
+<textarea name="notes" id="notes_field" rows="6" cols="65"><%=@log[:notes]%></textarea>
+<br/>
+<input type="submit" value="Submit" onsubmit="validateMbrPayForm()"> | <a href="/list/members">Cancel</a>
+</form>

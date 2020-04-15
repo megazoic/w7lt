@@ -11,6 +11,7 @@
 			<th>Pay Amount</th>
       <th>Date</th>
 			<th>Notes</th>
+      <th></th>
 		</tr>
 		<% for pay in @pay %>
 		<tr>
@@ -21,6 +22,7 @@
 		<td><%=pay[:amount]%></td>
 		<td><%=pay[:ts]%></td>
 		<td><%=pay[:notes]%></td>
+    <td><a href="/admin/payments/edit/<%=pay[:id]%>">edit</a></td>
 		</tr>
 		<% end %>
 	</table>

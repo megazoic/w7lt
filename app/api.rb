@@ -816,12 +816,57 @@ module MemberTracker
       end
       redirect "/list/members"
     end
+    get '/admin/payments/edit/:id' do
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
+      @pay = Payment.select(:id, :mbr_id, :payment_type_id, :payment_method_id, :payment_amount, :log_id)[params[:id].to_i]
+      @mbr = Member.select(:id, :fname, :lname, :callsign, :mbr_type)[@pay[:mbr_id]]
+      @log = Log.select(:id, :notes)[@pay[:log_id]]
+      @log[:notes] << "\n**** edited ******"
+      @payType = PaymentType.all
+      @payMethod = PaymentMethod.all
+      erb :p_edit, :layout => :layout_w_logout
+    end
+    post '/admin/payments/edit' do
+      #params are {"pay_id"=>"28", "pay_log_id"=>"552", "payment_type"=>"2", "payment_method"=>"2", "payment_amt"=>"18.0", "notes"=>"some notes"}
+      #only changing payment type, method, amount and log notes
+      log = Log[params[:pay_log_id]]
+      augmented_notes = params[:notes]
+      augmented_notes << Time.now.strftime("\nEdited on %m/%d/%Y")
+      log.notes = augmented_notes
+      ts = Time.now
+      pay = Payment[params[:pay_id]]
+      #validate
+      pm = params[:payment_method]
+      pt = params[:payment_type]
+      pa = params[:payment_amt]
+      if (pa == "" || pm == "" || pt == "")
+        session[:msg] = 'Edit payment was UNSUCCESSFUL please make sure all fields are entered'
+        redirect "/admin/payments/edit/#{params[:pay_id]}"
+      end
+      pay.payment_method_id = pm
+      pay.payment_type_id = pt
+      pay.payment_amount = pa
+      begin
+        DB.transaction do
+          log.save
+          pay.save
+        end
+        session[:msg] = 'Edited payment was successfully recorded'
+      rescue StandardError => e
+        session[:msg] = "The data was not entered successfully\n#{e}"
+      end
+      redirect "/admin/payments/show"
+    end
     get '/admin/payments/show' do
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
       #build array of hashes to load payment data
       @pay = []
       pay = Payment.order(:ts, :a_user_id).all
       pay.each do |pmt|
         out = Hash.new
+        out[:id] = pmt.id
         out[:mbr_name] = "#{pmt.member.fname} #{pmt.member.lname}"
         out[:auth_name] = "#{pmt.auth_user.member.fname} #{pmt.auth_user.member.lname}"
         out[:type] = pmt.paymentType.type
@@ -835,7 +880,7 @@ module MemberTracker
         out[:ts] = pmt.ts.strftime("%d-%m-%Y")
         @pay << out
       end
-      erb :pay_show, :layout => :layout_w_logout
+      erb :p_show, :layout => :layout_w_logout
     end
     get '/admin/list_auth_users' do
       @au_list = []
