@@ -22,7 +22,7 @@
 		<td><%=pay[:amount]%></td>
 		<td><%=pay[:ts]%></td>
 		<td><%=pay[:notes]%></td>
-    <td><a href="/admin/payments/edit/<%=pay[:id]%>">edit</a></td>
+    <td><a href="/admin/payments/edit/<%=pay[:id]%>">edit</a> | <a href="/admin/payments/destroy/<%=pay[:id]%>">delete</a></td>
 		</tr>
 		<% end %>
 	</table>

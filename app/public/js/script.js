@@ -183,7 +183,7 @@ function validateAssignRoleForm(){
 	}
 }
 function validateMbrPayForm(){
-	var paid_up = $("paid_yr_field").value;
+	var paid_up = $("paid_up_field").value;
 	var mbr_type = $("mbr_type").value;
 	var pay_amt = $("payment_amt_field");
 	var pay_mthd = $("payment_method_field");
@@ -318,7 +318,6 @@ function validateUnitTypeForm(){
 	var old_type_names = $('old_type_names').value;
 	var new_type_name = $('new_type_name').value;
 	var edit_old_type = $('editing_old_type').value;
-	console.log("e o t is " + edit_old_type);
 	if (new_type_name == ''){
 		alert("please give this unit type a name");
 		return false;
@@ -334,6 +333,16 @@ function validateUnitTypeForm(){
 		}
 	}
 	return true;
+}
+function validatePayDestroy(){
+	//need to ok this action
+	console.log ("in pay destroy");
+	var agree = confirm("Are you sure you want to delete this payment record?");
+	var confirmIt = $("confirmIt");
+	if (agree){
+		confirmIt.value = "Yes";
+	}
+	return true
 }
 
 window.onload = function (){

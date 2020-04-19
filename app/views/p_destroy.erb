@@ -1,0 +1,10 @@
+<h3>Delete Payment for Member <%=@payment.member.callsign%></h3>
+<br/>
+<form action='/admin/payments/destroy' method='POST' name="mbrPayDestroy" onsubmit="validatePayDestroy()">
+<input type="hidden" name="pay_id" value=<%=@payment[:id]%>>
+<input type="hidden" name="confirm" id="confirmIt" value="No">
+<label for="notes">Log notes</label>
+<input type="text" name="notes">
+</br>
+<input type="submit" value="Submit"> | <a href="/list/members">Cancel</a>
+</form>

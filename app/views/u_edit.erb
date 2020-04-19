@@ -3,7 +3,7 @@
   <%="Unit Type: #{@unit.unit_type.type.capitalize}"%><%if !@unit_elmer.nil?%><%=" | Elmer Call: #{@unit_elmer}"%><%end%>
 </span>
 </h3>
-Created on <%=@unit.ts%> by <%=@unit.member.callsign%>
+Created on <%=@unit.ts%> by <%=@unit_creator_callsign%>
 <form action='/update/unit' method='POST' name="unitVitals" onSubmit="return validateUnitEditForm()" >
 <input type="hidden" name="unit_id" value="<%=@unit.id%>">
 <input type="hidden" id="elmer" value=<%if !@unit_elmer.nil?%>"1"<%else%>"0"<%end%>>

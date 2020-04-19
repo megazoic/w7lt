@@ -4,14 +4,14 @@
 			<th>First Name</th>
 			<th>Last Name</th>
 			<th>call</th>
-			<th>log</th>
+			<th>action</th>
 		</tr>
 		<% for member in @mbr_list %>
 		<tr>
 		<td><%=member[:fname]%></td>
 		<td><%=member[:lname]%></td>
 		<td><%=member[:callsign]%></td>
-		<td><a href ="/admin/member/renew/<%=member[:id]%>">payment</a></td>
+		<td><a href ="/admin/payment/new/<%=member[:id]%>">payment</a></td>
 		</tr>
 		<% end %>
 	</table>
