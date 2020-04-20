@@ -20,6 +20,9 @@ design/*
 *.csv*
 *.xlsx
 
+#ignore folder
+ignore/*
+
 #to get data into db
 load_units.rb
 script_units.rb

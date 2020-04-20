@@ -1027,6 +1027,15 @@ module MemberTracker
         #load any auditLogs associated with this payment
         #expecting at most, three types of audit logs based on auditLog::column [paid_up, mbr_type, active]. generate a hash for each
         array_of_audit_log_hashes = []
+        #if there is no audit log throw an error
+        if payment.auditLog.empty?
+          #need to alert the user and exit out of this route
+          session[:msg] = "UNSUCCESSFUL, this payment record does not have an audit trail, cannot delete payment id: #{payment.id}"
+          augmented_notes << "\nattempt to delete payment id: #{payment.id} by #{Auth_user[session[:auth_user_id]].member.callsign} failed on #{Time.now.strftime("%m-%d-%y:%H:%M:%S")}"
+          log_pay.notes = augmented_notes
+          log_pay.save
+          redirect '/admin/payments/show'
+        end
         payment.auditLog.each do |al|
           h = {"a_user_id" => al.a_user_id, "column" => al.column, "old_value" => al.old_value, "new_value" => al.new_value}
           array_of_audit_log_hashes << h
