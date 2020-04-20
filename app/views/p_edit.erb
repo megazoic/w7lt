@@ -13,7 +13,7 @@
 <label for="payment_method_field">Payment method is </label>
 <select name="payment_method" id="payment_method_field">
   <% @payMethod.each do |m| %>
-    <option value=<%="#{m.values[:id]}"%> <% if @pay[:payment_method_id] == m.values[:id] %> selected="selected"<%end%>><%=m.values[:method]%></option>
+    <option value=<%="#{m.values[:id]}"%> <% if @pay[:payment_method_id] == m.values[:id] %> selected="selected"<%end%>><%=m.values[:mode]%></option>
   <% end %>
 </select>
 <br/>

@@ -37,7 +37,7 @@
   <select name="payment_method" id="payment_method_field">
   <option value="">--Choose method--</option>
     <% @payMethod.each do |m| %>
-      <option value=<%="#{m.values[:id]}"%>><%=m.values[:method]%></option>
+      <option value=<%="#{m.values[:id]}"%>><%=m.values[:mode]%></option>
     <% end %>
   </select>
   <br/>
