@@ -1111,7 +1111,7 @@ module MemberTracker
               end
               m.save
               old_notes = log_unit.notes
-              old_notes << "\nexecuted by #{auth_users_callsigns["new"]}; originally by #{auth_users_callsigns["old"]} at #{log_pay.ts.strftime("%m-%d-%Y:%S")}"
+              old_notes << "\nexecuted by #{auth_users_callsigns["new"]}; originally by #{auth_users_callsigns["old"]} at #{log_pay.ts.strftime("%m-%d-%y:%H:%M:%S")}"
               log_unit.notes = old_notes
               log_unit.save
             end
@@ -1126,6 +1126,30 @@ module MemberTracker
         session[:msg] = "The payment WAS NOT deleted\n#{e}"
       end
       redirect '/admin/payments/show'
+    end
+    get '/admin/payments/report/:type?' do
+      rpt_type = "all"
+      if !params[:type].nil? #if optional parameter :type is missing
+        rpt_type = params[:type]
+      end
+      @pay = []
+      if rpt_type == 'all'
+        Payment.all.each do |p|
+          temp = {}
+          temp[:lname] = p.member.lname
+          temp[:fname] = p.member.fname
+          temp[:callsign] = p.member.callsign.empty? ? "N/A" : p.member.callsign
+          temp[:pay_type] = p.paymentType.type
+          #temp[:pay_method] = p.paymentMethod.method
+          temp[:pay_method] = 'cash'
+          temp[:pay_amount] = p.payment_amount
+          temp[:auth_user] = "#{p.auth_user.member.lname}, #{p.auth_user.member.fname}"
+          temp[:date] = p.ts.strftime(("%m-%d-%y:hr %H"))
+          @pay << temp
+        end
+      end
+      #need to send :lname, :fname, :callsign, :pay_type, :pay_method, :pay_amount, :auth_user, :date
+      erb :p_report, :layout => :layout_w_logout
     end
     get '/admin/list_auth_users' do
       @au_list = []

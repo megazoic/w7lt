@@ -1,0 +1,30 @@
+<!--expect @pay to have :lname, :fname, :callsign, :pay_type, :pay_method, :pay_amount, :auth_user, :date-->
+<div>
+  <h3>Payment report</h3>
+</div>
+<div>
+	<table>
+		<tr>
+			<th>Last Name</th>
+			<th>First Name</th>
+			<th>Call sign</th>
+			<th>Pay Type</th>
+			<th>Pay Method</th>
+			<th>Pay Amount</th>
+			<th>Posted by</th>
+      <th>Date</th>
+		</tr>
+		<% for pay in @pay %>
+		<tr>
+		<td><%=pay[:lname]%></td>
+		<td><%=pay[:fname]%></td>
+		<td><%=pay[:callsign]%></td>
+		<td><%=pay[:pay_type]%></td>
+		<td><%=pay[:pay_method]%></td>
+		<td><%=pay[:pay_amount]%></td>
+		<td><%=pay[:auth_user]%></td>
+		<td><%=pay[:date]%></td>
+    </tr>
+    <%end%>
+  </table>
+</div>
