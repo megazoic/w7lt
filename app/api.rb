@@ -967,7 +967,7 @@ module MemberTracker
         out[:mbr_name] = "#{pmt.member.fname} #{pmt.member.lname}"
         out[:auth_name] = "#{pmt.auth_user.member.fname} #{pmt.auth_user.member.lname}"
         out[:type] = pmt.paymentType.type
-        out[:method] = pmt.paymentMethod[:method]
+        out[:mode] = pmt.paymentMethod[:mode]
         out[:amount] = pmt.payment_amount
         if !pmt.log_id.nil?
           out[:notes] = pmt.log.notes
