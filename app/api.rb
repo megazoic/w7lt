@@ -1133,15 +1133,15 @@ module MemberTracker
         rpt_type = params[:type]
       end
       @pay = []
+      
       if rpt_type == 'all'
-        Payment.all.each do |p|
+        Payment.join(:members, id: :mbr_id).order(:ts, :payment_type_id, :lname).each do |p|
           temp = {}
           temp[:lname] = p.member.lname
           temp[:fname] = p.member.fname
           temp[:callsign] = p.member.callsign.empty? ? "N/A" : p.member.callsign
           temp[:pay_type] = p.paymentType.type
-          #temp[:pay_method] = p.paymentMethod.method
-          temp[:pay_method] = 'cash'
+          temp[:pay_method] = p.paymentMethod.mode
           temp[:pay_amount] = p.payment_amount
           temp[:auth_user] = "#{p.auth_user.member.lname}, #{p.auth_user.member.fname}"
           temp[:date] = p.ts.strftime(("%m-%d-%y:hr %H"))
