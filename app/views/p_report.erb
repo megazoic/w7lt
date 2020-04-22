@@ -1,6 +1,7 @@
 <!--expect @pay to have :lname, :fname, :callsign, :pay_type, :pay_method, :pay_amount, :auth_user, :date-->
 <div>
-  <h3>Payment report:</h3> ordered by date, payment type, member last name
+  <h3>Payment report:</h3><br />
+  Total payments listed: <%=@pay.count%>, ordered by date, payment type, member last name
 </div>
 <div>
 	<table>

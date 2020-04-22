@@ -135,8 +135,8 @@ module MemberTracker
       #  "ve", :ve, "elmer", :elmer
       query_keys = [:paid_up_q, :mbr_full, :mbr_student, :mbr_family,
         :mbr_honorary, :mbr_none, :arrl, :ares, :pdxnet, :ve, :elmer, :sota]
-      qset = Hash.new
-      qset[:mbr_type] = []
+      @qset = Hash.new
+      @qset[:mbr_type] = []
       pu = Paid_up.new(false, false)
       query_keys.each do |k|
         if ["", nil].include?(params[k])
@@ -157,40 +157,40 @@ module MemberTracker
               #keep default pu values (false,false)
             end
           when  :arrl
-            qset[:arrl] = 1
+            @qset[:arrl] = 1
           when  :ares
-            qset[:ares] = 1
+            @qset[:ares] = 1
           when  :mbr_full, :mbr_student, :mbr_family, :mbr_honorary, :mbr_none
-            qset[:mbr_type] << params[k]
+            @qset[:mbr_type] << params[k]
           when  :pdxnet
-            qset[:net] = 1
+            @qset[:net] = 1
           when  :elmer
-            qset[:elmer] = 1
+            @qset[:elmer] = 1
           when  :ve
-            qset[:ve] = 1
+            @qset[:ve] = 1
           when  :sota
-            qset[:sota] = 1
+            @qset[:sota] = 1
           else
             puts "error"
           end
         end
       end
-      if qset[:mbr_type].empty?
-        qset.delete(:mbr_type)
+      if @qset[:mbr_type].empty?
+        @qset.delete(:mbr_type)
       end
       if pu.active == true
         #there is a request for paid up status
         if pu.condition == true
           puts "in looking for paid up members"
           #asking for members who are paid up through the current year
-          @member = Member.where(qset){paid_up >= Time.now.strftime("%Y").to_i}
+          @member = Member.where(@qset){paid_up >= Time.now.strftime("%Y").to_i}
         else
           #asking for members who are NOT paid up through the current year
-          @member = Member.where(qset){paid_up < Time.now.strftime("%Y").to_i}
+          @member = Member.where(@qset){paid_up < Time.now.strftime("%Y").to_i}
         end
       else
         #asking for all recorded members
-        @member = Member.where(qset)
+        @member = Member.where(@qset)
       end
       erb :m_list, :layout => :layout_w_logout
     end
@@ -321,11 +321,13 @@ module MemberTracker
         #new member
         params.reject!{|k,v| k == "id"}
         #the start date has been set in the erb file
-        params["mbr_since"] = Date.strptime(params["mbr_since"], '%Y-%m')
+        params[:mbr_since] = Date.strptime(params[:mbr_since], '%Y-%m')
         #set the character case to upper for name and email
-        params["fname"] = params["fname"].upcase
-        params["lname"] = params["lname"].upcase
-        params["email"] = params["email"].upcase
+        params[:fname] = params[:fname].upcase
+        params[:lname] = params[:lname].upcase
+        params[:email] = params[:email].upcase
+        #set the default mbr_type until a payment is made (this is also done on mbrs table)
+        params[:mbr_type] = 'none'
         mbr_record = Member.new(params)
         begin
           DB.transaction do
