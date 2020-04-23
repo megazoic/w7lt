@@ -1423,7 +1423,7 @@ module MemberTracker
       #expecting {"unit_type_name"=>"type5", "unit_type_descr"=>"a new type"}
       if params[:id].nil?
         #creating new type
-        ut = UnitType.new(:type => params["unit_type_name"], :descr => params["unit_type_descr"])
+        ut = UnitType.new(:type => params["unit_type_name"], :descr => params["unit_type_descr"], :a_user_id => session[:auth_user_id])
       else
         #updating existing type
         ut = UnitType[params[:id]]
@@ -1436,7 +1436,11 @@ module MemberTracker
       Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
       action_id = actions["unit"]
       l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
-      l.notes = "creating new unit type: #{params["unit_type_name"]}"
+      if ut.id.nil?
+        l.notes = "creating new unit type: #{params["unit_type_name"]}"
+      else
+        l.notes = "modifying existing user type: type creator #{ut.auth_users.member.callsign}"
+      end
       begin
         DB.transaction do
           ut.save
