@@ -79,6 +79,14 @@ module MemberTracker
               action_id = x.id
             end
           }
+          #remove old login logs, keeping first and last two
+          login_log_ids = Log.where(a_user_id: auth_user.id, action_id: action_id).map(:id).sort
+          if login_log_ids.length > 3
+            login_log_ids.shift
+            login_log_ids.pop(2)
+            Log.where(id: login_log_ids).delete
+          end
+          #add new
           l = Log.new(mbr_id: auth_user.mbr_id, a_user_id: auth_user.id, ts: Time.now, action_id: action_id, notes: "login")
           l.save
           #check to see if this auth_user is active
