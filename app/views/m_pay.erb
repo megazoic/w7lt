@@ -19,6 +19,7 @@
 	    <option value="student" <%=@mbr_pay[:mbr_type] == 'student' ? "selected" : nil%>>Student</option>
 	    <option value="family" <%=@mbr_pay[:mbr_type] == 'family' ? "selected" : nil%>>Family</option>
 	    <option value="honorary" <%=@mbr_pay[:mbr_type] == 'honorary' ? "selected" : nil%>>Honorary</option>
+	    <option value="none" <%=@mbr_pay[:mbr_type] == 'none' ? "selected" : nil%>>Not assigned</option>
     </select>
     <%if @mbr_pay[:mbr_type] == 'family'%>
       <br/><%@mbr_family.each {|mbr|%><%="#{mbr} "%><%}%>membership will also be renewed
