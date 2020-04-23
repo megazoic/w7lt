@@ -2,7 +2,7 @@
       @pay = {:fname, :lname, :callsign, :pay_type,
       :pay_method, :pay_amount, :auth_user, :date}
 %>
-Last Name,First Name,Call sign,Pay Type,Pay Method,Pay Amount,Posted by,Date
+Last Name,First Name,Call sign,Pay Type,Pay Method,Pay Amount,Posted by,Date<br />
 <%for p in @pay%>
-  <%=p[:lname]%>,<%=p[:fname]%>,<%=p[:callsign]%>,<%=p[:pay_type]%>,<%=p[:pay_method]%>,<%=p[:pay_amount]%>,<%=p[:auth_user]%>,<%=p[:date]%>
+  <%=p[:lname]%>,<%=p[:fname]%>,<%=p[:callsign]%>,<%=p[:pay_type]%>,<%=p[:pay_method]%>,<%=p[:pay_amount]%>,<%=p[:auth_user]%>,<%=p[:date]%><br />
 <%end%>
