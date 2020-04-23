@@ -55,9 +55,24 @@ module MemberTracker
       puts 'in get and json'
     end
     get '/dump/:table' , :provides => 'html' do
-      if params[:table] = 'mbr'
+      if params[:table] == 'mbr'
         @m = Member.all
-        erb :dump
+        erb :m_dump
+      elsif params[:table] == 'pay'
+        @pay = []
+        Payment.join(:members, id: :mbr_id).order(:ts, :payment_type_id, :lname).each do |p|
+          temp = {}
+          temp[:lname] = p.member.lname
+          temp[:fname] = p.member.fname
+          temp[:callsign] = p.member.callsign.empty? ? "N/A" : p.member.callsign
+          temp[:pay_type] = p.paymentType.type
+          temp[:pay_method] = p.paymentMethod.mode
+          temp[:pay_amount] = p.payment_amount
+          temp[:auth_user] = "#{p.auth_user.member.lname}, #{p.auth_user.member.fname}"
+          temp[:date] = p.ts.strftime(("%m-%d-%y:hr %H"))
+          @pay << temp
+        end
+        erb :p_dump
       else
         redirect '/home'
       end
