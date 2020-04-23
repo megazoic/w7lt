@@ -1,14 +1,35 @@
+<br /><h3>Unit Types currently available</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Desc</th>
+<th>Created by</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<%for ut in @unit_types%>
+<tr>
+<td><%=ut[:type]%></td>
+<td><%=ut[:descr]%></td>
+<td><%=ut.auth_users.member.callsign%></td>
+<td><a href=<%=URI.escape("/list/units/#{ut[:type]}")%>>List</a></td>
+</tr>
+<%end%>
+</tbody>
+</table>
 </br><h3>Edit Existing Unit Types</h3>
 <%if @unit_types.length < 5%>
   <%@unit_types.each do |ut|%>
-    <a href="/admin/create_unit_type/<%=ut.id%>"><%=ut.type%></a>, <%=ut.descr%></br>
+    <a href="/admin/create_unit_type/<%=ut.id%>"><%=ut.type%></a></br>
   <%end%>
 <%else%>
   <table>
     <%@unit_types.each_slice(2) do |ut|%>
-      <tr><td><a href="/admin/create_unit_type/<%=ut[0].id%>"><%=ut[0].type%></a>, <%=ut[0].descr%></td>
+      <tr><td><a href="/admin/create_unit_type/<%=ut[0].id%>"><%=ut[0].type%></a></td>
       <%if ut.length == 2%>
-        <td><a href="/admin/create_unit_type/<%=ut[1].id%>"><%=ut[1].type%></a>, <%=ut[1].descr%></td></tr>
+        <td><a href="/admin/create_unit_type/<%=ut[1].id%>"><%=ut[1].type%></a></td></tr>
       <%else%>
         <td></td></tr>
       <%end%>
@@ -25,5 +46,5 @@
 <br/><input type='text' name='unit_type_descr' <% if !@edit_unit_type.nil?%>value='<%=@edit_unit_type.descr%>'<%end%>>
 <label for="unit_name">Description of type</label>
 <br/>
-<input type='submit' value='Submit'/> | <a href="/admin/list_unit_types">Cancel</a>
+<input type='submit' value='Submit'/> | <a href="/home">Cancel</a>
 </form>    
