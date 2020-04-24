@@ -1,0 +1,6 @@
+<!--expect @pay to have :lname, :fname, :callsign, :pay_type, :pay_method, :pay_amount, :auth_user, :date-->
+<br /><h3>Type of report: <%=@rpt_type%> payments</h3><br />
+Last Name,First Name,Call sign,Pay Type,Pay Method,Pay Amount,Posted by,Date,hour<br />
+<% for pay in @pay %>
+<%=pay[:lname]%>,<%=pay[:fname]%>,<%=pay[:callsign]%>,<%=pay[:pay_type]%>,<%=pay[:pay_method]%>,<%=pay[:pay_amount]%>,<%=pay[:auth_user]%>,<%=pay[:date]%>,<%=pay[:hour]%><br />
+<%end%>

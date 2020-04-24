@@ -83,63 +83,6 @@ module MemberTracker
       session[:msg] = nil
       erb :home, :layout => :layout_w_logout
     end
-    get '/groupsio' do
-      #get members who have no Groups.io account record
-      @mbrs_wo_gio = Member.select(:id, :fname, :lname).where(Sequel.lit('gio_id IS NULL')).order(:lname).all
-      count_gio_noparc = 0
-      gio = GroupsioData.new
-      if gio.setToken == 0
-        #success, retrieve data
-        if gio.getMbrData == 0
-          #success, find unmatched emails
-          gio.compareEmails
-        end
-      end
-      if gio.groupsIOError["error"].to_i == 0
-        @unmatched = gio.unmatched
-        erb :groupsio, :layout => :layout_w_logout
-      else
-        #failed send message
-        @err_msg = gio.groupsIOError["errorMsg"]
-        erb :errorMsg, :layout => :layout_w_logout
-      end
-    end
-    post '/groupsio' do
-      #if params has any numbered keys these are parc_mbr ids that need to
-      #be updated with the value, first remove the captures key
-      #Params returned with the form have name=mbr_id value=email from the
-      #first table and name=gio_id, value=mbr_id from the second table
-      params.reject!{|k,v| k == "captures"}
-      params.reject!{|k,v| v == "none"}
-      if params.length > 0
-        mbrs = []
-        params.each{|k,v|
-          if /\d+/.match(k)
-            #there is an id need to update a record in Members based on which
-            #id we're dealing with here Groups.io or this database
-            if k.to_i > 10000
-              #this is a groups.io id use value to get member from this db
-              mbr = Member[v.to_i]
-              mbr.gio_id = k.to_i
-              if mbr.save
-                mbrs << v.to_i
-              end
-            else #this is a parc-mbr database id use key to get member
-              mbr = Member[k.to_i]
-              mbr.email = v.upcase
-              if mbr.save
-                mbrs << k.to_i
-              end
-            end
-          end
-        }
-        #return successful updates
-        @mbrs = Member.select(:id, :fname, :lname, :callsign, :email).where(id: mbrs).all
-        erb :list_saved, :layout => :layout_w_logout
-      else #nothing was sent
-        erb :home, :layout => :layout_w_logout
-      end
-    end
     get '/query' do
       erb :query, :layout => :layout_w_logout
     end
@@ -649,6 +592,63 @@ module MemberTracker
       redirect '/login'
     end
     ################### START ADMIN #######################
+    get '/admin/groupsio' do
+      #get members who have no Groups.io account record
+      @mbrs_wo_gio = Member.select(:id, :fname, :lname).where(Sequel.lit('gio_id IS NULL')).order(:lname).all
+      count_gio_noparc = 0
+      gio = GroupsioData.new
+      if gio.setToken == 0
+        #success, retrieve data
+        if gio.getMbrData == 0
+          #success, find unmatched emails
+          gio.compareEmails
+        end
+      end
+      if gio.groupsIOError["error"].to_i == 0
+        @unmatched = gio.unmatched
+        erb :groupsio, :layout => :layout_w_logout
+      else
+        #failed send message
+        @err_msg = gio.groupsIOError["errorMsg"]
+        erb :errorMsg, :layout => :layout_w_logout
+      end
+    end
+    post '/admin/groupsio' do
+      #if params has any numbered keys these are parc_mbr ids that need to
+      #be updated with the value, first remove the captures key
+      #Params returned with the form have name=mbr_id value=email from the
+      #first table and name=gio_id, value=mbr_id from the second table
+      params.reject!{|k,v| k == "captures"}
+      params.reject!{|k,v| v == "none"}
+      if params.length > 0
+        mbrs = []
+        params.each{|k,v|
+          if /\d+/.match(k)
+            #there is an id need to update a record in Members based on which
+            #id we're dealing with here Groups.io or this database
+            if k.to_i > 10000
+              #this is a groups.io id use value to get member from this db
+              mbr = Member[v.to_i]
+              mbr.gio_id = k.to_i
+              if mbr.save
+                mbrs << v.to_i
+              end
+            else #this is a parc-mbr database id use key to get member
+              mbr = Member[k.to_i]
+              mbr.email = v.upcase
+              if mbr.save
+                mbrs << k.to_i
+              end
+            end
+          end
+        }
+        #return successful updates
+        @mbrs = Member.select(:id, :fname, :lname, :callsign, :email).where(id: mbrs).all
+        erb :list_saved, :layout => :layout_w_logout
+      else #nothing was sent
+        erb :home, :layout => :layout_w_logout
+      end
+    end
     get '/admin/view_log/:type' do
       case params[:type]
       when "auth_user" #view only current logged in users logs
@@ -1189,14 +1189,13 @@ module MemberTracker
       end
       redirect '/admin/payments/show'
     end
-    get '/admin/payments/report/:type?' do
-      rpt_type = "all"
+    get '/admin/payments/report/:type/:format?' do
+      @rpt_type = "all"
       if !params[:type].nil? #if optional parameter :type is missing
-        rpt_type = params[:type]
+        @rpt_type = params[:type]
       end
       @pay = []
-      
-      if rpt_type == 'all'
+      if @rpt_type == 'all'
         Payment.join(:members, id: :mbr_id).order(:ts, :payment_type_id, :lname).each do |p|
           temp = {}
           temp[:lname] = p.member.lname
@@ -1205,13 +1204,18 @@ module MemberTracker
           temp[:pay_type] = p.paymentType.type
           temp[:pay_method] = p.paymentMethod.mode
           temp[:pay_amount] = p.payment_amount
-          temp[:auth_user] = "#{p.auth_user.member.lname}, #{p.auth_user.member.fname}"
-          temp[:date] = p.ts.strftime(("%m-%d-%y:hr %H"))
+          temp[:auth_user] = "#{p.auth_user.member.fname} #{p.auth_user.member.lname}"
+          temp[:date] = p.ts.strftime(("%m-%d-%y"))
+          temp[:hour] = p.ts.strftime(("%H"))
           @pay << temp
         end
       end
       #need to send :lname, :fname, :callsign, :pay_type, :pay_method, :pay_amount, :auth_user, :date
-      erb :p_report, :layout => :layout_w_logout
+      if params[:format] == 'csv'
+        erb :p_report_csv, :layout => :layout_w_logout
+      else
+        erb :p_report_html, :layout => :layout_w_logout
+      end
     end
     get '/admin/list_auth_users' do
       @au_list = []

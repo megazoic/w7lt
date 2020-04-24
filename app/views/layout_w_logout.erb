@@ -14,12 +14,13 @@
   <table>
   <tr><td>Dump <a href="/dump/mbr">members</a> | <a href="/dump/pay">payments</a></td><td><a href="/query">Query the member data</a></td></tr>
   <tr><td><a href="/list/members">List members</a></td><td><a href="/new/member">Add a new member</a></td></tr>
+  <tr><td><a href='/list/units/all'>View all units</a></td><td><a href='/new/unit'>Build a new Unit</a></td></tr>
 	<%if session[:auth_user_roles].include?('auth_u')%>
     <tr><td><a href="/admin/list_auth_users">List administrators</a></td><td><a href="/admin/create_auth_user">Add an administrator</a></td></tr>
     <tr><td><a href="/admin/log/">Record payment</a></td><td><a href="/admin/payments/show">View payments</a></td></tr>
-    <tr><td><a href='/admin/create_unit_type/'>Create/Edit/View unit types</a></td><td><a href='/admin/payments/report/'>Payment Report</a></td></tr>
+    <tr><td><a href='/admin/create_unit_type/'>Create/Edit/View unit types</a></td><td>Payment Rpt <a href='/admin/payments/report/all/html'>HTML</a> | <a href='/admin/payments/report/all/csv'>CSV</a></td></tr>
     <tr><td><a href="/admin/view_log/all">View all logs</a></td><td><a href="/admin/view_log/auth_user">View your logs</a></td></tr>
-    <tr><td><a href='/list/units/all'>View all units</a></td><td><a href='/new/unit'>Build a new Unit</a></td></tr>
+    <tr><td><a href='/admin/groupsio'>Sync w/ Groups.io</a></td></tr>
 	<%end%>
   </table
 	<br />
