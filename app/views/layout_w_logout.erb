@@ -14,7 +14,7 @@
   <table>
   <tr><td>Dump <a href="/dump/mbr">members</a> | <a href="/dump/pay">payments</a></td><td><a href="/query">Query the member data</a></td></tr>
   <tr><td><a href="/list/members">List members</a></td><td><a href="/new/member">Add a new member</a></td></tr>
-  <tr><td><a href='/list/units/all'>View all units</a></td><td><a href='/new/unit'>Build a new Unit</a></td></tr>
+  <tr><td><a href='/list/units/all'>View/Edit all units</a></td><td><a href='/new/unit'>Build a new Unit</a></td></tr>
 	<%if session[:auth_user_roles].include?('auth_u')%>
     <tr><td><a href="/admin/list_auth_users">List administrators</a></td><td><a href="/admin/create_auth_user">Add an administrator</a></td></tr>
     <tr><td><a href="/admin/log/">Record payment</a></td><td><a href="/admin/payments/show">View payments</a></td></tr>

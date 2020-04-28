@@ -406,9 +406,9 @@ module MemberTracker
       unit_notes = params[:unit_notes]
       params.reject!{|k,v| k == 'unit_notes'}
       #get member ids for this unit
-      mbrs = []
+      mbr_ids = []
       params.each do |k,v|
-        mbrs << /id:(\d+)/.match(k)[1]
+        mbr_ids << /id:(\d+)/.match(k)[1]
       end
       #need to create a log for this transaction
       #first get action id
@@ -417,7 +417,7 @@ module MemberTracker
       action_id = actions["unit"]
       l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
       mbr_names = ""
-      mbrs.each do |mbr_id|
+      mbr_ids.each do |mbr_id|
         mbr_names << "#{Member[mbr_id].fname} #{Member[mbr_id].lname}, "
       end
       l.notes = "creating new unit of type #{unit_type_name} with members #{mbr_names[0...-2]}"
@@ -429,9 +429,9 @@ module MemberTracker
       begin
         DB.transaction do
           u.save
-          mbrs.each do |mbr|
-            m = Member[mbr.to_i]
-            #family type also is related to member_type ('full', 'family', 'student', 'honorary')
+          mbr_ids.each do |mbr_id|
+            m = Member[mbr_id.to_i]
+            #family type also is related to member_type ('full', 'family', 'student', 'honorary', 'none')
             #since this isn't a payment however, don't update paid_up status
             if unit_type_name == 'family'
               #need to test if any member is already a member of a family unit
@@ -445,6 +445,14 @@ module MemberTracker
               if !fu_already.empty?
                 session[:msg] = "Unit creation UNSUCCESSFUL: member(s) are already in a family unit #{fu_already}"
                 redirect "/list/units/family"
+              end
+              #set mbr_type to none, record this change in auditLogs if mbr_type changed
+              #when payment is made this member will change type to family
+              if m.mbr_type != "none"
+                al = AuditLog.new("a_user_id" => session[:auth_user_id], "column" => "mbr_type",
+                        "changed_date" => Time.now, "old_value" => m.mbr_type, "new_value" => "none",
+                        "mbr_id" => m.id, "unit_id" => u.id)
+                al.save
               end
             end
             m.add_unit(u)
@@ -461,7 +469,7 @@ module MemberTracker
       end
     end
     get '/edit/unit/:id' do
-      response['Cache-Control'] = "public, max-age=0, must-revalidate"
+      #response['Cache-Control'] = "public, max-age=0, must-revalidate"
       @unit = Unit[params[:id].to_i]
       #get a list of member ids that belong to this unit
       #also, if the unit is an elmer, find that elmer member
@@ -526,13 +534,8 @@ module MemberTracker
         end
       end
       #compare the two sets of members
-      mbrs_old_out = mbrs_old - mbrs_new #these have been removed
-      #need to test for unit type family cuz cant remove family members through this route yet
-      if unit.unit_type.type == 'family' && !mbrs_old_out.empty?
-        session[:msg] = "The existing unit could not be updated. Removing family members can only be done via a membership renewal"
-        redirect "/list/units/all"
-      end
-      mbrs_new_in = mbrs_new - mbrs_old #these have been added
+      mbrs_ids_old_out = mbrs_old - mbrs_new #these have been removed
+      mbrs_ids_new_in = mbrs_new - mbrs_old #these have been added
       #look at changes in active status and name of unit
       name_new = params["name"]
       if name_new != unit.name
@@ -544,27 +547,121 @@ module MemberTracker
         augmented_notes << "\nactive status changed from #{unit.active.to_s} to #{active_new.to_s}"
         unit.active = active_new
       end
-      #build new unit and change members in the unit
-      mbrs_old_out.each do |mbr|
-        unit.remove_member(mbr)
-        augmented_notes << "\nUnit mbr association[-mbr_id:#{m.id}], #{m.fname} #{m.lname} has been removed"
-      end
-      mbrs_new_in.each do |mbr|
-        unit.add_member(mbr)
-        m = Member[mbr]
-        augmented_notes << "\nUnit mbr association[+mbr_id:#{mbr}], #{m.fname} #{m.lname} has been added"
-        #set mbr_type to family if this is a family unit but only if there are prior payments made on this unit
-        if unit.unit_type.type == 'family'
-          if !unit.log.payment.nil?
-            #we have a prior payment for this unit go ahead and set this member.mbr_type to family
-            m.mbr_type = 'family'
-            m.save
+      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: action_id)
+      ################get ready for update#####################
+      have_payment = false
+      paid_up_status = 0
+      unit_pay_date_latest = Time.new(1999,01,01)
+      unit_pay_id_latest = 0
+      if unit.unit_type.type == 'family'
+        #look for payments
+        unit.log.each do |ul|
+          if !ul.payment.nil?
+            have_payment = true
+            paid_up_status = ul.payment.member.paid_up
+            if ul.payment.ts > unit_pay_date_latest
+              unit_pay_date_latest = ul.payment.ts
+              unit_pay_id_latest = ul.payment.id
+            end
           end
         end
       end
-      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: action_id)
+      ##################end get ready for update###################
       begin
         DB.transaction do
+          #change members in the unit
+          #-------------------- BEGIN REMOVING MEMBERS FROM UNIT ---------------------
+          #need to get mbr back to original state before added to unit
+          mbrs_ids_old_out.each do |mbr_id|
+            #is this mbr associated with the most recent payment?
+            if have_payment == true && Payment[unit_pay_id_latest].mbr_id == mbr_id
+              #can't do this, need to rollback that payment and associate it with another remaining unit mbr
+              session[:msg] = "FAILED: The unit could not be updated. Most recent payment (id: #{unit_pay_id_latest}) is still associated with member (id: #{mbr_id}) you are trying to remove"
+              redirect "/list/units/all"
+            end
+            m = Member[mbr_id]
+            unit.remove_member(m)
+            #roll back mbr's paid_up and type status
+            ###########################2nd part of changes################
+            hash_of_audit_logs = Hash.new
+            m.audit_logs.each do |al|
+              #only get auditlogs for this unit
+              if al.unit_id == unit.id
+                #["al_id", "a_user_id", "column",  "old_value", "new_value"]
+                hash_of_audit_logs[al.changed_date] = [al.id, al.a_user_id, al.column, al.old_value, al.new_value]
+              end
+            end
+            #sort by timestamp and walk back in time
+            array_of_sorted_auditlogs = hash_of_audit_logs.sort
+            #hash[al.changed_date] = ["al_id", "a_user_id", "column",  "old_value", "new_value"]
+            #[[1999-01-08 04:05:06 -0800, ["al_id", "a_user_id", "column",  "old_value", "new_value"]]
+            while a = array_of_sorted_auditlogs.pop
+              if a[0] >= unit.ts
+                case a[1][2] 
+                when "paid_up"
+                  m.paid_up = a[1][3]
+                  augmented_notes << "\nsetting paid_up for #{m.callsign} to #{m.paid_up}"
+                  #remove audit log
+                  AuditLog[a[1][0]].delete
+                when "mbr_type"
+                  m.mbr_type = a[1][3]
+                  augmented_notes << "\nsetting mbr_type for #{m.callsign} to #{m.mbr_type}"
+                  #remove audit log
+                  AuditLog[a[1][0]].delete
+                else
+                  #shouldn't be here
+                end
+                m.save
+              end
+            end
+            #######################end 2nd part of changes################
+            augmented_notes << "\nUnit mbr association[-mbr_id:#{m.id}], #{m.fname} #{m.lname} has been removed"
+          end
+          #-------------------- END REMOVING MEMBERS FROM UNIT ---------------------
+          #-------------------- BEGIN ADDING MEMBERS TO UNIT ---------------------
+          mbrs_ids_new_in.each do |mbr_id|
+            unit.add_member(mbr_id)
+            m = Member[mbr_id]
+            augmented_notes << "\nUnit mbr association[+mbr_id:#{mbr_id}], #{m.fname} #{m.lname} has been added"
+            #set mbr_type to family if this is a family unit but only if there are prior payments made on this unit
+            if unit.unit_type.type == 'family'
+              #look for payments
+              have_payment = false
+              paid_up_status = 0
+              unit_pay_date_latest = Time.new(1999,01,01)
+              unit_pay_id_latest = 0
+              unit.log.each do |ul|
+                if !ul.payment.nil?
+                  have_payment = true
+                  paid_up_status = ul.payment.member.paid_up
+                  if ul.payment.ts > unit_pay_date_latest
+                    unit_pay_date_latest = ul.payment.ts
+                    unit_pay_id_latest = ul.payment.id
+                  end
+                end
+              end
+              if have_payment == true #if not, then this mbr has already been added no other changes need to be made
+                #do we need to record paid_up audit log?
+                if m.paid_up != paid_up_status
+                  al = AuditLog.new("a_user_id" => session[:auth_user_id], "column" => "paid_up",
+                          "changed_date" => Time.now, "old_value" => m.paid_up, "new_value" => paid_up_status,
+                          "mbr_id" => m.id, "pay_id" => unit_pay_id_latest, "unit_id" => unit.id)
+                  al.save
+                end
+                al = AuditLog.new("a_user_id" => session[:auth_user_id], "column" => "mbr_type",
+                        "changed_date" => Time.now, "old_value" => m.mbr_type, "new_value" => "family",
+                        "mbr_id" => m.id, "pay_id" => unit_pay_id_latest, "unit_id" => unit.id)
+                al.save
+                  #we have a prior payment for this unit go ahead and set this member.mbr_type to family
+                m.mbr_type = 'family'
+                m.paid_up = paid_up_status
+                #need to create audit log so this action will be rolled back if the payments that established the
+                #paid_up status of the other family units are rolled back
+                m.save
+              end
+            end
+          end
+          #-------------------- END OF ADDING MEMBERS TO UNIT ---------------------
           unit.save
           l.save
           session[:msg] = "The existing unit was successfully updated"
@@ -733,10 +830,19 @@ module MemberTracker
           end
         end
       end
+      #so that selected option for mbr_type in form defaults correctly, want those with none to be family if
+      #they just joined a family unit
+      @mbr_type_selected = ''
       if !@mbr_family.empty?
         #want to default the dues payment to family even if mbr_type is none
-        @mbr_pay.mbr_type = "family"
+        @mbr_type_selected = "family"
+      else #otherwise, just stick with existing mbr_type
+        @mbr_type_selected = @mbr_pay.mbr_type
       end
+      #need to remove sk from this array
+      @mbrTypes = []
+      Member.mbr_types.each { |mt| @mbrTypes << mt }
+      @mbrTypes.pop
       @payType = PaymentType.all
       @payMethod = PaymentMethod.all
       erb :m_pay, :layout => :layout_w_logout
@@ -750,14 +856,16 @@ module MemberTracker
       augmented_notes = params[:notes]
       log_pay = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now)
       log_unit = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: actions["unit"])
-      #load AuditLog in case needed
-      al_paid_up = AuditLog.new()
-      al_mbr_type = AuditLog.new()
-      al_active = AuditLog.new()
-      #only record an audit log if needed
+      #create hash to hold all of the audit logs associated with this transaction
+      auditlog_hash = {}
+      #load AuditLog in case needed this is associated with the paying member ie params[:mbr_id]
+      auditlog_hash["pay_mbr_paid_up"] = AuditLog.new()
+      auditlog_hash["pay_mbr_mbr_type"] = AuditLog.new()
+      auditlog_hash["al_active"] = AuditLog.new()
+      #only record an audit log if needed (this goes for any type of audit log)
       al_save = false
-      #check to see if 'dues' is selected as :payment_type to store family ids
-      mbr_family = []
+      #check to see if 'dues' is selected as :payment_type if so, store family ids
+      mbr_family_ids = []
       mbr_family_unit_id = nil
       if PaymentType[params[:payment_type]].type == 'Dues'
         #going to put this info in the log
@@ -781,7 +889,7 @@ module MemberTracker
           #load members in this family, first test for existance of this unit
           Unit[mbr_family_unit_id].members.each do |f_member|
             #load ids for all besides the current member
-            mbr_family << f_member.id if f_member.id != params[:id].to_i
+            mbr_family_ids << f_member.id if f_member.id != params[:mbr_id].to_i
           end
         elsif params[:mbr_type_old] == 'family'
           #member was previously in a family unit but no longer is paying as one
@@ -809,8 +917,9 @@ module MemberTracker
             #add to AuditLog to enable rollback
             if old_active != 0
               #will add pay id after pay is saved in DB.transaction
-              al_active.set("a_user_id" => session[:auth_user_id], "column" => "active",
-                "changed_date" => Time.now, "old_value" => old_active, "new_value" => 0)
+              auditlog_hash["al_active"].set("a_user_id" => session[:auth_user_id], "column" => "active",
+                "changed_date" => Time.now, "old_value" => old_active, "new_value" => 0,
+                    "mbr_id" => params[:mbr_id])
               al_save = true
             end
             #log this change to the unit
@@ -863,7 +972,8 @@ module MemberTracker
               #update other family members
               fam_names = ""
               #if there is temporarily only one family member of this unit, this will be skipped
-              mbr_family.each do |mbr_id|
+              #since that member has been removed from mbr_family_ids
+              mbr_family_ids.each do |mbr_id|
                 fm = Member[mbr_id]
                 #test to see if any family member's paid up status is > than this one
                 if fm.paid_up > params[:paid_up].to_i
@@ -871,12 +981,27 @@ module MemberTracker
                   session[:msg] = "UNSUCCESSFUL; family mbr #{fm.fname} #{fm.lname}: paid up, #{fm.paid_up} conflicts with #{m.fname} #{m.lname}: paid_up #{params[:paid_up]}"
                   redirect '/list/units/family'
                 end
-                fm.paid_up = params[:paid_up]
-                fm.mbr_type = 'family'
-                fm.save
                 fam_names << "\nmbr_id#:#{fm.id}, #{fm.fname}, #{fm.lname}"
+                #need to set up audit logs for these guys
+                #test to see if paid_up old is different from what is happening with this payment
+                if (fm.paid_up != params[:paid_up])
+                  fm.paid_up = params[:paid_up]
+                  auditlog_hash["#{fm.id}_mbr_paid_up"] = AuditLog.new()
+                  auditlog_hash["#{fm.id}_mbr_paid_up"].set("a_user_id" => session[:auth_user_id], "column" => "paid_up",
+                    "changed_date" => Time.now, "old_value" => params[:mbr_paid_up_old], "new_value" => params[:paid_up],
+                    "mbr_id" => fm.id)
+                end
+                #test to see if mbr_type old is different from what is happening with this payment
+                if (fm.mbr_type != 'family')
+                  fm.mbr_type = 'family'
+                  auditlog_hash["#{fm.id}_mbr_mbr_type"] = AuditLog.new()
+                  auditlog_hash["#{fm.id}_mbr_mbr_type"].set("a_user_id" => session[:auth_user_id], "column" => "mbr_type",
+                    "changed_date" => Time.now, "old_value" => params[:mbr_type_old], "new_value" => params[:mbr_type],
+                    "mbr_id" => fm.id)
+                end
+                fm.save
               end
-              if mbr_family.length == 0
+              if mbr_family_ids.length == 0
                 log_unit.notes = "there is only one member of this family, sad"
               else
                 #add names to log
@@ -886,22 +1011,24 @@ module MemberTracker
               fu = Unit[mbr_family_unit_id]
               if fu.active == 0
                 #need to set to 1 so keep auditLog record
-                al_active.set("a_user_id" => session[:auth_user_id], "column" => "active",
+                auditlog_hash["al_active"].set("a_user_id" => session[:auth_user_id], "column" => "active",
                   "changed_date" => Time.now, "old_value" => 0, "new_value" => 1)
                 al_save = true
               end
               fu.active = 1
               fu.save
             end
-            #log these to the auditlog table
+            #log these to the auditlog table for the paying member
             if (params[:mbr_paid_up_old] != params[:paid_up])
-              al_paid_up.set("a_user_id" => session[:auth_user_id], "column" => "paid_up",
-              "changed_date" => Time.now, "old_value" => params[:mbr_paid_up_old], "new_value" => params[:paid_up])
+              auditlog_hash["pay_mbr_paid_up"].set("a_user_id" => session[:auth_user_id], "column" => "paid_up",
+              "changed_date" => Time.now, "old_value" => params[:mbr_paid_up_old], "new_value" => params[:paid_up],
+              "mbr_id" => params[:mbr_id])
               al_save = true
             end
             if (params[:mbr_type_old] != params[:mbr_type])
-              al_mbr_type.set("a_user_id" => session[:auth_user_id], "column" => "mbr_type",
-              "changed_date" => Time.now, "old_value" => params[:mbr_type_old], "new_value" => params[:mbr_type])
+              auditlog_hash["pay_mbr_mbr_type"].set("a_user_id" => session[:auth_user_id], "column" => "mbr_type",
+              "changed_date" => Time.now, "old_value" => params[:mbr_type_old], "new_value" => params[:mbr_type],
+              "mbr_id" => params[:mbr_id])
               al_save = true
             end
             #only expecting to record unit logs if paying dues and is/was a member of a family unit
@@ -920,30 +1047,17 @@ module MemberTracker
           pay[:log_id] = log_pay.values[:id]
           pay.save
           #associate this payment record with any changes to member paid_up and mbr_type fields
+          #also consider impact that this payment makes to the active status of a unit
           if al_save == true
             #if instance for specific (paid_up, mbr_type) auditLog been written to yet, then link payment record
-            if !al_paid_up.a_user_id.nil?
-              al_paid_up.pay_id = pay.id
-              al_paid_up.mbr_id = params[:mbr_id]
-              if params[:mbr_type] == 'family'
-                al_paid_up.unit_id = mbr_family_unit_id
+            auditlog_hash.each do |k,v|
+              if !v.a_user_id.nil?
+                v.pay_id = pay.id
+                if params[:mbr_type] == 'family'
+                  v.unit_id = mbr_family_unit_id
+                end
+                v.save
               end
-              al_paid_up.save
-            end
-            if !al_mbr_type.a_user_id.nil?
-              al_mbr_type.pay_id = pay.id
-              al_mbr_type.mbr_id = params[:mbr_id]
-              if params[:mbr_type] == 'family'
-                al_mbr_type.unit_id = mbr_family_unit_id
-              end
-              al_mbr_type.save
-            end
-            if !al_active.a_user_id.nil?
-              al_active.pay_id = pay.id
-              al_active.mbr_id = params[:mbr_id]
-              #we already know that a familly unit is involved (either previous or current mbr_type)
-              al_active.unit_id = mbr_family_unit_id
-              al_active.save
             end
           end          
         end
@@ -1076,7 +1190,7 @@ module MemberTracker
       #see issue 267 need to allow other payment types to be deleted
       if payment.payment_type_id == paymentTypes["Dues"]
         #this is a dues payment then need to roll back from audit log
-        audit_logs = []
+        audit_log_ids = []
         #load any auditLogs associated with this payment
         #expecting at most, three types of audit logs based on auditLog::column [paid_up, mbr_type, active]
         #generate a hash for each
@@ -1091,9 +1205,10 @@ module MemberTracker
           redirect '/admin/payments/show'
         end
         payment.auditLog.each do |al|
-          h = {"a_user_id" => al.a_user_id, "column" => al.column, "old_value" => al.old_value, "new_value" => al.new_value}
+          h = {"a_user_id" => al.a_user_id, "column" => al.column, "old_value" => al.old_value, "new_value" => al.new_value,
+            "mbr_id" => al.mbr_id, "unit_id" => al.unit_id}
           array_of_audit_log_hashes << h
-          audit_logs << al.id
+          audit_log_ids << al.id
         end
         array_of_audit_log_hashes.each do |alh|
           augmented_notes << "rolling back payment with #{alh["column"]} new value: #{alh["old_value"]} old value: #{alh["new_value"]}\n"
@@ -1111,11 +1226,39 @@ module MemberTracker
           if payment.payment_type_id == paymentTypes["Dues"]
             #roll back member status on paid_up and possibly, mbr_type (if not a family)
             #if current member type is family need to rollback paid_up for all family members
+            array_of_audit_log_hashes.each do |alh|
+              case alh["column"]
+              when "paid_up"
+                m = Member[alh["mbr_id"]]
+                m.paid_up = alh["old_value"]
+                m.save
+              when "mbr_type"
+                m = Member[alh["mbr_id"]]
+                if m.mbr_type != alh["old_value"] && alh["old_value"] == 'family'
+                  #placing mbr back in a family unit, then need to find unit and add back
+                  unit_id = alh["unit_id"]
+                  if !unit_id.empty?
+                    u = Unit[alh["unit_id"]]
+                    u.add_member(m)
+                  end
+                end
+                m.mbr_type = alh["old_value"]
+                m.save
+              when "active"
+                u = Unit[alh["unit_id"]]
+                u.active = alh["old_value"]
+                u.save
+              else
+                    #shouldn't be here cuz only three values column
+              end
+            end
+            #enter into existing log (pay?, unit?)
+            #check for unit_id, if present, need to add this
+=begin
             m = Member[payment.mbr_id]
             if m.mbr_type == 'family'
               #only working with paid_up and active state changing; get all members of this unit
               u = Unit[log_pay.unit_id]
-              puts "u.nil? #{u.nil?}"
               u.members.each do |m|
                 array_of_audit_log_hashes.each do |alh|
                   if alh["column"] == "paid_up"
@@ -1177,8 +1320,9 @@ module MemberTracker
                 log_unit.save
               end
             end
-            audit_logs.each do |al|
-              AuditLog[al].delete
+=end
+            audit_log_ids.each do |al_id|
+              AuditLog[al_id].delete
             end
           end#end if dues, nothing special to do for other payments
           payment.delete

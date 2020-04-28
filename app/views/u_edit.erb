@@ -3,7 +3,7 @@
   <%="Unit Type: #{@unit.unit_type.type.capitalize}"%><%if !@unit_elmer.nil?%><%=" | Elmer Call: #{@unit_elmer}"%><%end%>
 </span>
 </h3>
-Created on <%=@unit.ts%> by <%=@unit_creator_callsign%>
+Created on <%=@unit.ts.strftime("%m-%d-%Y:%H")%> by <%=@unit_creator_callsign%>
 <form action='/update/unit' method='POST' name="unitVitals" onSubmit="return validateUnitEditForm()" >
 <input type="hidden" name="unit_id" value="<%=@unit.id%>">
 <input type="hidden" id="elmer" value=<%if !@unit_elmer.nil?%>"1"<%else%>"0"<%end%>>
@@ -13,6 +13,34 @@ Created on <%=@unit.ts%> by <%=@unit_creator_callsign%>
 <label for="unit_name">Name</label>
 <br/><input type='text' name='notes' id="unit_notes"/>
 <label for="unit_notes">Log Notes</label>
+<%if @unit.unit_type.type != 'family'%>
+  <div>
+  <h3>Members in this unit</h3>
+  	<table>
+  		<tr>
+  			<th>First Name</th>
+  			<th>Last Name</th>
+  			<th>call</th>
+        <%if !@unit_elmer.nil?%><th>elmer</th><%end%>
+  			<th>select</th>
+  		</tr>
+  		<% for member in @member%>
+        <%if !@unit_elmer.nil? && @unit_elmer == member[:callsign] %>
+          <% next %>
+        <%end%>
+  		<tr>
+  		<td><%=member[:fname]%></td>
+  		<td><%=member[:lname]%></td>
+  		<td><%=member[:callsign]%></td>
+  		<%if !@unit_elmer.nil?%><td><%=member[:elmer]%></td><%end%>
+  		<td><input type='checkbox' name='id:<%=member[:id]%><%if !@unit_elmer.nil?%>:<%=member[:elmer]%><%end%>' value='1'<%=member[:included] == '1'  ? "checked='checked'" : nil%>/></td>
+  		</tr>
+  		<% end %>
+  	</table>
+  </div>
+<%else%>
+  <!--To effect inclusion in unit need to work here-->
+<%end%>
 <div>
 <h3>Members in this unit</h3>
 	<table>

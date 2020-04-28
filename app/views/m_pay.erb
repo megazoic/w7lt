@@ -15,11 +15,9 @@
   <div id="message">
     Member Type:
     <select id="mbr_type" name="mbr_type">
-	    <option value="full" <%=@mbr_pay[:mbr_type] == 'full' ? "selected" : nil%>>Full</option>
-	    <option value="student" <%=@mbr_pay[:mbr_type] == 'student' ? "selected" : nil%>>Student</option>
-	    <option value="family" <%=@mbr_pay[:mbr_type] == 'family' ? "selected" : nil%>>Family</option>
-	    <option value="honorary" <%=@mbr_pay[:mbr_type] == 'honorary' ? "selected" : nil%>>Honorary</option>
-	    <option value="none" <%=@mbr_pay[:mbr_type] == 'none' ? "selected" : nil%>>Not assigned</option>
+    <%@mbrTypes.each do |mt|%>
+      <option value=<%="#{mt}"%> <%=@mbr_type_selected == mt ? "selected" : nil%>><%=mt%></option>
+    <%end%>
     </select>
     <%if @mbr_pay[:mbr_type] == 'family'%>
       <br/><%@mbr_family.each {|mbr|%><%="#{mbr} "%><%}%>membership will also be renewed
@@ -29,7 +27,7 @@
     <label for="paid_up_field">Select a year that this member will be paid up through </label>
     <select name="paid_up" id="paid_up_field">
       <%(0..4).each do |yr|%>
-        <option><%=Time.now.year + yr%></option>
+        <option value=<%="#{Time.now.year + yr}"%>><%=Time.now.year + yr%></option>
       <% end %>
     </select>
   </div>
