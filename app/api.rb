@@ -56,7 +56,14 @@ module MemberTracker
     end
     get '/dump/:table' , :provides => 'html' do
       if params[:table] == 'mbr'
+        @m = nil
         @m = Member.all
+        @m.each do |m|
+          if !m.modes.nil?
+            m.modes.gsub!(",", "|")
+          end
+        end
+        @modes = Member.modes
         erb :m_dump
       elsif params[:table] == 'pay'
         @pay = []
@@ -245,14 +252,17 @@ module MemberTracker
       @tmp_msg = session[:msg]
       session[:msg] = nil
       @member = Member[params[:id].to_i]
+      @modes = Member.modes
       erb :m_show, :layout => :layout_w_logout
     end
     get '/edit/member/:id' do
       @member = Member[params[:id].to_i]
+      @modes = Member.modes
       erb :m_edit, :layout => :layout_w_logout
     end
     get '/new/member' do
-      @member = {:lname => ''}
+      @member = {:lname => '', :modes => ''}
+      @modes = Member.modes
       erb :m_edit, :layout => :layout_w_logout
     end
     post '/save/member' do
@@ -274,6 +284,18 @@ module MemberTracker
       #the js form validator that uses regex inserts a captures key
       #in the returning params. need to pull this out too
       params.reject!{|k,v| k == "captures"}
+      #need to pack all of the modes
+      modes = ""
+      params.each do |k,v|
+        mode_key = /mode_(.*)$/.match(k)
+        if  mode_key.respond_to?("[]") && v == "1"
+          modes << "#{Member.modes.key(mode_key[1])},"
+        end
+      end
+      #remove these k,v pairs and add packed modes back
+      params.reject! {|k,v| /mode_/.match(k)}
+      params["modes"] = modes[0...-1]
+      
       #this could be a new member or existing member
       if mbr_id == ''
         #new member

@@ -18,6 +18,9 @@
 <p>License class: <span class="highlight"><%=@member[:license_class]%></span>, member type: <span class="highlight"><%=@member[:mbr_type]%></span>, paid through <span class="highlight"><%=@member[:paid_up]%></span><br />
 Other affiliations:<br />ARRL: <span class="highlight"><%=@member[:arrl].to_i == 0 ? "N" : "Y (expire #{@member[:arrl_expire]})"%></span> | ARES: <span class="highlight"><%=@member[:ares].to_i == 0 ? "N" : "Y"%></span> | Portland NET: <span class="highlight"><%=@member[:net].to_i == 0 ? "N" : "Y"%></span> | SOTA: <span class="highlight"><%=@member[:sota].to_i == 0 ? "N" : "Y"%></span><br />
 Volunteer:<br />VE <span class="highlight"><%=@member[:ve].to_i == 0 ? "N" : "Y"%></span> | Elmer <span class="highlight"><%=@member[:elmer].to_i == 0 ? "N" : "Y"%></span> | SOTA <span class="highlight"><%=@member[:sota].to_i == 0 ? "N" : "Y"%></span></p>
-
-	 
+<h4>Modes:</h4>
+<%@member[:modes].split(",").each do |mi|%>
+<%=" #{@modes[mi]} |"%>
+<%end%>
+<br />
 <a href="/edit/member/<%= @member[:id]%>">Edit</a>

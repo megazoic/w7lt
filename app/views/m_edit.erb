@@ -82,7 +82,13 @@
 	<input type="checkbox" name="elmer" id="elmer" value="1" <%=@member[:elmer] == 1  ? "checked='checked'" : nil%>>
 	<br />
 	<label for="sota">SOTA</label>
-	<input type="checkbox" name="sota" id="sota" value="1" <%=@member[:sota] == 1  ? "checked='checked'" : nil%>>	<hr />
+	<input type="checkbox" name="sota" id="sota" value="1" <%=@member[:sota] == 1  ? "checked='checked'" : nil%>>
 	<input type="hidden" name="id" value="<%=@member[:id]%>">
-	<input type="submit" value="Submit" onsubmit="validateMbrForm()"> | <a href="/list/members">Cancel</a>
+  <p>Modes:
+  <%@modes.each do |k,v|%>
+  	<label for=<%="mode_#{v}"%>><%="#{v}"%></label>
+  	<input type="hidden" name=<%="mode_#{v}"%> value="0">
+  	<input type="checkbox" name=<%="mode_#{v}"%> id=<%="mode_#{v}"%> value="1" <%=@member[:modes].include?(k.to_s)  ? "checked='checked'" : nil%>>
+  <%end%></p>	<hr />
+ 	<input type="submit" value="Submit" onsubmit="validateMbrForm()"> | <a href="/list/members">Cancel</a>
 </form>

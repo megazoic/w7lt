@@ -6,7 +6,8 @@
         :paid_up => '', :arrl => '', :arrl_expire => '', :ares => '',
         :net => '', :ve => '', :elmer => ''}
 %>
-First_Name,Last_Name,email,Apartment,Street,City,Zip,State,Call_sign,Phone_mobile,Phone_mobile_publish,Phone_work,Phone_work_publish,Phone_home,Phone_home_publish,License_class,Member_type,Paid_Dues,ARRL,ARRL_expire_date,ARES,NET,Volunteer_examiner,Elmer<br />
+#NOTE Modes is a string with the following <%=@modes%>
+First_Name,Last_Name,email,Apartment,Street,City,Zip,State,Call_sign,Phone_mobile,Phone_mobile_publish,Phone_work,Phone_work_publish,Phone_home,Phone_home_publish,License_class,Member_type,Paid_Dues,ARRL,ARRL_expire_date,ARES,NET,Volunteer_examiner,Elmer,Modes<br />
 <%for member in @m%>
-<%=member.fname%>,<%=member.lname%>,<%=member.email%>,<%=member.street%>,<%=member.city%>,<%=member.zip%>,<%=member.state%>,<%=member.callsign%>,<%=member.phm%>,<%=member.phm_pub%>,<%=member.phh%>,<%=member.phh_pub%>,<%=member.phw%>,<%=member.phw_pub%>,<%=member.license_class%>,<%=member.mbr_type%>,<%=member.paid_up%>,<%=member.arrl%>,<%=member.arrl_expire%>,<%=member.ares%>,<%=member.net%>,<%=member.ve%>,<%=member.elmer%><br />
+<%=member.fname%>,<%=member.lname%>,<%=member.email%>,<%=member.street%>,<%=member.city%>,<%=member.zip%>,<%=member.state%>,<%=member.callsign%>,<%=member.phm%>,<%=member.phm_pub%>,<%=member.phh%>,<%=member.phh_pub%>,<%=member.phw%>,<%=member.phw_pub%>,<%=member.license_class%>,<%=member.mbr_type%>,<%=member.paid_up%>,<%=member.arrl%>,<%=member.arrl_expire%>,<%=member.ares%>,<%=member.net%>,<%=member.ve%>,<%=member.elmer%>,<%=member.modes%><br />
 <%end%>

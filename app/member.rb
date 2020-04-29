@@ -9,8 +9,10 @@ module MemberTracker
     one_to_many :audit_logs, :class=>"MemberTracker::AuditLog", key: :mbr_id
     #keep sk last so can remove for payment route
     @mbr_types = ['family', 'student', 'full', 'honorary', 'none', 'sk']
+    @modes = {'1' => 'phone', '2' => 'cw', '3' => 'rtty', '4' => 'msk:ft8/jt65', '5' => 'digital:other',
+      '6' => 'packet', '7' => 'psk31/63', '8' => 'video:sstv', '9' => 'mesh network'}
     class << self
-      attr_reader :mbr_types
+      attr_reader :mbr_types, :modes
     end
     
     def record(member_data)
