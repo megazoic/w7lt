@@ -59,8 +59,8 @@ module MemberTracker
         @m = nil
         @m = Member.all
         @m.each do |m|
-          if !m.modes.nil?
-            m.modes.gsub!(",", "|")
+          if !m[:modes].nil?
+            m[:modes].gsub!(",", "|")
           end
         end
         @modes = Member.modes
