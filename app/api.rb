@@ -253,6 +253,9 @@ module MemberTracker
       session[:msg] = nil
       @member = Member[params[:id].to_i]
       @modes = Member.modes
+      if @member[:modes] == ''
+        @member[:modes] = 'none'
+      end
       erb :m_show, :layout => :layout_w_logout
     end
     get '/edit/member/:id' do
