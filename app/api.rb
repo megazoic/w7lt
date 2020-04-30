@@ -228,6 +228,7 @@ module MemberTracker
         #########begin web configuration ############
         session[:auth_user_id] = auth_user_result['auth_user_id']
         session[:auth_user_roles] = auth_user_result['auth_user_roles']
+        puts "au roles are #{auth_user_result['auth_user_roles']}"
         #########end web configuration ############
         redirect '/home'
       else
@@ -823,10 +824,6 @@ module MemberTracker
         #shouldn't be here
       end
       erb :list_logs, :layout => :layout_w_logout
-    end
-    get '/admin/log/' do
-      @mbr_list = DB[:members].select(:id, :fname, :lname, :callsign).order(:lname, :fname).all
-      erb :log_action, :layout => :layout_w_logout
     end
     get '/admin/payment/new/:id' do
       @tmp_msg = session[:msg]
@@ -1483,6 +1480,16 @@ module MemberTracker
           end
           if deactivate == false
             diff_roles << 'New roles: '
+            #set the the roles for this user, first auth_users must have all lesser roles
+            #and auth_users must have the lowest id
+            if params[:roles].has_key?(Role.min(:id).to_s)
+              #get the other roles
+              Role.select(:id).all.each do |r|
+                if !params[:roles].has_key?(r[:id].to_s)
+                  params[:roles][r[:id].to_s] = "1" 
+                end
+              end
+            end
             params[:roles].each do |k,v|
               au.add_role(Role[k.to_i])
               roles << Role[k.to_i].name
@@ -1495,6 +1502,7 @@ module MemberTracker
           end
           l.save
           au.save
+          session[:msg] = "Success the Auth User has been reassigned"
         end
       rescue StandardError => e
         #restore roles to this member
@@ -1564,7 +1572,15 @@ module MemberTracker
           l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
           l.notes = "New authorized user added\nwith following roles #{roles}\nNotes: #{params[:notes]}"
           l.save
-          #set the the roles for this user
+          #set the the roles for this user, first auth_users must have all lesser roles
+          if params[:roles].has_key?(Role.min(:id).to_s)
+            #get the other roles
+            Role.select(:id).all.each do |r|
+              if !params[:roles].has_key?(r[:id].to_s)
+                params[:roles][r[:id].to_s] = "1" 
+              end
+            end
+          end
           params[:roles].each do |k,v|
             auth_user.add_role(Role[k.to_i])
           end
