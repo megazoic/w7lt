@@ -17,7 +17,7 @@
 		<td><%=au["callsign"]%></td>
     <td><%=au["active"] == 1 ? "Yes" : "No"%></td>
 		<td><%=au["roles"].join("<br>")%></td>
-		<td><a href="/admin/update_au_roles/<%= au['mbr_id']%>">Re-assign</a></td>
+		<td><a href="/a/update_au_roles/<%= au['mbr_id']%>">Re-assign</a></td>
 		</tr>
 		<% end %>
 	</table>

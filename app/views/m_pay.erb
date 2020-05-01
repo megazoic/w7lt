@@ -1,6 +1,6 @@
 <h3>Add a payment for member <span class="textColor"><%="#{@mbr_pay[:fname]} #{@mbr_pay[:lname]}, #{@mbr_pay[:callsign]}"%></span></h3>
 <br />
-<form action='/admin/payment/new' method='POST' name="mbrPay" onsubmit="return validateMbrPayForm();">
+<form action='/m/payment/new' method='POST' name="mbrPay" onsubmit="return validateMbrPayForm();">
   <input type="hidden" name="mbr_id" value=<%=@mbr_pay[:id]%>>
   <input type="hidden" name="mbr_type_old" value=<%=@mbr_pay[:mbr_type]%>>
   <input type="hidden" name="mbr_paid_up_old" value=<%=@mbr_pay[:paid_up]%>>
@@ -46,5 +46,5 @@
   <label for="notes_field">Notes</label>
   <textarea name="notes" id="notes_field" rows="6" cols="65"></textarea>
   <br/>
-	<input type="submit" value="Submit" onsubmit="validateMbrPayForm()"> | <a href="/list/members">Cancel</a>
+	<input type="submit" value="Submit" onsubmit="validateMbrPayForm()"> | <a href="/m/list/members">Cancel</a>
 </form>

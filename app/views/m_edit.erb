@@ -6,7 +6,7 @@
 :arrl_expire	:ares	:net	:ve	:elmer :sota
 %>
 <h3>Edit existing OR add new member: <span class="textColor"><%="#{@member[:fname]} #{@member[:lname]}"%></span></h3>
-<form action='/save/member' method='POST' name="mbrVitals" onsubmit="return validateMbrForm();">
+<form action='/m/save/member' method='POST' name="mbrVitals" onsubmit="return validateMbrForm();">
   <%if session[:auth_user_roles].include?('auth_u')%>
   <label for="payment_field">Need to submit payment information for this member?</label>
   <input type="checkbox" name="payment" id="payment_field" value="1" />
@@ -90,5 +90,5 @@
   	<input type="hidden" name=<%="mode_#{v}"%> value="0">
   	<input type="checkbox" name=<%="mode_#{v}"%> id=<%="mode_#{v}"%> value="1" <%=@member[:modes].include?(k.to_s)  ? "checked='checked'" : nil%>>
   <%end%></p>	<hr />
- 	<input type="submit" value="Submit" onsubmit="validateMbrForm()"> | <a href="/list/members">Cancel</a>
+ 	<input type="submit" value="Submit" onsubmit="validateMbrForm()"> | <a href="/m/list/members">Cancel</a>
 </form>

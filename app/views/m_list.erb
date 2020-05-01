@@ -29,7 +29,7 @@
 		<td><%=member[:lname]%></td>
 		<td><%=member[:callsign]%></td>
 		<td><%=member[:paid_up]%></td>
-		<td><a href="/edit/member/<%= member[:id]%>">edit</a> | <a href="/show/member/<%= member[:id]%>">view</a><%if session[:auth_user_roles].include?('auth_u')%> | <a href="/admin/payment/new/<%= member[:id]%>">pay</a><%end%></td>
+		<td><a href="/m/edit/member/<%= member[:id]%>">edit</a> | <a href="/m/show/member/<%= member[:id]%>">view</a><%if session[:auth_user_roles].include?('auth_u')%> | <a href="/m/payment/new/<%= member[:id]%>">pay</a><%end%></td>
 		</tr>
 		<% end %>
 	</table>

@@ -2,7 +2,7 @@ require_relative '../config/sequel'
 
 module MemberTracker
   class Member < Sequel::Model
-    one_to_one :auth_user, :class=>"MemberTracker::Auth_user", key: :a_user_id
+    one_to_one :auth_user, :class=>"MemberTracker::Auth_user", key: :mbr_id
     one_to_many :logs, :class=>"MemberTracker::Log", key: :mbr_id
     many_to_many :units, left_key: :mbr_id, right_key: :unit_id, join_table: :members_units
     one_to_many :payments, :class=>"MemberTracker::Payment", key: :mbr_id

@@ -1,11 +1,11 @@
 <h3>Update Roles for <%="#{@mbr_to_update[:fname]} #{@mbr_to_update[:lname]}, #{@mbr_to_update[:callsign]}: #{@mbr_to_update[:email]}"%></h3>
-<form action="/admin/update_auth_user" method="POST" name="auRoles" onsubmit="return validateAssignRoleForm();">
+<form action="/a/update_auth_user" method="POST" name="auRoles" onsubmit="return validateAssignRoleForm();">
 	<input type="hidden" name="mbr_id" value=<%=@mbr_to_update[:id]%>>
   <p>Authorized User Status:</p>
   <label for="active">Active</label>
-  <input type="radio" name="status" id="active" <% if @mbr_to_update[:active] == 1 %>checked<%end%> value="1" onchange="authUserStatusSet(this)">
+  <input type="radio" name="active_status" id="active" <% if @mbr_to_update[:active] == 1 %>checked<%end%> value="1" onchange="authUserStatusSet(this)">
   <label for="active">Inactive</label>
-  <input type="radio" name="status" id="inactive" <% if @mbr_to_update[:active] == 0 %>checked<%end%> value="0" onchange="authUserStatusSet(this)">
+  <input type="radio" name="active_status" id="inactive" <% if @mbr_to_update[:active] == 0 %>checked<%end%> value="0" onchange="authUserStatusSet(this)">
     <br />
   <%# expect @au_roles = [[:role_id, :role_description, :role_boolean],[]] %>
   <div id="roles">

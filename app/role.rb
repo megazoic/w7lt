@@ -1,5 +1,6 @@
 require_relative '../config/sequel'
 #roles auth_u mbr_mgr
+#save the position of the lowest role in the Roles table for the administrator (highest authority)
 
 module MemberTracker
   class Role < Sequel::Model

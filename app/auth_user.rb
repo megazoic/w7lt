@@ -2,6 +2,8 @@ require_relative '../config/sequel'
 require 'bcrypt'
 require 'securerandom'
 
+#the administrator (auth_user) has to have the role with the lowest id in the Roles table
+
 module MemberTracker
   class Auth_user < Sequel::Model
     many_to_many :roles, :class=>"MemberTracker::Role", left_key: :user_id, right_key: :role_id, join_table: :roles_users
