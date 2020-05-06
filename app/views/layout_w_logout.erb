@@ -12,15 +12,16 @@
     </form>
 	<br />
   <table>
-  <tr><td><a href="/m/dump/mbr">Members Table</a></td><td><a href="/m/query">Query the member data</a></td></tr>
-  <tr><td><a href="/m/list/members">List members</a></td><td><a href="/m/new/member">Add a new member</a></td></tr>
+  <tr><td><a href="/r/dump/mbr">Members Table</a></td><td><a href="/r/list/members">List members</a></td></tr>
+  <%if session[:auth_user_roles].include?('mbr_mgr')%>
+  <tr><td><a href="/m/query">Query the member data</a></td><td><a href="/m/new/member">Add a new member</a></td></tr>
   <tr><td><a href='/m/list/units/all'>View/Edit all units</a></td><td><a href='/m/new/unit'>Build a new Unit</a></td></tr>
-	<%if session[:auth_user_roles].include?('auth_u')%>
+  <tr><td><a href="/r/list/members">Record payment</a></td><td><a href="/m/payments/show">View payments</a></td></tr>
+  <tr><td><a href='/m/create_unit_type/'>Create/Edit/View unit types</a></td><td>Payment Rpt <a href='/m/payments/report/all/html'>HTML</a> | <a href='/m/payments/report/all/csv'>CSV</a></td></tr>
+  <tr><td><a href="/m/view_log/all">View all logs</a></td><td><a href="/m/view_log/auth_user">View your logs</a></td></tr>
+  <tr><td><a href='/m/groupsio'>Sync w/ Groups.io</a></td><td></td></tr>
+	<%end%><%if session[:auth_user_roles].include?('auth_u')%>
     <tr><td><a href="/a/list_auth_users">List administrators</a></td><td><a href="/a/create_auth_user">Add an administrator</a></td></tr>
-    <tr><td><a href="/m/list/members">Record payment</a></td><td><a href="/m/payments/show">View payments</a></td></tr>
-    <tr><td><a href='/m/create_unit_type/'>Create/Edit/View unit types</a></td><td>Payment Rpt <a href='/m/payments/report/all/html'>HTML</a> | <a href='/m/payments/report/all/csv'>CSV</a></td></tr>
-    <tr><td><a href="/m/view_log/all">View all logs</a></td><td><a href="/m/view_log/auth_user">View your logs</a></td></tr>
-    <tr><td><a href='/m/groupsio'>Sync w/ Groups.io</a></td></tr>
 	<%end%>
   </table
 	<br />

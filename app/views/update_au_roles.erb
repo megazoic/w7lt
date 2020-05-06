@@ -1,19 +1,14 @@
 <h3>Update Roles for <%="#{@mbr_to_update[:fname]} #{@mbr_to_update[:lname]}, #{@mbr_to_update[:callsign]}: #{@mbr_to_update[:email]}"%></h3>
 <form action="/a/update_auth_user" method="POST" name="auRoles" onsubmit="return validateAssignRoleForm();">
 	<input type="hidden" name="mbr_id" value=<%=@mbr_to_update[:id]%>>
-  <p>Authorized User Status:</p>
-  <label for="active">Active</label>
-  <input type="radio" name="active_status" id="active" <% if @mbr_to_update[:active] == 1 %>checked<%end%> value="1" onchange="authUserStatusSet(this)">
-  <label for="active">Inactive</label>
-  <input type="radio" name="active_status" id="inactive" <% if @mbr_to_update[:active] == 0 %>checked<%end%> value="0" onchange="authUserStatusSet(this)">
+  <p>Authorized User Status: <%if @mbr_to_update[:role_id].is_a?(Integer)%>Active<%else%>Inactive<%end%></p>
     <br />
-  <%# expect @au_roles = [[:role_id, :role_description, :role_boolean],[]] %>
+  <%# expect @au_roles = [[:role_id, :role_description],[]] %>
   <div id="roles">
-  <p>Authorized User Roles:</p>
+  <p>Authorized User Role:</p>
 	<% for role in @au_roles%>
-    <label for=<%="#{role[0]}"%>><%=role[1]%></label>
-		<input type="checkbox" name=<%="roles[#{role[0]}]"%> id=<%="#{role[0]}"%> value=1
-		<% if role[2] == 1 %>checked<% end %>>
+    <label for=<%="#{role[1]}"%>><%=role[2]%></label>
+		<input type="radio" name="role_id" value=<%="#{role[1]}"%> <% if @mbr_to_update[:role_id] == role[1] %>checked="checked"<% end %>>
 	<% end %>
   </div>
   <br />

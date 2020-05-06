@@ -67,8 +67,12 @@ module MemberTracker
           message['auth_user_id'] = auth_user.id
           #get roles
           au_roles = []
-          auth_user.roles.each do |r|
-            au_roles << r.name
+          auth_user.get_roles("authenticate").each do |r|
+            au_roles << r
+          end
+          #check to see if this auth_user is active ('inactive' only present when it is the users role)
+          if au_roles.include?('inactive')
+            message['error'] = 'inactive'
           end
           message['auth_user_roles'] = au_roles
           #set last_login
@@ -92,10 +96,6 @@ module MemberTracker
           #add new
           l = Log.new(mbr_id: auth_user.mbr_id, a_user_id: auth_user.id, ts: Time.now, action_id: action_id, notes: "login")
           l.save
-          #check to see if this auth_user is active
-          if auth_user.active == 0
-            message['error'] = 'inactive'
-          end
         else
           message['error'] = 'password mismatch'
         end
@@ -108,6 +108,29 @@ module MemberTracker
       encrypted_pwd = BCrypt::Password.create(au_password).to_s
       au = Auth_user.where(mbr_id: mbr_id).update(password: encrypted_pwd, new_login: 0)
     end
+    def get_roles(type = "default")
+      #returns an array [[role_id, role_description],[]]
+      au_role = self.roles.first
+      roles = Role.map(){|x| [x.rank, x.id, x.description, x.name]}
+      roles.sort!
+      #if this user has a role different from 'inactive' need to pull last element (the 'inactive' one)
+      if au_role.name != 'inactive'
+        roles.pop
+      end
+      au_roles = []
+      roles.each do |r|
+        if r[0] >= au_role.rank
+          if type == "default"
+            au_roles << r[1,2]
+          elsif type == "authenticate"
+            #just need the name
+            au_roles << r[3]
+          end
+        end
+      end
+      return au_roles
+    end
+    
   end
 end
   

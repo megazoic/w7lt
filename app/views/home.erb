@@ -3,11 +3,11 @@
 	<table>
 		<%@member_lnames.each_slice(5) do |member| %>
 		<tr>
-		<td><%if !member[0].nil?%><a href="/m/show/member/<%=member[0].id%>"><%=member[0].lname%><%end%></td>
-		<td><%if !member[1].nil?%><a href="/m/show/member/<%=member[1].id%>"><%=member[1].lname%><% end %></td>
-		<td><%if !member[2].nil?%><a href="/m/show/member/<%=member[2].id%>"><%=member[2].lname%><% end %></td>
-		<td><%if !member[3].nil?%><a href="/m/show/member/<%=member[3].id%>"><%=member[3].lname%><% end %></td>
-		<td><%if !member[4].nil?%><a href="/m/show/member/<%=member[4].id%>"><%=member[4].lname%><% end %></td>
+		<td><%if !member[0].nil?%><a href="/r/show/member/<%=member[0].id%>"><%=member[0].lname%><%end%></td>
+		<td><%if !member[1].nil?%><a href="/r/show/member/<%=member[1].id%>"><%=member[1].lname%><% end %></td>
+		<td><%if !member[2].nil?%><a href="/r/show/member/<%=member[2].id%>"><%=member[2].lname%><% end %></td>
+		<td><%if !member[3].nil?%><a href="/r/show/member/<%=member[3].id%>"><%=member[3].lname%><% end %></td>
+		<td><%if !member[4].nil?%><a href="/r/show/member/<%=member[4].id%>"><%=member[4].lname%><% end %></td>
 		</tr>
 		<%end%>
 	</table>

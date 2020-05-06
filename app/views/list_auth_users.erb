@@ -6,7 +6,6 @@
 			<th>First Name</th>
 			<th>Last Name</th>
 			<th>call</th>
-      <th>Active?</th>
 			<th>Authorized to:</th>
 			<th></th>
 		</tr>
@@ -15,7 +14,6 @@
 		<td><%=au["fname"]%></td>
 		<td><%=au["lname"]%></td>
 		<td><%=au["callsign"]%></td>
-    <td><%=au["active"] == 1 ? "Yes" : "No"%></td>
 		<td><%=au["roles"].join("<br>")%></td>
 		<td><a href="/a/update_au_roles/<%= au['mbr_id']%>">Re-assign</a></td>
 		</tr>

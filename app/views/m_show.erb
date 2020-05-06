@@ -27,4 +27,4 @@ Volunteer:<br />VE <span class="highlight"><%=@member[:ve].to_i == 0 ? "N" : "Y"
   <%end%>
 <%end%>
 <br />
-<a href="/m/edit/member/<%= @member[:id]%>">Edit</a>
+<%if session[:auth_user_roles].include?('mbr_mgr') || MemberTracker::Auth_user[session[:auth_user_id]].member.id == @member[:id]%><a href="/m/edit/member/<%= @member[:id]%>">Edit</a><%end%>
