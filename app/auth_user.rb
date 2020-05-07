@@ -8,7 +8,7 @@ module MemberTracker
   class Auth_user < Sequel::Model
     #many_to_one :role, :class=>"MemberTracker::Role", left_key: :user_id, right_key: :role_id, join_table: :roles_users
     many_to_one :role, :class=>"MemberTracker::Role", key: :role_id
-    one_to_one :member, :class=>"MemberTracker::Member", key: :mbr_id
+    many_to_one :member, :class=>"MemberTracker::Member", key: :mbr_id
     one_to_many :logs, :class=>"MemberTracker::Log", key: :a_user_id
     one_to_many :unit_types, :class=>"MemberTracker::UnitType", key: :a_user_id
     

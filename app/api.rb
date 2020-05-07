@@ -43,7 +43,7 @@ module MemberTracker
       #need to make exception for read_only editing their own profile
       ro_test_route = params['splat'][0].split('/')
       ro_action = ro_test_route.shift
-      mbr_id = Auth_user[session[:auth_user_id]].member.id.to_s
+      mbr_id = Auth_user[session[:auth_user_id]].mbr_id.to_s
       #test for matching id
       allow = false
       if ro_action == 'save'
