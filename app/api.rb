@@ -1386,27 +1386,37 @@ module MemberTracker
           action_id = x.id
         end
       }
+      notes_only = false
       #start building the log string
       l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
       au = Auth_user.where(mbr_id: params[:mbr_id]).first
-      old_au_role = au.roles.first
-      new_au_role = Role[params[:role_id].to_i].name
+      old_au_role = au.roles.first.name
+      new_au_role = Role[params[:role_id]].name
       #if there's something in notes put a newline after it and add it to the log
       l.notes = params[:notes] == '' ? '' : "#{params[:notes]}\n"
       #was there a role change?
       if new_au_role == old_au_role
-        #nothing was changed get out of here
-        session[:msg] = "The Auth User's new role was not different from old: No Change made"
-        redirect '/a/list_auth_users'
-      else
-        l.notes << "role changed from #{old_au_role} to #{new_au_role}"
+        #look to see if notes were taken
+        if params[:notes] == ''
+          #nothing was changed get out of here
+          session[:msg] = "The Auth User's new role was not different from old: No Change made"
+          redirect '/a/list_auth_users'
+        else
+          notes_only = true
+        end
+      elsif old_au_role == "inactive"
+        #reactivating this auth user so need to reset password
+        au.new_login = 1
       end
+      l.notes << "role changed from #{old_au_role} to #{new_au_role}"
       begin
         DB.transaction do
           l.save
-          au.remove_all_roles
-          au.add_role(params[:role_id])
-          au.save
+          if notes_only == false
+            au.remove_all_roles
+            au.add_role(params[:role_id])
+            au.save
+          end
           session[:msg] = "Success the Auth User has been reassigned"
         end
       rescue StandardError => e

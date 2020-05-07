@@ -1,7 +1,7 @@
 <h3>Update Roles for <%="#{@mbr_to_update[:fname]} #{@mbr_to_update[:lname]}, #{@mbr_to_update[:callsign]}: #{@mbr_to_update[:email]}"%></h3>
 <form action="/a/update_auth_user" method="POST" name="auRoles" onsubmit="return validateAssignRoleForm();">
 	<input type="hidden" name="mbr_id" value=<%=@mbr_to_update[:id]%>>
-  <p>Authorized User Status: <%if @mbr_to_update[:role_id].is_a?(Integer)%>Active<%else%>Inactive<%end%></p>
+  <p>Authorized User Status: <h4><%if MemberTracker::Role[@mbr_to_update[:role_id]].name != "inactive"%>Active<%else%>Inactive<%end%></h4></p>
     <br />
   <%# expect @au_roles = [[:role_id, :role_description],[]] %>
   <div id="roles">
