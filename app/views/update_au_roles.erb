@@ -1,18 +1,18 @@
 <h3>Update Roles for <%="#{@mbr_to_update[:fname]} #{@mbr_to_update[:lname]}, #{@mbr_to_update[:callsign]}: #{@mbr_to_update[:email]}"%></h3>
 <form action="/a/update_auth_user" method="POST" name="auRoles" onsubmit="return validateAssignRoleForm();">
 	<input type="hidden" name="mbr_id" value=<%=@mbr_to_update[:id]%>>
-  <p>Authorized User Status: <h4><%if MemberTracker::Role[@mbr_to_update[:role_id]].name != "inactive"%>Active<%else%>Inactive<%end%></h4></p>
-    <br />
-  <%# expect @au_roles = [[:role_id, :role_description],[]] %>
+  <p>Authorized User Status: <strong><%if @mbr_to_update[:role].name != "inactive"%>Active<%else%>Inactive<%end%></strong></p>
+  <%# expect @au_roles = [[:role, :role_description],[]] %>
   <div id="roles">
   <p>Authorized User Role:</p>
+  Rolls are hierarchical, a roll includes all rolls of lower rank<br />
 	<% for role in @au_roles%>
-    <label for=<%="#{role[1]}"%>><%=role[2]%></label>
-		<input type="radio" name="role_id" value=<%="#{role[1]}"%> <% if @mbr_to_update[:role_id] == role[1] %>checked="checked"<% end %>>
+    <label for=<%="#{role[1]}"%>><%="#{role[2]} rank: #{['hi', 'med', 'lo', 'none'][role[0]]}"%></label>
+		<input type="radio" name="role_id" value=<%="#{role[1]}"%> <% if @mbr_to_update[:role].id == role[1] %>checked="checked"<% end %>><br />
 	<% end %>
   </div>
   <br />
-  <label for="notes_field">Leave notes for this change in roles here</label>
+  Leave notes for this change in roles here<br />
   <textarea name="notes" id="notes_field" rows="3" cols="65"></textarea>
   <br />
 	<input type="submit" value="Submit" onsubmit="validateAssignRoleForm()">

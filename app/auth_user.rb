@@ -6,8 +6,9 @@ require 'securerandom'
 
 module MemberTracker
   class Auth_user < Sequel::Model
-    many_to_many :roles, :class=>"MemberTracker::Role", left_key: :user_id, right_key: :role_id, join_table: :roles_users
-    many_to_one :member, :class=>"MemberTracker::Member", key: :mbr_id
+    #many_to_one :role, :class=>"MemberTracker::Role", left_key: :user_id, right_key: :role_id, join_table: :roles_users
+    many_to_one :role, :class=>"MemberTracker::Role", key: :role_id
+    one_to_one :member, :class=>"MemberTracker::Member", key: :mbr_id
     one_to_many :logs, :class=>"MemberTracker::Log", key: :a_user_id
     one_to_many :unit_types, :class=>"MemberTracker::UnitType", key: :a_user_id
     
@@ -70,7 +71,7 @@ module MemberTracker
           auth_user.get_roles("authenticate").each do |r|
             au_roles << r
           end
-          #check to see if this auth_user is active ('inactive' only present when it is the users role)
+          #check to see if this auth_user is active
           if au_roles.include?('inactive')
             message['error'] = 'inactive'
           end
@@ -110,7 +111,7 @@ module MemberTracker
     end
     def get_roles(type = "default")
       #returns an array [[role_id, role_description],[]]
-      au_role = self.roles.first
+      au_role = self.role
       roles = Role.map(){|x| [x.rank, x.id, x.description, x.name]}
       roles.sort!
       #if this user has a role different from 'inactive' need to pull last element (the 'inactive' one)

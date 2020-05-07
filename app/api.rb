@@ -108,7 +108,6 @@ module MemberTracker
         #########end for rack testing###########
         #########begin web configuration ############
         session[:auth_user_id] = auth_user_result['auth_user_id']
-        puts "roles are #{auth_user_result['auth_user_roles']}"
         session[:auth_user_roles] = auth_user_result['auth_user_roles']
         #########end web configuration ############
         redirect '/home'
@@ -1371,9 +1370,9 @@ module MemberTracker
     end
     get '/a/update_au_roles/:id' do
       @mbr_to_update = Member.select(:id, :fname, :lname, :callsign, :email)[params[:id].to_i]
+      #get role associated with this auth_user
       au = Auth_user.where(mbr_id: params[:id]).first
-      #does this auth_user have a role?
-      @mbr_to_update[:role_id] = Auth_user[au.values[:id]].roles.first.nil? ? 'na' : Auth_user[au.values[:id]].roles.first.id
+      @mbr_to_update[:role] = au.role
       @au_roles = Role.map(){|x| [x.rank, x.id, x.description]}
       @au_roles.sort!
       erb :update_au_roles, :layout => :layout_w_logout
@@ -1390,11 +1389,12 @@ module MemberTracker
       #start building the log string
       l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
       au = Auth_user.where(mbr_id: params[:mbr_id]).first
-      old_au_role = au.roles.first.name
+      old_au_role = au.role.name
       new_au_role = Role[params[:role_id]].name
       #if there's something in notes put a newline after it and add it to the log
       l.notes = params[:notes] == '' ? '' : "#{params[:notes]}\n"
       #was there a role change?
+      new_pwd = ''
       if new_au_role == old_au_role
         #look to see if notes were taken
         if params[:notes] == ''
@@ -1407,17 +1407,23 @@ module MemberTracker
       elsif old_au_role == "inactive"
         #reactivating this auth user so need to reset password
         au.new_login = 1
+        #reset password
+        new_pwd = SecureRandom.hex[0,6]
+        au.password = BCrypt::Password.create(new_pwd)
       end
       l.notes << "role changed from #{old_au_role} to #{new_au_role}"
       begin
         DB.transaction do
           l.save
           if notes_only == false
-            au.remove_all_roles
-            au.add_role(params[:role_id])
+            au.role_id = params[:role_id]
             au.save
           end
-          session[:msg] = "Success the Auth User has been reassigned"
+          out_msg = "Success the Auth User has been reassigned"
+          if !new_pwd.empty?
+            out_msg << "\n new password is #{new_pwd} with username #{Member[params[:mbr_id]].email}, 48 hrs to reset password"
+          end
+          session[:msg] = out_msg
         end
       rescue StandardError => e
         session[:msg] = "The data was not entered successfully\n#{e}"
@@ -1432,11 +1438,11 @@ module MemberTracker
       erb :set_au_roles, :layout => :layout_w_logout
     end
     get '/a/create_auth_user' do
-      #first, remove current user from this list
       @tmp_msg = session[:msg]
       session[:msg] = nil
-      mbr_id = Auth_user[session[:auth_user_id]].mbr_id
-      @sel_au_from_mbrs = Member.exclude(id: mbr_id).select(:id, :fname, :lname, :callsign, :email).all
+      #only want members who are not already auth users
+      existing_au_mbr_ids = Auth_user.map{|x| x.mbr_id}
+      @sel_au_from_mbrs = Member.exclude(id: existing_au_mbr_ids).select(:id, :fname, :lname, :callsign, :email).all
       erb :create_au, :layout => :layout_w_logout
     end
     post '/a/create_auth_user' do
@@ -1471,43 +1477,20 @@ module MemberTracker
           action_id = x.id
         end
       }
-      role = Role[params[:role_id]].name
-=begin
-      roles = ""
-      params[:roles].each do |k,v|
-        roles << "#{Role[k].name}, "
-      end
-      roles.chomp!(', ')
-      role_names = []
-=end
       begin
         DB.transaction do
           auth_user = Auth_user.new(:password => encrypted_pwd, :mbr_id => params[:mbr_id].to_i,
-            :time_pwd_set => Time.now, :new_login => 1, :last_login => Time.now)
+            :time_pwd_set => Time.now, :new_login => 1, :last_login => Time.now, :role_id => params[:role_id])
           auth_user.save
           l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
-          l.notes = "New authorized user added\nwith following role #{role}"
+          l.notes = "New authorized user added\nwith following role #{Role[params[:role_id]].name}"
           if !params[:notes].empty?
             l.notes << "\nNotes: #{params[:notes]}"
           end
           l.save
-          #set the the role for this user who will pick up all roles of lesser rank in the authentication process
-          auth_user.add_role(Role[params[:role_id]])
-=begin
-          if params[:roles].has_key?(Role.min(:id).to_s)
-            #get the other roles
-            Role.select(:id).all.each do |r|
-              if !params[:roles].has_key?(r[:id].to_s)
-                params[:roles][r[:id].to_s] = "1" 
-              end
-            end
-          end
-          params[:roles].each do |k,v|
-            auth_user.add_role(Role[k.to_i])
-          end
-=end
         end
-        session[:msg] = "Success; temp password for member #{member_set[0].values[:callsign]} and username #{member_set[0].values[:email]} is #{password}"
+        session[:msg] = "Success; temp password is #{password} for member #{member_set[0].values[:callsign]} with username #{member_set[0].values[:email]}\n
+        they have 48 hrs to reset their password"
         redirect "/a/list_auth_users"
       rescue StandardError => e
         session[:msg] = "error: could not create authorized user.\n#{e}"
