@@ -1,0 +1,27 @@
+<h3>Events List: <%=@event_type%></h3>
+<table>
+<tr>
+  <%if @event_type == 'all'%>
+    <th>Event Type</th>
+  <%end%>
+	<th>Event Creator</th>
+	<th>Event Contact</th>
+	<th>Date</th>
+  <th>Duration</th>
+  <th>Description</th>
+  <th>Members Attended</th>
+</tr>
+<%@events.each do |event|%>
+		<tr>
+    <%if @event_type == 'all'%>
+      <td><%=@event.name%></td>
+    <%end%>
+		<td><%=MemberTracker::Auth_user[event.a_user_id].member.callsign%></td>
+		<td><%="#{MemberTracker::Member[event.mbr_id].lname}, #{MemberTracker::Member[event.mbr_id].callsign}"%></td>
+		<td><%=event.ts.strftime("%m-%d-%y")%></td>
+    <td><%="#{event.duration} hrs"%></td>
+    <td><%=event.descr%></td>
+    <td><a href="/m/events/show_attendees/<%=event.id%>">show attendees</a> | <a href="/m/events/edit/<%=event.id%>">edit</a></td>
+		</tr>
+<%end%>
+</table>

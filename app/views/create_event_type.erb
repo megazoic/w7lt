@@ -1,0 +1,50 @@
+<br /><h3>Event Types currently available</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Desc</th>
+<th>Created by</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<%for et in @event_types%>
+<tr>
+<td><%=et[:name]%></td>
+<td><%=et[:descr]%></td>
+<td><%=et.auth_users.member.callsign%></td>
+<td><a href=<%=URI.escape("/m/events/list/#{et[:id]}")%>>List</a></td>
+</tr>
+<%end%>
+</tbody>
+</table>
+</br><h3>Edit Existing Event Types</h3>
+<%if @event_types.length < 5%>
+  <%@event_types.each do |et|%>
+    <a href="/m/create_event_type/<%=et.id%>"><%=et.name%></a></br>
+  <%end%>
+<%else%>
+  <table>
+    <%@event_types.each_slice(2) do |et|%>
+      <tr><td><a href="/m/create_event_type/<%=et[0].id%>"><%=et[0].name%></a></td>
+      <%if et.length == 2%>
+        <td><a href="/m/create_event_type/<%=et[1].id%>"><%=et[1].name%></a></td></tr>
+      <%else%>
+        <td></td></tr>
+      <%end%>
+    <%end%>
+  </table>
+<%end%>
+
+</br><h3>Create/Edit New Event Event</h3>
+<form action='/m/events/create_type/<% if !@edit_event_type.nil?%><%=@edit_event_type.id%><%end%>' method='POST' name='new_event_type' onsubmit="return validateEventTypeForm()">
+<input type='hidden' id='editing_old_type' value=<% if !@edit_event_type.nil? %>'1'<%else%>'0'<%end%>>
+<input type='hidden' id='old_type_names' value='<%=@old_type_names%>'>
+<br/><input type='text' name='event_type_name' id='new_type_name' <% if !@edit_event_type.nil?%>value='<%=@edit_event_type.name%>'<%end%>>
+<label for="event_name">Short Name of Event</label>
+<br/><input type='text' name='event_type_descr' <% if !@edit_event_type.nil?%>value='<%=@edit_event_type.descr%>'<%end%>>
+<label for="event_name">Description of type</label>
+<br/>
+<input type='submit' value='Submit'/> | <a href="/home">Cancel</a>
+</form>    

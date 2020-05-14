@@ -5,6 +5,7 @@ module MemberTracker
     one_to_one :auth_user, :class=>"MemberTracker::Auth_user", key: :mbr_id
     one_to_many :logs, :class=>"MemberTracker::Log", key: :mbr_id
     many_to_many :units, left_key: :mbr_id, right_key: :unit_id, join_table: :members_units
+    many_to_many :events, left_key: :mbr_id, right_key: :event_id, join_table: :members_events
     one_to_many :payments, :class=>"MemberTracker::Payment", key: :mbr_id
     one_to_many :audit_logs, :class=>"MemberTracker::AuditLog", key: :mbr_id
     #keep sk last so can remove for payment route

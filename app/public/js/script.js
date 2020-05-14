@@ -28,6 +28,15 @@ function duesSet(selectElement){
 		$("message").style.display = "none";
 	}
 }
+function guestsSet(inputElement){
+	//set visibility of new guests table in create_event.erb
+	if (inputElement.checked){
+		$("message").style.display = "block";
+	}else{
+		$("message").style.display = "none";
+	}
+		
+}
 function authUserStatusSet(inputElement){
 	//set visibility of authorized user roles based on their status
 	var ieValue = inputElement.value;

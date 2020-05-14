@@ -81,3 +81,7 @@ input[type=submit] {
   content: "&#10006;";
 } 
 /* End w3schools example*/
+/* Misc styles */
+.lgtext {
+	width: 400px; height: 100px;
+}

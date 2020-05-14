@@ -1,0 +1,14 @@
+<h3>List of attendees for Event <%=@event.name%> on <%=@event.ts.strftime("%B %d, %Y")%></h3>
+<br />
+Contact for event: <%=@event.members.first.callsign%>
+<br />Attendees already in our database<br />
+<%@event.members.each do |mbr|%>
+  <p><%="#{mbr.fname} #{mbr.lname}, #{mbr.callsign}: paidup? "%><%=mbr.paid_up == Time.now.year ? "yes" : "no"%></p>
+<%end%>
+<br />
+<%if !@guests.empty?%>
+Attendees just added to database enclosed in {} those who aren't in the database enclosed in [] (should these be entered?)'</br>
+<%@guests.each do |guest|%>
+  <p><%=guest%></p>
+<%end%>
+<%end%>

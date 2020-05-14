@@ -1,0 +1,53 @@
+<br /><h3>Create new event</h3>
+<form action='/m/events/update' method='POST' name='edit_event' onsubmit="return validateUpdateEventForm()">
+<label for='notes'>Notes for log</label>
+<input type='text' name='notes'>
+<br />
+Event Type:
+<select id="type" name="event_type_id">
+  <option value="none" selected>Select event type</option>
+  <% for event_type in @event_types %>
+    <option value=<%=event_type[:id]%>><%=event_type[:name]%></option>
+  <%end%>
+</select>
+<br/><label for="name">Name of Event</label>
+<input type='text' name='name' id='new_type_name'>
+<br/><label for="description">Description of event</label>
+<input type='text' name='descr'>
+<br /><label for="duration">Duration of event (hrs)</label>
+<select name='duration' id='duration'>
+<option>0</option>
+<option>1</option>
+<option>2</option>
+<option>3</option>
+<option>4</option>
+<option>5</option>
+</select>
+<br />Duration units<br />
+Hours<input type='radio' name='duration_units' value='hrs'> | 
+Days<input type='radio' name='duration_units' value='days'>
+<br/>
+<h3>Pick One Event Contact and All Attendees</h3> (put other organzers in the description)
+<br/><label for="guests">Add Guest Attendess separated by a semicolon ';'</label><br/>
+<textarea name='guests' id='guests' class='lgtext'></textarea>
+	<table>
+		<tr>
+      <th>Organzer</th>
+			<th>First Name</th>
+			<th>Last Name</th>
+			<th>call</th>
+			<th>attendee</th>
+		</tr>
+		<% for member in @mbrs %>
+		<tr>
+		<td><input type='radio' name='mbr_id' value=<%=member[:id]%>></td>
+		<td><%=member[:fname]%></td>
+		<td><%=member[:lname]%></td>
+		<td><%=member[:callsign]%></td>
+		<td><input type='checkbox' name='id:<%=member[:id]%>' value='1'/></td>
+		</tr>
+		<% end %>
+	</table>
+
+<input type='submit' value='Submit'/> | <a href="/home">Cancel</a>
+</form>    

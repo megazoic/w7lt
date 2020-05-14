@@ -11,6 +11,7 @@ module MemberTracker
     many_to_one :member, :class=>"MemberTracker::Member", key: :mbr_id
     one_to_many :logs, :class=>"MemberTracker::Log", key: :a_user_id
     one_to_many :unit_types, :class=>"MemberTracker::UnitType", key: :a_user_id
+    one_to_many :event_types, :class=>"MemberTracker::EventType", key: :a_user_id
     
     def authenticate(auth_user_credentials)
       #auth_user_credentials are :email, :password
