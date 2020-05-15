@@ -229,7 +229,7 @@ module MemberTracker
       "g0:fname"=>"Myron", "g0:lname"=>"Dembo", "g0:callsign"=>"A7MYR", "g0:email"=>"*guest email",
       "g0:notes"=>"some notes for guest0",..., "mbr_id"=>"478", "id:481"=>"1", "id:479"=>"1"}
 =end
-      #validate presence of contact member, event type
+      #validate presence of contact member, event type, date
       valid_form = true
       if params[:mbr_id].nil?
         #invalid cuz no event contact
@@ -239,9 +239,18 @@ module MemberTracker
         #invalid cuz need an event type
         session[:msg] = "Error; the event could not be created\nEvent type missing"
         valid_form = false
+      elsif !/202\d-[01]\d-[0-3]\d\s+[012]\d:[0-5]\d/.match(params[:event_date]) #'MM-DD-YYYY HH:MM'
+        session[:msg] = "Error; the event could not be created\nEvent date incorrectly formatted"
+        valid_form = false
       end
       if valid_form == false
         redirect "/m/events/create"
+      end
+      #are we updating an existing event?
+      existing_event_id = nil
+      if !params[:event_id].nil?
+        existing_event_id = params[:event_id].to_i
+        params.delete(:event_id)
       end
       #get action ids
       #need to create a log for this transaction
@@ -291,24 +300,53 @@ module MemberTracker
         guest.new_guests << guest.tmp_vitals
       end
       l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: actions["event"])
+      #look for existing log
+      recent_log_vitals = {:a_user => nil, :ts => nil, :log_id => nil}
+      if !existing_event_id.nil?
+        recent_log = Event[existing_event_id].log_dataset.order(:id).all.shift
+        auth_user = "#{recent_log.auth_user.member.fname} #{recent_log.auth_user.member.lname},
+        #{recent_log.auth_user.member.callsign} "
+        recent_log_vitals = {:a_user => auth_user, :ts => recent_log[:ts].strftime("%m-%d-%y"),
+        :log_id => recent_log[:id]}
+      end
       if !params[:notes].nil?
-        l.notes = "#{params[:notes]}"
+        if existing_event_id.nil?
+          l.notes = "#{params[:notes]}"
+        else
+          l.notes = "MODIFIED NOTES: previous auth user #{recent_log_vitals[:a_user]},
+          at #{recent_log_vitals[:ts]}\n#{params[:notes]}, log id #{recent_log_vitals[:log_id]}"
+        end
         params.delete(:notes)
       end
-      ga = "\nguest attendees:#{params[:guests]}"
-      params.delete(:guests)
-      l.notes.nil? ? l.notes = ga : l.notes << ga
-      params[:ts] = Time.now
-      event = Event.new(params)
+      if !params[:guests].nil?
+        ga = "guest attendees:#{params[:guests]}"
+        params.delete(:guests)
+        l.notes.nil? ? l.notes = ga : l.notes << ("\n" + ga)
+      end
+      params[:ts] = "#{DateTime.parse(params[:event_date])}"
+      params.delete(:event_date)
+      #at this point params should be params are {"event_type_id"=>"1", "name"=>"fdim :update ;update2", "descr"=>"a desc :update :update2", "duration"=>"3", "duration_units"=>"hrs", "mbr_id"=>"481", "ts"=>"2020-05-15 15:01:28 -0700"}
+      event = nil
+      if !existing_event_id.nil?
+        event = Event[existing_event_id]
+        event.update(params)
+      else
+        event = Event.new(params)
+      end
       event[:a_user_id] = session[:auth_user_id]
       begin
         DB.transaction do
           event.save
           l.event_id = event.id
+          if !existing_event_id.nil?
+            #remove old attendees before adding new
+            event.remove_all_members
+          end
           guest.attendees.each do |mbr_id|
             event.add_member(mbr_id)
           end
-          if !guest.new_guests.empty?
+          if !guest.new_guests.empty? && existing_event_id.nil?
+            #we don't expect to have new guests with event update
             #need to check if we already have the guest in our database
             mbrs = Member.select(:fname, :lname, :callsign, :email).all
             guest.new_guests.each do |ng|
@@ -499,7 +537,20 @@ module MemberTracker
       @event = Event[params[:id]]
       @event_types = EventType.all
       @mbrs = Member.select(:id, :fname, :lname, :callsign).all
-      erb :create_event, :layout => :layout_w_logout
+      #need to parse the log; should be in two parts 1) general notes 2) guest's not added to db
+      notes = @event.log.first.notes.split("\n")
+      @guest_notes = ''
+      @pared_notes = ''
+      if notes.length > 1
+        @guest_notes = notes.pop
+        @pared_notes = notes * "-"
+      end
+      #get members who have already been entered as attending this event
+      @mbrs_attending = []
+      @event.members.each do |mbr|
+        @mbrs_attending << mbr.id
+      end
+      erb :e_edit, :layout => :layout_w_logout
     end
     get '/r/list/members/?:event?' do
       @member = DB[:members].select(:id, :lname, :fname, :callsign, :paid_up, :mbr_type).order(:lname, :fname).all

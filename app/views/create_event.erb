@@ -2,7 +2,9 @@
 inline js used to select contents of input text-->
 <br /><h3>Create new event</h3>
 <form action='/m/events/create' method='POST' name='new_event' onsubmit="return validateCreateEventForm()">
-<label for='notes'>Notes for log</label>
+<label for='event_date'>Date and time of Event (format is 'YYYY-MM-DD HH:MM')</label>
+<input type='text' name='event_date' value='<%=Time.now.strftime("%Y-%m-%d %H:%M")%>'>
+<br /><label for='notes'>Notes for log</label>
 <input type='text' name='notes'>
 <br />
 Event Type (this field is required):
