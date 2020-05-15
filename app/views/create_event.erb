@@ -1,11 +1,11 @@
 <!--see https://stackoverflow.com/questions/4067469/selecting-all-text-in-html-text-input-when-clicked for exception to
 inline js used to select contents of input text-->
 <br /><h3>Create new event</h3>
-<form action='/m/events/create' method='POST' name='new_event' onsubmit="return validateEventForm()">
+<form action='/m/events/create' method='POST' name='new_event' onsubmit="return validateCreateEventForm()">
 <label for='notes'>Notes for log</label>
 <input type='text' name='notes'>
 <br />
-Event Type:
+Event Type (this field is required):
 <select id="type" name="event_type_id">
   <option value="none" selected>Select event type</option>
   <% for event_type in @event_types %>
@@ -29,20 +29,21 @@ Event Type:
 Hours<input type='radio' name='duration_units' value='hrs'> | 
 Days<input type='radio' name='duration_units' value='days'>
 <br/>
-<h3>Pick One Event Contact (Organizer column) and All Attendees</h3><h4>(note for other organzers in go the description)</h4>
+<h3>Pick One Event Contact (Organizer column, this field is required) and All Attendees</h3><h4>(note names of other organzers go in the description)</h4>
 <br/><label for="guests">Add Attendees with low probability of becoming a member (eg. out of town folks)
 </label><br/>(entries separated by a semicolon and no spaces &apos;Guest,First;Guest,Second&apos;)<br/>
 <textarea name='guests' id='guests' class='lgtext'></textarea>
 <br/><label for="has_guests">Are there Guests to add to the database? Please check in table below to see if they haven&apos;t already been added</label>
 <input type='checkbox' name='has_guests' onchange="guestsSet(this)"/>
 <div id="message">
-At least two of the 4 fields for a guest need to be filled out
+At least two of the 4 fields (not including notes) for a guest need to be filled out
 <br/><table>
 <tr>
 	<th>First Name</th>
 	<th>Last Name</th>
 	<th>Callsign</th>
 	<th>Email</th>
+	<th>Notes</th>
 </tr>
 <%count = 0%>
 <%5.times do%>
@@ -50,7 +51,8 @@ At least two of the 4 fields for a guest need to be filled out
   <td><input type='text' name=<%="g#{count}:fname"%> value='*guest first name' onClick="this.select();"></td>
   <td><input type='text' name=<%="g#{count}:lname"%> value='*guest last name' onClick="this.select();"></td>
   <td><input type='text' name=<%="g#{count}:callsign"%> value='*guest callsign' onClick="this.select();"></td>
-  <td><input type='text' name=<%="g#{count}:email"%> value='*guest email' onClick="this.select();"></td>
+  <td><input type='text' name=<%="g#{count}:email"%> class='guestEmail' value='*guest email' onClick="this.select();"></td>
+  <td><textarea name=<%="g#{count}:notes"%> class='mdtext' onClick="this.select();">*guest notes</textarea></td>
 </tr>
 <%count = count + 1%>
 <%end%>

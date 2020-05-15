@@ -14,7 +14,7 @@
 <%@events.each do |event|%>
 		<tr>
     <%if @event_type == 'all'%>
-      <td><%=@event.name%></td>
+      <td><%=event.event_type.name%></td>
     <%end%>
 		<td><%=MemberTracker::Auth_user[event.a_user_id].member.callsign%></td>
 		<td><%="#{MemberTracker::Member[event.mbr_id].lname}, #{MemberTracker::Member[event.mbr_id].callsign}"%></td>

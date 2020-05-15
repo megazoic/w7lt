@@ -353,6 +353,40 @@ function validatePayDestroy(){
 	}
 	return true
 }
+function validateCreateEventForm(){
+	//need to have a member contact, event type
+	var event_type = $('type').value;
+	if (event_type == "none"){
+		alert("please select an event type");
+		return false;
+	}
+	var mbr_selected = false;
+        var chx = document.getElementsByName('mbr_id');
+        for (var i = 0; i < chx.length; i++) {
+		if (chx[i].checked) {
+            mbr_selected = true;
+          }
+        }
+	if (mbr_selected == false){
+		alert("please select an event contact");
+		return false;
+	}
+	//need to validate guest emails
+	//default is '*guest email' which should be allowed
+	var g_emails = document.getElementsByClassName('guestEmail');
+	//a close approximation
+	var emailPattern = /^\w[-.\w]*@[-a-z0-9]+(\.[-a-z0-9]+)*\.(com|edu|info|mil|net|org|biz|[a-z][a-z])$/i;
+	for(var i = 0; i < g_emails.length; i++){
+		var email = g_emails[i].value
+		if (!email.match(emailPattern) && email != '*guest email'){
+			var agree = confirm("A guest email may be incorrect, proceed anyway?");
+			if (agree != true){
+				return false;
+			}
+		}
+	}
+	return true;
+}
 
 window.onload = function (){
 	//load only if using password reset page

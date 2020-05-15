@@ -203,7 +203,6 @@ module MemberTracker
       if pu.active == true
         #there is a request for paid up status
         if pu.condition == true
-          puts "in looking for paid up members"
           #asking for members who are paid up through the current year
           @member = Member.where(@qset){paid_up >= Time.now.strftime("%Y").to_i}
         else
@@ -216,7 +215,9 @@ module MemberTracker
       end
       erb :m_list, :layout => :layout_w_logout
     end
-    get '/m/events/new' do
+    get '/m/events/create' do
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
       @event_types = EventType.all
       @mbrs = Member.select(:id, :fname, :lname, :callsign).all
       erb :create_event, :layout => :layout_w_logout
@@ -225,15 +226,34 @@ module MemberTracker
 =begin
       params {"notes"=>"a newer one", "event_type_id"=>"1", "name"=>"andSo", "descr"=>"a desc",
       "duration"=>"3", "duration_units"=>"hrs", "guests"=>"last,name;last2,name2",
-      "g0:fname"=>"Myron", "g0:lname"=>"Dembo", "g0:callsign"=>"A7MYR", "g1:fname"=>"*guest first name",
-      "g1:lname"=>"*guest last name", "g1:callsign"=>"*guest callsign", "g2:fname"=>"*guest first name",
-      "g2:lname"=>"*guest last name", "g2:callsign"=>"*guest callsign", "mbr_id"=>"478", "id:481"=>"1", "id:479"=>"1"}
+      "g0:fname"=>"Myron", "g0:lname"=>"Dembo", "g0:callsign"=>"A7MYR", "g0:email"=>"*guest email",
+      "g0:notes"=>"some notes for guest0",..., "mbr_id"=>"478", "id:481"=>"1", "id:479"=>"1"}
 =end
+      #validate presence of contact member, event type
+      valid_form = true
+      if params[:mbr_id].nil?
+        #invalid cuz no event contact
+        session[:msg] = "Error; the event could not be created\nEvent contact missing"
+        valid_form = false
+      elsif params[:event_type_id] == "none"
+        #invalid cuz need an event type
+        session[:msg] = "Error; the event could not be created\nEvent type missing"
+        valid_form = false
+      end
+      if valid_form == false
+        redirect "/m/events/create"
+      end
+      #get action ids
+      #need to create a log for this transaction
+      #first get action id
+      actions = {}
+      Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
       #remove member and guest info from params
       params.delete("has_guests")
       count = 0
       #Guest = Struct.new(:number, :attendees, :new_guests, :tmp_vitals, :msng_values, :duplicate)
       #Struct holds attendees (mbrs who are already in db), new_guests (those to be entered), vitals a temp hash
+      #new_guests hash may have the following keys ("fname", "lname", "callsign", "notes")
       guest = Event::Guest.new(true,[],[],{},'',[])
       params.each do |k,v|
         #expect "id:481"=>"1"
@@ -254,20 +274,23 @@ module MemberTracker
             end
           end
           if v[0...2] != "*g" && v != ''
-            guest.tmp_vitals["#{m_new_guests[2]}"] = v.strip.upcase
+            #upcase everything but the notes
+            if !/notes/.match(k)
+              v.upcase!
+            end
+            guest.tmp_vitals["#{m_new_guests[2]}"] = v.strip
           end
           params.delete(k)
         end
       end
+      #add coordinator to attendee list if not already there
+      if !guest.attendees.include?(params[:mbr_id].to_i)
+        guest.attendees << params[:mbr_id].to_i
+      end
       if !guest.tmp_vitals.empty?
         guest.new_guests << guest.tmp_vitals
       end
-      #need to create a log for this transaction
-      #first get action id
-      actions = {}
-      Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
-      action_id = actions["event"]
-      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
+      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: actions["event"])
       if !params[:notes].nil?
         l.notes = "#{params[:notes]}"
         params.delete(:notes)
@@ -285,22 +308,24 @@ module MemberTracker
           guest.attendees.each do |mbr_id|
             event.add_member(mbr_id)
           end
-          #need to add guests to database before adding them to this event
-          actions = {}
-          Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
-          action_id = actions["mbr_edit"]
-          log_guest = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id, event_id: event.id)
           if !guest.new_guests.empty?
             #need to check if we already have the guest in our database
             mbrs = Member.select(:fname, :lname, :callsign, :email).all
             guest.new_guests.each do |ng|
-              possible_duplicate = {}
-              number_duplicate_keys = 0
+              #expecting 2 out of 4 keys (not including "notes")
+              guest_notes = ''
+              if ng.has_key?("notes")
+                guest_notes = ng["notes"]
+                ng.delete("notes")
+              end
               if ng.size < 2
-                #cannot work with this member
                 guest.msng_values = "This guest has too few fields entered #{ng}; enter as new member and add to event attendee list"
                 next
               end
+              #need to add guests to database before adding them to this event
+              log_guest = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: actions["mbr_edit"], event_id: event.id)
+              possible_duplicate = {}
+              number_duplicate_keys = 0
               ng.each do |k,v|
                 v.upcase!
                 mbrs.each do |mbr|
@@ -325,15 +350,9 @@ module MemberTracker
               new_guest_mbr = Member.new(ng)
               new_guest_mbr.save
               event.add_member(new_guest_mbr.id)
-              if log_guest.notes.nil?
-                log_guest.notes = "New guest:#{ng}"
-              else
-                log_guest.notes << "\nNew guest:#{ng}"
-              end
+              log_guest.notes = "New guest:#{ng}\n#{guest_notes}"
+              log_guest.save
             end
-          end
-          if !log_guest.notes.nil?
-            log_guest.save
           end
           l.save
         end
@@ -402,13 +421,13 @@ module MemberTracker
       rescue StandardError => e
         session[:msg] = "Error; the event type could not be created\n#{e}"
       end
-      redirect '/m/create_event_type/'
+      redirect '/m/events/create_type/'
     end
     get '/m/events/list/:id' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
       @events = nil
-      @event_type = 'All Event Types'
+      @event_type = 'all'
       if params[:id] == 'all'
         @events = Event.order(:ts, :event_type_id).all
       else
@@ -419,6 +438,34 @@ module MemberTracker
     end
     get '/m/events/show_attendees/:id' do
       @event = Event[params[:id]]
+      @attendees =[]
+      #create hash with 2 keys, :same, :other  and a count of number times attended that event type
+      etypes = []
+      MemberTracker::EventType.select(:id).each do |et|
+        if et != @event.event_type_id
+          etypes << et.id
+        end
+      end
+      @event.members.each do |mbr|
+        #set up hash to hold counts of attendance
+        et_hash = {:same => 0, :other => 0}
+        etypes.each{|et| et_hash[et] = 0}
+        mbr_tmp_hash = {:mbr_id => mbr.id, :fname => mbr.fname, :lname => mbr.lname,
+          :callsign => mbr.callsign, :paid_up => mbr.paid_up, :attendance => et_hash}
+        mbr.events.each do |event|
+          #only events within the last year
+          if Date.parse(event.ts.to_s) > Date.today.prev_year
+            #is it the same event type?
+            if event.event_type_id == @event.event_type_id
+              mbr_tmp_hash[:attendance][:same] += 1
+            else
+              mbr_tmp_hash[:attendance][:other] += 1
+            end
+          end
+        end
+        @attendees << mbr_tmp_hash
+        mbr_tmp_hash = {}
+      end
       #look for guest attendees in the log notes
       @guests = []
       @event.log.each do |l|
@@ -426,7 +473,6 @@ module MemberTracker
         when 'mbr_edit'
           #expect "New guest:{"fname" => "name"...}
           #there may be more than one line (new guest)
-          puts "in mbr_edit and l.notes #{l.notes}"
           gs = l.notes.split("\n")
           gs.each do |g|
             m = /:({.*})/.match(g)
@@ -435,7 +481,6 @@ module MemberTracker
             end
           end
         when 'event'
-          puts "in event and l.notes #{l.notes}"
           g = l.notes.split("\n").last
           # expect "guest attendees:guest1;guest2;guest3"
           if g.include?(";")
@@ -447,7 +492,7 @@ module MemberTracker
         else
         end
       end
-      puts "guests are #{@guests}"
+      @e_contact = Member.select(:fname, :lname, :callsign).where(id: @event.mbr_id).first
       erb :e_attendees, :layout => :layout_w_logout
     end
     get '/m/events/edit/:id' do
@@ -1682,7 +1727,6 @@ module MemberTracker
       @sel_au_mbr = Member.select(:id, :fname, :lname, :callsign, :email)[params[:id].to_i]
       #won't be setting a newly authorized member as inactive, so pull this from the list
       @roles = Role.exclude(name: 'inactive').order(:rank)
-      puts "roles from get /a/set_au_roles/:id are #{@roles}"
       erb :set_au_roles, :layout => :layout_w_logout
     end
     get '/a/create_auth_user' do
