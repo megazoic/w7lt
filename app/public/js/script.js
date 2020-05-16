@@ -385,6 +385,20 @@ function validateCreateEventForm(){
 			}
 		}
 	}
+	//validate datetime as YYYY-MM-DD HH:MM
+	var event_date = $('event_date').value;
+	if (!event_date.match(/202\d-[01]\d-[0-3]\d\s+[012]\d:[0-5]\d/)){
+		alert("date doesn't match expected format");
+		return false;
+	}
+	//validate that if a duration is chosen, a duration_units is also picked
+	var duration = $('duration').value;
+	var duration_unit_hrs = $('durat_hrs').checked;
+	var duration_unit_days = $('durat_days').checked;
+	if (duration != "0" && (duration_unit_hrs == false && duration_unit_days == false)){
+		alert("if a duration for this event is selected, a unit must also be chosen");
+		return false;
+	}
 	return true;
 }
 

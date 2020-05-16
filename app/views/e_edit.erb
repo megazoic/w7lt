@@ -1,10 +1,10 @@
 <br /><h3>Edit event</h3>
-<form action='/m/events/create' method='POST' name='edit_event' onsubmit="return validateUpdateEventForm()">
+<form action='/m/events/create' method='POST' name='edit_event' onsubmit="return validateCreateEventForm()">
 <input type='hidden' name='event_id' value='<%=@event.id%>'>
 <label for='event_date'>Date and time of Event (format is 'YYYY-MM-DD HH:MM')</label>
-<input type='text' name='event_date' value='<%=@event.ts.to_s[0,16]%>'>
-<br /><label for='notes'>Notes for log</label>
-<input type='text' name='notes' value='<%=@pared_notes%>'>
+<br /><input type='text' name='event_date' value='<%=@event.ts.to_s[0,16]%>'>
+<br /><label for='general_notes'>Notes for log</label>
+<br /><textarea name='general_notes' id='general_notes' class='lgtext'><%=@pared_notes%></textarea>
 <br />
 Event Type:
 <select id="type" name="event_type_id">
@@ -23,12 +23,12 @@ Event Type:
 <%end%>
 </select>
 <br />Duration units<br />
-Hours<input type='radio' name='duration_units' value='hrs' <%if @event[:duration_units] == 'hrs'%>checked<%end%>> | 
-Days<input type='radio' name='duration_units' value='days' <%if @event[:duration_units] == 'days'%>checked<%end%>>
+Hours<input type='radio' name='duration_units' id='durat_hrs' value='hrs' <%if @event[:duration_units] == 'hrs'%>checked<%end%>> | 
+Days<input type='radio' name='duration_units' id='durat_days' value='days' <%if @event[:duration_units] == 'days'%>checked<%end%>>
 <br/>
 <h3>Pick One Event Contact and All Attendees</h3> (put other organzers in the description)
-<br/><label for="guests">Add Guest Attendess separated by a semicolon ';'</label><br/>
-<textarea name='guests' id='guests' class='lgtext'><%=@guest_notes%></textarea>
+<br/><label for="guest_notes">Add Guest Attendess separated by a semicolon ';'</label><br/>
+<textarea name='guest_notes' id='guest_notes' class='lgtext'><%=@guest_notes%></textarea>
 	<table>
 		<tr>
       <th>Organzer</th>

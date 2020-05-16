@@ -3,9 +3,9 @@ inline js used to select contents of input text-->
 <br /><h3>Create new event</h3>
 <form action='/m/events/create' method='POST' name='new_event' onsubmit="return validateCreateEventForm()">
 <label for='event_date'>Date and time of Event (format is 'YYYY-MM-DD HH:MM')</label>
-<input type='text' name='event_date' value='<%=Time.now.strftime("%Y-%m-%d %H:%M")%>'>
-<br /><label for='notes'>Notes for log</label>
-<input type='text' name='notes'>
+<br /><input type='text' name='event_date' id='event_date' value='<%=Time.now.strftime("%Y-%m-%d %H:%M")%>'>
+<br /><label for='general_notes'>Notes for log</label><br />
+<textarea name='general_notes' id='general_notes' class='lgtext'></textarea>
 <br />
 Event Type (this field is required):
 <select id="type" name="event_type_id">
@@ -28,13 +28,13 @@ Event Type (this field is required):
 <option>5</option>
 </select>
 <br />Duration units<br />
-Hours<input type='radio' name='duration_units' value='hrs'> | 
-Days<input type='radio' name='duration_units' value='days'>
+Hours<input type='radio' name='duration_units' id='durat_hrs' value='hrs'> | 
+Days<input type='radio' name='duration_units' id='durat_days' value='days'>
 <br/>
 <h3>Pick One Event Contact (Organizer column, this field is required) and All Attendees</h3><h4>(note names of other organzers go in the description)</h4>
-<br/><label for="guests">Add Attendees with low probability of becoming a member (eg. out of town folks)
+<br/><label for="guest_notes">Add Attendees with low probability of becoming a member (eg. out of town folks)
 </label><br/>(entries separated by a semicolon and no spaces &apos;Guest,First;Guest,Second&apos;)<br/>
-<textarea name='guests' id='guests' class='lgtext'></textarea>
+<textarea name='guest_notes' id='guest_notes' class='lgtext'></textarea>
 <br/><label for="has_guests">Are there Guests to add to the database? Please check in table below to see if they haven&apos;t already been added</label>
 <input type='checkbox' name='has_guests' onchange="guestsSet(this)"/>
 <div id="message">

@@ -224,12 +224,13 @@ module MemberTracker
     end
     post '/m/events/create' do
 =begin
-      params {"notes"=>"a newer one", "event_type_id"=>"1", "name"=>"andSo", "descr"=>"a desc",
-      "duration"=>"3", "duration_units"=>"hrs", "guests"=>"last,name;last2,name2",
+      params {"general_notes"=>"a newer one", "event_type_id"=>"1", "name"=>"andSo", "descr"=>"a desc",
+      "duration"=>"3", "duration_units"=>"hrs", "guest_notes"=>"last,name;last2,name2",
       "g0:fname"=>"Myron", "g0:lname"=>"Dembo", "g0:callsign"=>"A7MYR", "g0:email"=>"*guest email",
       "g0:notes"=>"some notes for guest0",..., "mbr_id"=>"478", "id:481"=>"1", "id:479"=>"1"}
 =end
-      #validate presence of contact member, event type, date
+      ######validate presence of contact member, event type, date, if duration also units ###########
+=begin
       valid_form = true
       if params[:mbr_id].nil?
         #invalid cuz no event contact
@@ -242,10 +243,15 @@ module MemberTracker
       elsif !/202\d-[01]\d-[0-3]\d\s+[012]\d:[0-5]\d/.match(params[:event_date]) #'MM-DD-YYYY HH:MM'
         session[:msg] = "Error; the event could not be created\nEvent date incorrectly formatted"
         valid_form = false
+      elsif (params[:duration] != "0" && params[:duration_units].nil?) ||
+        (params[:duration] == "0" && !params[:duration_units].nil?)
+        session[:msg] = "Error, both a duration and a duration units must be selected"
+        valid_form = false
       end
       if valid_form == false
         redirect "/m/events/create"
       end
+      ################################### end of form validation #####################################
       #are we updating an existing event?
       existing_event_id = nil
       if !params[:event_id].nil?
@@ -283,7 +289,7 @@ module MemberTracker
             end
           end
           if v[0...2] != "*g" && v != ''
-            #upcase everything but the notes
+            #upcase everything but the general_notes
             if !/notes/.match(k)
               v.upcase!
             end
@@ -304,23 +310,23 @@ module MemberTracker
       recent_log_vitals = {:a_user => nil, :ts => nil, :log_id => nil}
       if !existing_event_id.nil?
         recent_log = Event[existing_event_id].log_dataset.order(:id).all.shift
-        auth_user = "#{recent_log.auth_user.member.fname} #{recent_log.auth_user.member.lname},
-        #{recent_log.auth_user.member.callsign} "
+        auth_user = "#{recent_log.auth_user.member.fname} #{recent_log.auth_user.member.lname}, #{recent_log.auth_user.member.callsign}"
         recent_log_vitals = {:a_user => auth_user, :ts => recent_log[:ts].strftime("%m-%d-%y"),
         :log_id => recent_log[:id]}
       end
-      if !params[:notes].nil?
+      if !params[:general_notes].nil?
         if existing_event_id.nil?
-          l.notes = "#{params[:notes]}"
+          l.notes = "#{params[:general_notes]}"
         else
-          l.notes = "MODIFIED NOTES: previous auth user #{recent_log_vitals[:a_user]},
-          at #{recent_log_vitals[:ts]}\n#{params[:notes]}, log id #{recent_log_vitals[:log_id]}"
+          l.notes = "MODIFIED EVENT NOTES: previous auth user\n#{recent_log_vitals[:a_user]}," +
+            " previous notes made back on #{recent_log_vitals[:ts]}, that log id: #{recent_log_vitals[:log_id]}" +
+            "\nNEW NOTES: #{params[:general_notes]}"
         end
-        params.delete(:notes)
+        params.delete(:general_notes)
       end
-      if !params[:guests].nil?
-        ga = "guest attendees:#{params[:guests]}"
-        params.delete(:guests)
+      if !params[:guest_notes].nil?
+        ga = "guest attendees:#{params[:guest_notes]}"
+        params.delete(:guest_notes)
         l.notes.nil? ? l.notes = ga : l.notes << ("\n" + ga)
       end
       params[:ts] = "#{DateTime.parse(params[:event_date])}"
@@ -410,6 +416,7 @@ module MemberTracker
         #puts "error #{e.backtrace}"
       end
       redirect "/m/events/list/#{params[:event_type_id]}"
+=end
     end
     get '/m/events/create_type/:id?' do
       @tmp_msg = session[:msg]
@@ -538,11 +545,18 @@ module MemberTracker
       @event_types = EventType.all
       @mbrs = Member.select(:id, :fname, :lname, :callsign).all
       #need to parse the log; should be in two parts 1) general notes 2) guest's not added to db
-      notes = @event.log.first.notes.split("\n")
+      #notes = @event.log.first.notes.split("\n")
+      prev_log = @event.log_dataset.order(:id).all.shift
+      notes = prev_log.notes.split("\n")
       @guest_notes = ''
       @pared_notes = ''
       if notes.length > 1
         @guest_notes = notes.pop
+        #remove 'guest attendees:'
+        m = /guest attendees:(.*)/.match(@guest_notes)
+        if !m.nil?
+          @guest_notes = m[1]
+        end
         @pared_notes = notes * "-"
       end
       #get members who have already been entered as attending this event
