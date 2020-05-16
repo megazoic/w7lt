@@ -1,15 +1,20 @@
 <%case @type%>
 <%when 'auth_user'%><h3>Logs you created</h3>
 <%when 'all'%><h3>All logs</h3>
+<%when 'general'%><h3>General logs</h3>
 <%else%>
 <%end%>
 <br/>
 <div>
 	<table>
 		<tr>
+    <% if @logs[0].key?(:mbr_name) %>
 			<th>Member</th>
+    <% end %>
 			<th>Time</th>
-			<th>Type</th>
+      <% if @logs[0].key?(:action) %>
+  			<th>Type</th>
+      <% end %>
 			<th>Notes</th>
       <% if @logs[0].key?(:au_name) %>
         <th>Auth_user</th>
@@ -17,9 +22,9 @@
 		</tr>
 		<% for log in @logs %>
 		<tr>
-		<td><%if log.has_key?(:mbr_name)%><%=log[:mbr_name]%><%else%><%='N/A'%><%end%></td>
+		<%if log.has_key?(:mbr_name)%><td><%=log[:mbr_name]%></td><%end%>
 		<td><%=log[:time]%></td>
-		<td><%=log[:action]%></td>
+		<% if @logs[0].key?(:action) %><td><%=log[:action]%></td><%end%>
 		<td><%=log[:notes]%></td>
     <% if @logs[0].key?(:au_name) %>
       <td><%=log[:au_name]%></td>

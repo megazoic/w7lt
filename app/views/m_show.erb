@@ -27,4 +27,13 @@ Volunteer:<br />VE <span class="highlight"><%=@member[:ve].to_i == 0 ? "N" : "Y"
   <%end%>
 <%end%>
 <br />
-<%if session[:auth_user_roles].include?('mbr_mgr') || MemberTracker::Auth_user[session[:auth_user_id]].member.id == @member[:id]%><a href="/m/edit/member/<%= @member[:id]%>">Edit</a><%end%>
+<%if session[:auth_user_roles].include?('mbr_mgr') || MemberTracker::Auth_user[session[:auth_user_id]].member.id == @member[:id]%><a href="/m/edit/member/<%= @member[:id]%>">Edit Member Details</a><%end%><br />
+<h4>Log notes:</h4>
+<a href="/m/log/create/<%=@member[:id]%>">Add a log note for this member</a>
+<br />
+<%@member.logs_dataset.order(:id).each do |l|%>
+  ################################
+  <br />Auth User <%="#{l.auth_user.member.fname} #{l.auth_user.member.lname}, #{l.auth_user.member.callsign}"%>
+  <p>Date <%=l.ts.strftime("%m-%d-%y")%></p>
+  <p><%=l.notes%></p>
+<%end%>

@@ -1,0 +1,23 @@
+<form action='/m/logs/create' method='POST' name='create_log'>
+<h4>
+<%if @type == 'general'%>
+  Creating general log notes
+  <input type='hidden' name='action' value='general_log'>  
+<%else%>
+  Creating log for <%="#{@member.fname} #{@member.lname} #{@member.callsign}"%>
+  <input type='hidden' name='action' value='mbr_edit'>  
+  <input type='hidden' name='mbr_id' value=<%=@member.id%>>  
+<%end%>
+</h4>
+<textarea name='notes' id='notes' class='lgtext'></textarea>
+<br /><input type='submit' value='Submit'/> | <a href="/home">Cancel</a>
+</form>
+<% if @type == 'member'%>
+<h4>Previous Log notes:</h4>
+<%@member.logs_dataset.order(:id).each do |l|%>
+  ################################
+  <br />Auth User <%="#{l.auth_user.member.fname} #{l.auth_user.member.lname}, #{l.auth_user.member.callsign}"%>
+  <p>Date <%=l.ts.strftime("%m-%d-%y")%></p>
+  <p><%=l.notes%></p>
+<%end%>
+<%end%>

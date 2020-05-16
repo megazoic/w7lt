@@ -230,7 +230,6 @@ module MemberTracker
       "g0:notes"=>"some notes for guest0",..., "mbr_id"=>"478", "id:481"=>"1", "id:479"=>"1"}
 =end
       ######validate presence of contact member, event type, date, if duration also units ###########
-=begin
       valid_form = true
       if params[:mbr_id].nil?
         #invalid cuz no event contact
@@ -416,7 +415,6 @@ module MemberTracker
         #puts "error #{e.backtrace}"
       end
       redirect "/m/events/list/#{params[:event_type_id]}"
-=end
     end
     get '/m/events/create_type/:id?' do
       @tmp_msg = session[:msg]
@@ -565,6 +563,37 @@ module MemberTracker
         @mbrs_attending << mbr.id
       end
       erb :e_edit, :layout => :layout_w_logout
+    end
+    get '/m/logs/create/:id?' do
+      if params[:id].nil?
+        #creating a general log
+        @type = 'general'
+      else
+        @type = 'member'
+        @member = Member[params[:id]]
+      end
+      erb :l_create, :layout => :layout_w_logout
+    end
+    post '/m/logs/create' do
+      #first get action id
+      actions = {}
+      Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
+      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, notes: params[:notes])
+      
+      if params[:mbr_id].nil?
+        #a general log (for now)
+        l.action_id = actions["general_log"]
+        l.save
+        session[:message] = "Log successfully saved"
+        redirect '/m/view_log/auth_user'
+      else
+        #adding a note to a member
+        l.mbr_id = params[:mbr_id]
+        l.action_id = actions["mbr_edit"]
+        l.save
+        session[:message] = "Log successfully saved"
+        redirect "/r/show/member/#{params[:mbr_id]}"
+      end
     end
     get '/r/list/members/?:event?' do
       @member = DB[:members].select(:id, :lname, :fname, :callsign, :paid_up, :mbr_type).order(:lname, :fname).all
@@ -1196,7 +1225,19 @@ module MemberTracker
           session[:msg] = "there are no logs to view"
           redirect '/home'
         end
-      else
+      when "general"
+        @logs = []
+        #first get action id
+        actions = {}
+        Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
+        Action[actions['general_log']].logs_dataset.order(:id).each do |l|
+          @logs << {:au_name => l.auth_user.member.callsign, :notes => l.notes, :time => l.ts.strftime("%m-%d-%Y")}
+        end
+        if @logs.length == 0
+          session[:msg] = "there are no logs to view"
+          redirect '/home'
+        end
+     else
         #shouldn't be here
       end
       erb :list_logs, :layout => :layout_w_logout
