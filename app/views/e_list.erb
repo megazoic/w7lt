@@ -21,7 +21,7 @@
 		<td><%=event.ts.strftime("%m-%d-%y")%></td>
     <td><%="#{event.duration} hrs"%></td>
     <td><%=event.descr%></td>
-    <td><a href="/m/events/attendees/show/<%=event.id%>">show attendees</a> | <a href="/m/events/edit/<%=event.id%>">edit</a></td>
+    <td><a href="/m/event/attendees/show/<%=event.id%>">show attendees</a> | <a href="/m/event/edit/<%=event.id%>">edit</a></td>
 		</tr>
 <%end%>
 </table>

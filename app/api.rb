@@ -215,14 +215,14 @@ module MemberTracker
       end
       erb :m_list, :layout => :layout_w_logout
     end
-    get '/m/events/create' do
+    get '/m/event/create' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
       @event_types = EventType.all
       @mbrs = Member.select(:id, :fname, :lname, :callsign).all
       erb :create_event, :layout => :layout_w_logout
     end
-    post '/m/events/create' do
+    post '/m/event/create' do
 =begin
       params {"general_notes"=>"a newer one", "event_type_id"=>"1", "name"=>"andSo", "descr"=>"a desc",
       "duration"=>"3", "duration_units"=>"hrs", "guest_notes"=>"last,name;last2,name2",
@@ -248,7 +248,7 @@ module MemberTracker
         valid_form = false
       end
       if valid_form == false
-        redirect "/m/events/create"
+        redirect "/m/event/create"
       end
       ################################### end of form validation #####################################
       #are we updating an existing event?
@@ -414,9 +414,9 @@ module MemberTracker
         session[:msg] = "Error; the event could not be created\n#{e}"
         #puts "error #{e.backtrace}"
       end
-      redirect "/m/events/list/#{params[:event_type_id]}"
+      redirect "/m/event/list/#{params[:event_type_id]}"
     end
-    get '/m/events/type/create/:id?' do
+    get '/m/event/type/create/:id?' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
       @edit_event_type = nil
@@ -432,7 +432,7 @@ module MemberTracker
       @old_type_names = @old_type_names[0...-1]
       erb :e_type_create, :layout => :layout_w_logout
     end
-    post '/m/events/type/create/:id?' do
+    post '/m/event/type/create/:id?' do
       #expecting {"event_type_name"=>"type5", "event_type_descr"=>"a new type"}
       if params[:id].nil?
         #creating new type
@@ -464,9 +464,9 @@ module MemberTracker
       rescue StandardError => e
         session[:msg] = "Error; the event type could not be created\n#{e}"
       end
-      redirect '/m/events/type/create/'
+      redirect '/m/event/type/create/'
     end
-    get '/m/events/list/:id' do
+    get '/m/event/list/:id' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
       @events = nil
@@ -479,7 +479,7 @@ module MemberTracker
       end
       erb :e_list, :layout => :layout_w_logout
     end
-    get '/m/events/attendees/show/:id' do
+    get '/m/event/attendees/show/:id' do
       @event = Event[params[:id]]
       @attendees =[]
       #create hash with 2 keys, :same, :other  and a count of number times attended that event type
@@ -538,7 +538,7 @@ module MemberTracker
       @e_contact = Member.select(:fname, :lname, :callsign).where(id: @event.mbr_id).first
       erb :e_attendees, :layout => :layout_w_logout
     end
-    get '/m/events/edit/:id' do
+    get '/m/event/edit/:id' do
       @event = Event[params[:id]]
       @event_types = EventType.all
       @mbrs = Member.select(:id, :fname, :lname, :callsign).all

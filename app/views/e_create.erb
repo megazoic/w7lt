@@ -1,7 +1,7 @@
 <!--see https://stackoverflow.com/questions/4067469/selecting-all-text-in-html-text-input-when-clicked for exception to
 inline js used to select contents of input text-->
 <br /><h3>Create new event</h3>
-<form action='/m/events/create' method='POST' name='new_event' onsubmit="return validateCreateEventForm()">
+<form action='/m/event/create' method='POST' name='new_event' onsubmit="return validateCreateEventForm()">
 <label for='event_date'>Date and time of Event (format is 'YYYY-MM-DD HH:MM')</label>
 <br /><input type='text' name='event_date' id='event_date' value='<%=Time.now.strftime("%Y-%m-%d %H:%M")%>'>
 <br /><label for='general_notes'>Notes for log</label><br />

@@ -14,7 +14,7 @@
 <td><%=et[:name]%></td>
 <td><%=et[:descr]%></td>
 <td><%=et.auth_users.member.callsign%></td>
-<td><a href=<%=URI.escape("/m/events/list/#{et[:id]}")%>>List</a></td>
+<td><a href=<%=URI.escape("/m/event/list/#{et[:id]}")%>>List</a></td>
 </tr>
 <%end%>
 </tbody>
@@ -38,7 +38,7 @@
 <%end%>
 
 </br><h3>Create/Edit New Event Event</h3>
-<form action='/m/events/type/create/<% if !@edit_event_type.nil?%><%=@edit_event_type.id%><%end%>' method='POST' name='new_event_type' onsubmit="return validateEventTypeForm()">
+<form action='/m/event/type/create/<% if !@edit_event_type.nil?%><%=@edit_event_type.id%><%end%>' method='POST' name='new_event_type' onsubmit="return validateEventTypeForm()">
 <input type='hidden' id='editing_old_type' value=<% if !@edit_event_type.nil? %>'1'<%else%>'0'<%end%>>
 <input type='hidden' id='old_type_names' value='<%=@old_type_names%>'>
 <br/><input type='text' name='event_type_name' id='new_type_name' <% if !@edit_event_type.nil?%>value='<%=@edit_event_type.name%>'<%end%>>

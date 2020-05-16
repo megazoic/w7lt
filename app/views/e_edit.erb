@@ -1,5 +1,5 @@
 <br /><h3>Edit event</h3>
-<form action='/m/events/create' method='POST' name='edit_event' onsubmit="return validateCreateEventForm()">
+<form action='/m/event/create' method='POST' name='edit_event' onsubmit="return validateCreateEventForm()">
 <input type='hidden' name='event_id' value='<%=@event.id%>'>
 <label for='event_date'>Date and time of Event (format is 'YYYY-MM-DD HH:MM')</label>
 <br /><input type='text' name='event_date' value='<%=@event.ts.to_s[0,16]%>'>
