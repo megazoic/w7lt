@@ -220,7 +220,7 @@ module MemberTracker
       session[:msg] = nil
       @event_types = EventType.all
       @mbrs = Member.select(:id, :fname, :lname, :callsign).all
-      erb :create_event, :layout => :layout_w_logout
+      erb :e_create, :layout => :layout_w_logout
     end
     post '/m/event/create' do
 =begin
@@ -564,7 +564,7 @@ module MemberTracker
       end
       erb :e_edit, :layout => :layout_w_logout
     end
-    get '/m/logs/create/:id?' do
+    get '/m/log/create/:id?' do
       if params[:id].nil?
         #creating a general log
         @type = 'general'
@@ -574,7 +574,7 @@ module MemberTracker
       end
       erb :l_create, :layout => :layout_w_logout
     end
-    post '/m/logs/create' do
+    post '/m/log/create' do
       #first get action id
       actions = {}
       Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
@@ -595,7 +595,7 @@ module MemberTracker
         redirect "/r/member/show/#{params[:mbr_id]}"
       end
     end
-    get '/m/logs/view/:type' do
+    get '/m/log/view/:type' do
       case params[:type]
       when "auth_user" #view only current logged in users logs
         @type = "auth_user"
@@ -1841,7 +1841,7 @@ module MemberTracker
       #only want members who are not already auth users
       existing_au_mbr_ids = Auth_user.map{|x| x.mbr_id}
       @sel_au_from_mbrs = Member.exclude(id: existing_au_mbr_ids).select(:id, :fname, :lname, :callsign, :email).all
-      erb :create_au, :layout => :layout_w_logout
+      erb :au_create, :layout => :layout_w_logout
     end
     post '/a/auth_user/create' do
       #expecting params keys :notes, :mbr_id, :role_id

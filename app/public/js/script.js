@@ -29,7 +29,7 @@ function duesSet(selectElement){
 	}
 }
 function guestsSet(inputElement){
-	//set visibility of new guests table in create_event.erb
+	//set visibility of new guests table in e_create.erb
 	if (inputElement.checked){
 		$("message").style.display = "block";
 	}else{
