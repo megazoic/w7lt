@@ -4,7 +4,7 @@
 </span>
 </h3>
 Created on <%=@unit.ts.strftime("%m-%d-%Y:%H")%> by <%=@unit_creator_callsign%>
-<form action='/m/update/unit' method='POST' name="unitVitals" onSubmit="return validateUnitEditForm()" >
+<form action='/m/unit/update' method='POST' name="unitVitals" onSubmit="return validateUnitEditForm()" >
 <input type="hidden" name="unit_id" value="<%=@unit.id%>">
 <input type="hidden" id="elmer" value=<%if !@unit_elmer.nil?%>"1"<%else%>"0"<%end%>>
 <input type="checkbox" name="active" value="1" id="active_cb"<%=@unit.active == 1  ? "checked='checked'" : nil%>>
@@ -65,6 +65,6 @@ Created on <%=@unit.ts.strftime("%m-%d-%Y:%H")%> by <%=@unit_creator_callsign%>
 		<% end %>
 	</table>
 </div>
-<input type='submit' value='Submit'/> | <a href="/m/list/units/all">Cancel</a>
+<input type='submit' value='Submit'/> | <a href="/m/unit/list/all">Cancel</a>
   
 </form>

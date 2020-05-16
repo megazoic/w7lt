@@ -32,7 +32,7 @@
     <%if @event == true%>
       <td><a href="/m/event/new/<%= member[:id]%>">select</a></td>
     <%else%>
-		  <td><a href="/r/show/member/<%= member[:id]%>">view</a><%if session[:auth_user_roles].include?('mbr_mgr')%> | <a href="/m/edit/member/<%= member[:id]%>">edit</a><%end%><%if session[:auth_user_roles].include?('auth_u')%> | <a href="/m/payment/new/<%= member[:id]%>">pay</a><%end%></td>
+		  <td><a href="/r/member/show/<%= member[:id]%>">view</a><%if session[:auth_user_roles].include?('mbr_mgr')%> | <a href="/m/member/edit/<%= member[:id]%>">edit</a><%end%><%if session[:auth_user_roles].include?('auth_u')%> | <a href="/m/payment/new/<%= member[:id]%>">pay</a><%end%></td>
     <%end%>
 		</tr>
 		<% end %>

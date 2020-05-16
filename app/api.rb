@@ -416,7 +416,7 @@ module MemberTracker
       end
       redirect "/m/events/list/#{params[:event_type_id]}"
     end
-    get '/m/events/create_type/:id?' do
+    get '/m/events/type/create/:id?' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
       @edit_event_type = nil
@@ -430,9 +430,9 @@ module MemberTracker
         @old_type_names << "#{ut.name},"
       end
       @old_type_names = @old_type_names[0...-1]
-      erb :create_event_type, :layout => :layout_w_logout
+      erb :e_type_create, :layout => :layout_w_logout
     end
-    post '/m/events/create_type/:id?' do
+    post '/m/events/type/create/:id?' do
       #expecting {"event_type_name"=>"type5", "event_type_descr"=>"a new type"}
       if params[:id].nil?
         #creating new type
@@ -464,7 +464,7 @@ module MemberTracker
       rescue StandardError => e
         session[:msg] = "Error; the event type could not be created\n#{e}"
       end
-      redirect '/m/events/create_type/'
+      redirect '/m/events/type/create/'
     end
     get '/m/events/list/:id' do
       @tmp_msg = session[:msg]
@@ -479,7 +479,7 @@ module MemberTracker
       end
       erb :e_list, :layout => :layout_w_logout
     end
-    get '/m/events/show_attendees/:id' do
+    get '/m/events/attendees/show/:id' do
       @event = Event[params[:id]]
       @attendees =[]
       #create hash with 2 keys, :same, :other  and a count of number times attended that event type
@@ -585,17 +585,82 @@ module MemberTracker
         l.action_id = actions["general_log"]
         l.save
         session[:message] = "Log successfully saved"
-        redirect '/m/view_log/auth_user'
+        redirect '/m/log/view/auth_user'
       else
         #adding a note to a member
         l.mbr_id = params[:mbr_id]
         l.action_id = actions["mbr_edit"]
         l.save
         session[:message] = "Log successfully saved"
-        redirect "/r/show/member/#{params[:mbr_id]}"
+        redirect "/r/member/show/#{params[:mbr_id]}"
       end
     end
-    get '/r/list/members/?:event?' do
+    get '/m/logs/view/:type' do
+      case params[:type]
+      when "auth_user" #view only current logged in users logs
+        @type = "auth_user"
+        @logs = []
+        au = Auth_user[session[:auth_user_id]]
+        #are there any logs for this auth_user?
+        if au.logs.length == 0
+          session[:msg] = "there are no logs to view"
+          redirect '/home'
+        end
+        Log.where(a_user_id: session[:auth_user_id]).order(:ts, :action_id).each do |l|
+          h = Hash.new
+          if !l.member.nil?
+            h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"
+          end
+          ts = l.ts.strftime("%m-%d-%Y")
+          h[:time] = "#{ts}"
+          h[:notes] = l.notes
+          h[:action] = l.action.type
+          @logs << h
+        end
+      when "all"
+        @type = "all"
+        aus = Auth_user.all
+        @logs = []
+        no_logs = true
+        aus.each do |au|
+          if au.logs.length > 0
+            no_logs = false
+            au.logs.each do |l|
+              h = Hash.new
+              if !l.member.nil?
+                h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"
+              end
+              ts = l.ts.strftime("%m-%d-%Y")
+              h[:time] = "#{ts}"
+              h[:notes] = l.notes
+              h[:action] = l.action.type
+              h[:au_name] = "#{l.auth_user.member.fname} #{l.auth_user.member.lname}"
+              @logs << h
+            end
+          end
+        end
+        if no_logs == true
+          session[:msg] = "there are no logs to view"
+          redirect '/home'
+        end
+      when "general"
+        @logs = []
+        #first get action id
+        actions = {}
+        Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
+        Action[actions['general_log']].logs_dataset.order(:id).each do |l|
+          @logs << {:au_name => l.auth_user.member.callsign, :notes => l.notes, :time => l.ts.strftime("%m-%d-%Y")}
+        end
+        if @logs.length == 0
+          session[:msg] = "there are no logs to view"
+          redirect '/home'
+        end
+     else
+        #shouldn't be here
+      end
+      erb :l_list, :layout => :layout_w_logout
+    end
+    get '/r/member/list/?:event?' do
       @member = DB[:members].select(:id, :lname, :fname, :callsign, :paid_up, :mbr_type).order(:lname, :fname).all
       @tmp_msg = session[:msg]
       session[:msg] = nil
@@ -606,7 +671,7 @@ module MemberTracker
       end
       erb :m_list, :layout => :layout_w_logout
     end
-    get '/r/show/member/:id' do
+    get '/r/member/show/:id' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
       @member = Member[params[:id].to_i]
@@ -616,17 +681,17 @@ module MemberTracker
       end
       erb :m_show, :layout => :layout_w_logout
     end
-    get '/m/edit/member/:id' do
+    get '/m/member/edit/:id' do
       @member = Member[params[:id].to_i]
       @modes = Member.modes
       erb :m_edit, :layout => :layout_w_logout
     end
-    get '/m/new/member' do
+    get '/m/member/create' do
       @member = {:lname => '', :modes => ''}
       @modes = Member.modes
       erb :m_edit, :layout => :layout_w_logout
     end
-    post '/m/save/member' do
+    post '/m/member/create' do
       #this route used to update an existing member or save a new member
       #this action is also logged
       mbr_id = params[:id]
@@ -713,9 +778,9 @@ module MemberTracker
           session[:msg] << "\nyou need to be an admin to add a payment record"
         end
       end
-      redirect "/r/show/member/#{mbr_id}"
+      redirect "/r/member/show/#{mbr_id}"
     end
-    get '/m/list/units/:unit_type' do
+    get '/m/unit/list/:unit_type' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
       units = nil
@@ -764,7 +829,7 @@ module MemberTracker
       end
       erb :u_list, :layout => :layout_w_logout
     end
-    get '/m/new/unit' do
+    get '/m/unit/create' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
       @unit_type = DB[:unit_types].select(:id, :type).all
@@ -778,7 +843,7 @@ module MemberTracker
       end
       erb :u_new, :layout => :layout_w_logout
     end
-    post '/m/new/unit' do
+    post '/m/unit/create' do
       #get the string unit_type
       unit_type_id = params[:unit_type_id].to_i
       unit_type_name = UnitType[unit_type_id].type
@@ -828,7 +893,7 @@ module MemberTracker
               end
               if !fu_already.empty?
                 session[:msg] = "Unit creation UNSUCCESSFUL: member(s) are already in a family unit #{fu_already}"
-                redirect "/m/list/units/family"
+                redirect "/m/unit/list/family"
               end
               #set mbr_type to none, record this change in auditLogs if mbr_type changed
               #when payment is made this member will change type to family
@@ -846,13 +911,13 @@ module MemberTracker
           l.save
         end
         session[:msg] = "The unit was successfully created"
-        redirect "/m/list/units/#{unit_type_name}"
+        redirect "/m/unit/list/#{unit_type_name}"
       rescue StandardError => e
         session[:msg] = "The unit could not be created\n#{e}"
         redirect '/home'
       end
     end
-    get '/m/edit/unit/:id' do
+    get '/m/unit/edit/:id' do
       #response['Cache-Control'] = "public, max-age=0, must-revalidate"
       @unit = Unit[params[:id].to_i]
       #get a list of member ids that belong to this unit
@@ -884,7 +949,7 @@ module MemberTracker
       end
       erb :u_edit, :layout => :layout_w_logout
     end
-    post '/m/update/unit' do
+    post '/m/unit/update' do
       #expecting keys "unit_id", "name", some mbrs like {"id:nnn" => 1, ...} where nnn is the member id
       #if :active is missing is then 0
       #save notes for log
@@ -961,7 +1026,7 @@ module MemberTracker
             if have_payment == true && Payment[unit_pay_id_latest].mbr_id == mbr_id
               #can't do this, need to rollback that payment and associate it with another remaining unit mbr
               session[:msg] = "FAILED: The unit could not be updated. Most recent payment (id: #{unit_pay_id_latest}) is still associated with member (id: #{mbr_id}) you are trying to remove"
-              redirect "/m/list/units/all"
+              redirect "/m/unit/list/all"
             end
             m = Member[mbr_id]
             unit.remove_member(m)
@@ -1051,14 +1116,14 @@ module MemberTracker
           session[:msg] = "The existing unit was successfully updated"
           #need to build this route
           #redirect "/show/unit/#{unit.id}"
-          redirect "/m/list/units/#{unit.unit_type.type}"
+          redirect "/m/unit/list/#{unit.unit_type.type}"
         end
       rescue StandardError => e
         session[:msg] = "The existing unit could not be updated\n#{e}"
-        redirect "/m/list/units/all"
+        redirect "/m/unit/list/all"
       end
     end
-    get '/m/create_unit_type/:id?' do
+    get '/m/unit/type/create/:id?' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
       @edit_unit_type = nil
@@ -1074,7 +1139,7 @@ module MemberTracker
       @old_type_names = @old_type_names[0...-1]
       erb :create_unit_type, :layout => :layout_w_logout
     end
-    post '/m/create_unit_type/:id?' do
+    post '/m/unit/type/create/:id?' do
       #expecting {"unit_type_name"=>"type5", "unit_type_descr"=>"a new type"}
       if params[:id].nil?
         #creating new type
@@ -1106,7 +1171,7 @@ module MemberTracker
       rescue StandardError => e
         session[:msg] = "Error; the unit type could not be created\n#{e}"
       end
-      redirect '/m/create_unit_type/'
+      redirect '/m/unit/type/create/'
     end
     get '/reset_password/:id' do
       #use @is_pwdreset to load password script from script.js by setting <body id="PwdReset"> in layout
@@ -1120,7 +1185,7 @@ module MemberTracker
       session[:msg] = 'Password successfully reset, please login with your new password'
       redirect '/login'
     end
-    get '/m/groupsio' do
+    get '/m/member/groupsio' do
       #get members who have no Groups.io account record
       @mbrs_wo_gio = Member.select(:id, :fname, :lname).where(Sequel.lit('gio_id IS NULL')).order(:lname).all
       count_gio_noparc = 0
@@ -1141,7 +1206,7 @@ module MemberTracker
         erb :errorMsg, :layout => :layout_w_logout
       end
     end
-    post '/m/groupsio' do
+    post '/m/member/groupsio' do
       #if params has any numbered keys these are parc_mbr ids that need to
       #be updated with the value, first remove the captures key
       #Params returned with the form have name=mbr_id value=email from the
@@ -1172,75 +1237,10 @@ module MemberTracker
         }
         #return successful updates
         @mbrs = Member.select(:id, :fname, :lname, :callsign, :email).where(id: mbrs).all
-        erb :list_saved, :layout => :layout_w_logout
+        erb :g_list, :layout => :layout_w_logout
       else #nothing was sent
         erb :home, :layout => :layout_w_logout
       end
-    end
-    get '/m/view_log/:type' do
-      case params[:type]
-      when "auth_user" #view only current logged in users logs
-        @type = "auth_user"
-        @logs = []
-        au = Auth_user[session[:auth_user_id]]
-        #are there any logs for this auth_user?
-        if au.logs.length == 0
-          session[:msg] = "there are no logs to view"
-          redirect '/home'
-        end
-        Log.where(a_user_id: session[:auth_user_id]).order(:ts, :action_id).each do |l|
-          h = Hash.new
-          if !l.member.nil?
-            h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"
-          end
-          ts = l.ts.strftime("%m-%d-%Y")
-          h[:time] = "#{ts}"
-          h[:notes] = l.notes
-          h[:action] = l.action.type
-          @logs << h
-        end
-      when "all"
-        @type = "all"
-        aus = Auth_user.all
-        @logs = []
-        no_logs = true
-        aus.each do |au|
-          if au.logs.length > 0
-            no_logs = false
-            au.logs.each do |l|
-              h = Hash.new
-              if !l.member.nil?
-                h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"
-              end
-              ts = l.ts.strftime("%m-%d-%Y")
-              h[:time] = "#{ts}"
-              h[:notes] = l.notes
-              h[:action] = l.action.type
-              h[:au_name] = "#{l.auth_user.member.fname} #{l.auth_user.member.lname}"
-              @logs << h
-            end
-          end
-        end
-        if no_logs == true
-          session[:msg] = "there are no logs to view"
-          redirect '/home'
-        end
-      when "general"
-        @logs = []
-        #first get action id
-        actions = {}
-        Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
-        Action[actions['general_log']].logs_dataset.order(:id).each do |l|
-          @logs << {:au_name => l.auth_user.member.callsign, :notes => l.notes, :time => l.ts.strftime("%m-%d-%Y")}
-        end
-        if @logs.length == 0
-          session[:msg] = "there are no logs to view"
-          redirect '/home'
-        end
-     else
-        #shouldn't be here
-      end
-      erb :list_logs, :layout => :layout_w_logout
     end
     get '/m/payment/new/:id' do
       @tmp_msg = session[:msg]
@@ -1320,7 +1320,7 @@ module MemberTracker
           #validate this member is already a member of a family, need to set that up first
           if mbr_family_unit_id.nil?
             session[:msg] = "Payment FAILED; please set up the family unit first"
-            redirect "/m/new/unit"
+            redirect "/m/unit/create"
           end
           #associate logs with this unit
           log_pay.unit_id = mbr_family_unit_id
@@ -1418,7 +1418,7 @@ module MemberTracker
                 if fm.paid_up > params[:paid_up].to_i
                   #bail with error
                   session[:msg] = "UNSUCCESSFUL; family mbr #{fm.fname} #{fm.lname}: paid up, #{fm.paid_up} conflicts with #{m.fname} #{m.lname}: paid_up #{params[:paid_up]}"
-                  redirect '/m/list/units/family'
+                  redirect '/m/unit/list/family'
                 end
                 fam_names << "\nmbr_id#:#{fm.id}, #{fm.fname}, #{fm.lname}"
                 #need to set up audit logs for these guys
@@ -1734,7 +1734,7 @@ module MemberTracker
       end
     end
     ################### START ADMIN #######################
-    get '/a/list_auth_users' do
+    get '/a/auth_user/list' do
       @au_list = []
       #get a 2D array of [[mbr_id, auth_user_id]] for each auth_user
       #except for currently logged in admin
@@ -1765,18 +1765,18 @@ module MemberTracker
       @au_list
       @tmp_msg = session[:msg]
       session[:msg] = nil
-      erb :list_auth_users, :layout => :layout_w_logout
+      erb :au_list, :layout => :layout_w_logout
     end
-    get '/a/update_au_roles/:id' do
+    get '/a/auth_user/role/update/:id' do
       @mbr_to_update = Member.select(:id, :fname, :lname, :callsign, :email)[params[:id].to_i]
       #get role associated with this auth_user
       au = Auth_user.where(mbr_id: params[:id]).first
       @mbr_to_update[:role] = au.role
       @au_roles = Role.map(){|x| [x.rank, x.id, x.description]}
       @au_roles.sort!
-      erb :update_au_roles, :layout => :layout_w_logout
+      erb :au_roles_update, :layout => :layout_w_logout
     end
-    post '/a/update_auth_user' do
+    post '/a/auth_user/update' do
       #get action_id
       action_id = nil
       Action.select(:id, :type).map(){|x|
@@ -1799,7 +1799,7 @@ module MemberTracker
         if params[:notes] == ''
           #nothing was changed get out of here
           session[:msg] = "The Auth User's new role was not different from old: No Change made"
-          redirect '/a/list_auth_users'
+          redirect '/a/auth_user/list'
         else
           notes_only = true
         end
@@ -1827,15 +1827,15 @@ module MemberTracker
       rescue StandardError => e
         session[:msg] = "The data was not entered successfully\n#{e}"
       end
-      redirect '/a/list_auth_users'
+      redirect '/a/auth_user/list'
     end
-    get '/a/set_au_roles/:id' do
+    get '/a/auth_user/role/set/:id' do
       @sel_au_mbr = Member.select(:id, :fname, :lname, :callsign, :email)[params[:id].to_i]
       #won't be setting a newly authorized member as inactive, so pull this from the list
       @roles = Role.exclude(name: 'inactive').order(:rank)
-      erb :set_au_roles, :layout => :layout_w_logout
+      erb :au_roles_set, :layout => :layout_w_logout
     end
-    get '/a/create_auth_user' do
+    get '/a/auth_user/create' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
       #only want members who are not already auth users
@@ -1843,14 +1843,14 @@ module MemberTracker
       @sel_au_from_mbrs = Member.exclude(id: existing_au_mbr_ids).select(:id, :fname, :lname, :callsign, :email).all
       erb :create_au, :layout => :layout_w_logout
     end
-    post '/a/create_auth_user' do
+    post '/a/auth_user/create' do
       #expecting params keys :notes, :mbr_id, :role_id
       email = Member[params[:mbr_id].to_i].email
       #test for existing user with these credentials
       existing_auth_user = Auth_user.first(mbr_id: params[:mbr_id])
       if !existing_auth_user.nil?
         session[:msg] = 'this auth_user already exists, select update instead of create new'
-        redirect "/a/create_auth_user"
+        redirect "/a/auth_user/create"
       end
       #test for duplicate emails in members table for this user
       member_set = Member.select(:id, :fname, :lname, :callsign, :email).where(email: email).all
@@ -1863,7 +1863,7 @@ module MemberTracker
         end
         mbrs_w_same_email.chomp!()
         session[:msg] = "this auth_user shares email (#{email}) with\n#{mbrs_w_same_email}"
-        redirect "/a/create_auth_user"
+        redirect "/a/auth_user/create"
       end
       #all criteria are passing, go ahead and save this auth_user
       password = SecureRandom.hex[0,6]
@@ -1889,10 +1889,10 @@ module MemberTracker
         end
         session[:msg] = "Success; temp password is #{password} for member #{member_set[0].values[:callsign]} with username #{member_set[0].values[:email]}\n
         they have 48 hrs to reset their password"
-        redirect "/a/list_auth_users"
+        redirect "/a/auth_user/list"
       rescue StandardError => e
         session[:msg] = "error: could not create authorized user.\n#{e}"
-        redirect "/a/create_auth_user"
+        redirect "/a/auth_user/create"
       end
     end
     #################### END ADMIN #############################

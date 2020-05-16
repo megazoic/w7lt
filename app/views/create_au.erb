@@ -16,7 +16,7 @@
 		<td><%=member[:lname]%></td>
 		<td><%=member[:callsign]%></td>
 		<td><%=member[:email]%></td>
-		<td><a href="/a/set_au_roles/<%= member[:id]%>">select</a></td>
+		<td><a href="/a/auth_user/role/set/<%= member[:id]%>">select</a></td>
 		</tr>
 		<% end %>
 	</table>

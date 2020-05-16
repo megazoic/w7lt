@@ -27,7 +27,7 @@ Volunteer:<br />VE <span class="highlight"><%=@member[:ve].to_i == 0 ? "N" : "Y"
   <%end%>
 <%end%>
 <br />
-<%if session[:auth_user_roles].include?('mbr_mgr') || MemberTracker::Auth_user[session[:auth_user_id]].member.id == @member[:id]%><a href="/m/edit/member/<%= @member[:id]%>">Edit Member Details</a><%end%><br />
+<%if session[:auth_user_roles].include?('mbr_mgr') || MemberTracker::Auth_user[session[:auth_user_id]].member.id == @member[:id]%><a href="/m/member/edit/<%= @member[:id]%>">Edit Member Details</a><%end%><br />
 <h4>Log notes:</h4>
 <a href="/m/log/create/<%=@member[:id]%>">Add a log note for this member</a>
 <br />

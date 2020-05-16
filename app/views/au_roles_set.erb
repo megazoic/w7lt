@@ -1,6 +1,6 @@
 <h3>Set Roles for <%="#{@sel_au_mbr[:fname]} #{@sel_au_mbr[:lname]}, #{@sel_au_mbr[:callsign]}: #{@sel_au_mbr[:email]}"%></h3>
 Rolls are hierarchical, a roll includes all rolls of lower rank
-<form action="/a/create_auth_user" method="POST" name="auRoles" onsubmit="return validateAssignRoleForm();">
+<form action="/a/auth_user/create" method="POST" name="auRoles" onsubmit="return validateAssignRoleForm();">
 	<input type="hidden" name="mbr_id" value=<%=@sel_au_mbr[:id]%>>
 	<% for role in @roles%>
 		<input type="radio" name="role_id" id=<%="role_#{role[:id]}"%> value=<%=role[:id]%>>

@@ -1,5 +1,5 @@
 <h3>Build a new unit</h3>
-<form action='/m/new/unit' method='POST' name='new_unit' onSubmit="return validateUnitNewForm()">
+<form action='/m/unit/create' method='POST' name='new_unit' onSubmit="return validateUnitNewForm()">
 Unit Type:
 <select id="unit_type" name="unit_type_id">
   <option value="none" selected>Select unit type</option>
@@ -34,5 +34,5 @@ Unit Type:
 		<% end %>
 	</table>
 </div>
-<input type='submit' value='Submit'\> | <a href="/m/list/units/all">Cancel</a>
+<input type='submit' value='Submit'\> | <a href="/m/unit/list/all">Cancel</a>
 </form>
