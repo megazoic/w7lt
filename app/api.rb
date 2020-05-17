@@ -257,11 +257,6 @@ module MemberTracker
         existing_event_id = params[:event_id].to_i
         params.delete(:event_id)
       end
-      #get action ids
-      #need to create a log for this transaction
-      #first get action id
-      actions = {}
-      Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
       #remove member and guest info from params
       params.delete("has_guests")
       count = 0
@@ -304,8 +299,7 @@ module MemberTracker
       if !guest.tmp_vitals.empty?
         guest.new_guests << guest.tmp_vitals
       end
-      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: actions["event"])
-      puts "actions event is #{actions["event"]} and l.actions are #{l.action_id}"
+      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: @action.get_action_id("event"))
       #look for existing log
       recent_log_vitals = {:a_user => nil, :ts => nil, :log_id => nil}
       if !existing_event_id.nil?
@@ -367,7 +361,7 @@ module MemberTracker
                 next
               end
               #need to add guests to database before adding them to this event
-              log_guest = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: actions["mbr_edit"], event_id: event.id)
+              log_guest = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: @action.get_action_id("mbr_edit"), event_id: event.id)
               possible_duplicate = {}
               number_duplicate_keys = 0
               ng.each do |k,v|
@@ -445,11 +439,7 @@ module MemberTracker
         et.descr = params["event_type_descr"]
       end
       #need to create a log for this transaction
-      #first get action id
-      actions = {}
-      Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
-      action_id = actions["event"]
-      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
+      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: @action.get_action_id("event"))
       if et.id.nil?
         l.notes = "creating new event type: #{params["event_type_name"]}"
       else
@@ -576,21 +566,18 @@ module MemberTracker
       erb :l_create, :layout => :layout_w_logout
     end
     post '/m/log/create' do
-      #first get action id
-      actions = {}
-      Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
       l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, notes: params[:notes])
       
       if params[:mbr_id].nil?
         #a general log (for now)
-        l.action_id = actions["general_log"]
+        l.action_id = @action.get_action_id("general_log")
         l.save
         session[:message] = "Log successfully saved"
         redirect '/m/log/view/auth_user'
       else
         #adding a note to a member
         l.mbr_id = params[:mbr_id]
-        l.action_id = actions["mbr_edit"]
+        l.action_id = @action.get_action_id("mbr_edit")
         l.save
         session[:message] = "Log successfully saved"
         redirect "/r/member/show/#{params[:mbr_id]}"
@@ -646,10 +633,7 @@ module MemberTracker
         end
       when "general"
         @logs = []
-        #first get action id
-        actions = {}
-        Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
-        Action[actions['general_log']].logs_dataset.order(:id).each do |l|
+        Action[@action.get_action_id("general_log")].logs_dataset.order(:id).each do |l|
           @logs << {:au_name => l.auth_user.member.callsign, :notes => l.notes, :time => l.ts.strftime("%m-%d-%Y")}
         end
         if @logs.length == 0
@@ -699,12 +683,6 @@ module MemberTracker
       #save notes for log
       notes = params[:notes]
       #get action id
-      action_id = nil
-      Action.select(:id, :type).map(){|x|
-        if x.type == "mbr_edit"
-          action_id = x.id
-        end
-      }
       params.reject!{|k,v| k == 'notes'}
       logPayment = params[:payment]
       params.reject!{|k,v| k == 'payment'}
@@ -744,7 +722,7 @@ module MemberTracker
             mbr_id = mbr.id
             #log the action
             augmented_notes = "**** New Member entry\n#{notes}"
-            l = Log.new(mbr_id: mbr_id, a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: action_id)
+            l = Log.new(mbr_id: mbr_id, a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: @action.get_action_id("mbr_edit"))
             l.save
           end
           session[:msg] = "The new member was successfully entered"
@@ -764,7 +742,7 @@ module MemberTracker
           DB.transaction do
             mbr_record.update(params)
             augmented_notes = "**** Existing Member update\n#{notes}"
-            l = Log.new(mbr_id: mbr_record.id, a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: action_id)
+            l = Log.new(mbr_id: mbr_record.id, a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: @action.get_action_id("mbr_edit"))
             l.save
           end
           session[:msg] = "The existing member was successfully updated"
@@ -861,11 +839,7 @@ module MemberTracker
         mbr_ids << /id:(\d+)/.match(k)[1]
       end
       #need to create a log for this transaction
-      #first get action id
-      actions = {}
-      Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
-      action_id = actions["unit"]
-      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
+      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: @action.get_action_id("unit"))
       mbr_names = ""
       mbr_ids.each do |mbr_id|
         mbr_names << "#{Member[mbr_id].fname} #{Member[mbr_id].lname}, "
@@ -956,13 +930,6 @@ module MemberTracker
       #save notes for log
       notes = params["notes"]
       params.reject!{|k,v| k == "notes"}
-      #get action id
-      action_id = nil
-      Action.select(:id, :type).map(){|x|
-        if x.type == "unit"
-          action_id = x.id
-        end
-      }
       #load unit and check values
       unit = Unit[params["unit_id"].to_i]
       augmented_notes = "updating unit_id:#{params["unit_id"]}"
@@ -997,7 +964,7 @@ module MemberTracker
         augmented_notes << "\nactive status changed from #{unit.active.to_s} to #{active_new.to_s}"
         unit.active = active_new
       end
-      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: action_id)
+      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: @action.get_action_id("unit"))
       ################get ready for update#####################
       have_payment = false
       paid_up_status = 0
@@ -1152,11 +1119,7 @@ module MemberTracker
         ut.descr = params["unit_type_descr"]
       end
       #need to create a log for this transaction
-      #first get action id
-      actions = {}
-      Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
-      action_id = actions["unit"]
-      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
+      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: @action.get_action_id("unit"))
       if ut.id.nil?
         l.notes = "creating new unit type: #{params["unit_type_name"]}"
       else
@@ -1290,12 +1253,10 @@ module MemberTracker
     post '/m/payment/new' do
       #this is used to renew a membership but also to record other payment types
       #{mbr_id, mbr_type_old=>(eg.)full, mbr_paid_up_old, payment_type=>2, mbr_type, paid_up, payment_method=>1, payment_amt, notes=>}
-      #need to create a log for this transaction, first get action id
-      actions = {}
-      Action.select(:id, :type).map(){|x| actions[x.type]= x.id}
+      #need to create a log for this transaction
       augmented_notes = params[:notes]
       log_pay = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now)
-      log_unit = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: actions["unit"])
+      log_unit = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: @action.get_action_id("unit"))
       #create hash to hold all of the audit logs associated with this transaction
       auditlog_hash = {}
       #load AuditLog in case needed this is associated with the paying member ie params[:mbr_id]
@@ -1309,7 +1270,7 @@ module MemberTracker
       mbr_family_unit_id = nil
       if PaymentType[params[:payment_type]].type == 'Dues'
         #going to put this info in the log
-        log_pay.action_id = actions["mbr_renew"]
+        log_pay.action_id = @action.get_action_id("mbr_renew")
         m = Member[params[:mbr_id]]
         if params[:mbr_type] == 'family'
           #get other family members; find the id for the family unit
@@ -1400,7 +1361,7 @@ module MemberTracker
         end
       else #end if Dues
         #payment must be a donation, set up for log
-        log_pay.action_id = actions["donation"]
+        log_pay.action_id = @action.get_action_id("donation")
       end
       pay = Payment.new(:mbr_id => params[:mbr_id], :a_user_id => session[:auth_user_id], :payment_type_id => params[:payment_type],
         :payment_method_id => params[:payment_method], :payment_amount => params[:payment_amt], :ts => Time.now)
@@ -1778,16 +1739,9 @@ module MemberTracker
       erb :au_roles_update, :layout => :layout_w_logout
     end
     post '/a/auth_user/update' do
-      #get action_id
-      action_id = nil
-      Action.select(:id, :type).map(){|x|
-        if x.type == "auth_u"
-          action_id = x.id
-        end
-      }
       notes_only = false
       #start building the log string
-      l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
+      l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: @action.get_action_id("auth_u"))
       au = Auth_user.where(mbr_id: params[:mbr_id]).first
       old_au_role = au.role.name
       new_au_role = Role[params[:role_id]].name
@@ -1856,7 +1810,6 @@ module MemberTracker
       #test for duplicate emails in members table for this user
       member_set = Member.select(:id, :fname, :lname, :callsign, :email).where(email: email).all
       if member_set.length > 1
-        puts "there is more than one member with this email"
         mbrs_w_same_email = ""
         member_set.each do |m|
           mbrs_w_same_email << "#{m.fname} #{m.lname}, #{m.callsign}\n"
@@ -1869,19 +1822,12 @@ module MemberTracker
       #all criteria are passing, go ahead and save this auth_user
       password = SecureRandom.hex[0,6]
       encrypted_pwd = BCrypt::Password.create(password)
-      #get action id
-      action_id = nil
-      Action.select(:id, :type).map(){|x|
-        if x.type == "auth_u"
-          action_id = x.id
-        end
-      }
       begin
         DB.transaction do
           auth_user = Auth_user.new(:password => encrypted_pwd, :mbr_id => params[:mbr_id].to_i,
             :time_pwd_set => Time.now, :new_login => 1, :last_login => Time.now, :role_id => params[:role_id])
           auth_user.save
-          l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: action_id)
+          l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: @action.get_action_id("auth_u"))
           l.notes = "New authorized user added\nwith following role #{Role[params[:role_id]].name}"
           if !params[:notes].empty?
             l.notes << "\nNotes: #{params[:notes]}"
