@@ -305,6 +305,7 @@ module MemberTracker
         guest.new_guests << guest.tmp_vitals
       end
       l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: actions["event"])
+      puts "actions event is #{actions["event"]} and l.actions are #{l.action_id}"
       #look for existing log
       recent_log_vitals = {:a_user => nil, :ts => nil, :log_id => nil}
       if !existing_event_id.nil?
