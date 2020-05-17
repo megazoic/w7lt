@@ -598,6 +598,8 @@ module MemberTracker
           h = Hash.new
           if !l.member.nil?
             h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"
+          else
+            h[:mbr_name] = "N/A"
           end
           ts = l.ts.strftime("%m-%d-%Y")
           h[:time] = "#{ts}"
@@ -1813,7 +1815,6 @@ module MemberTracker
         mbrs_w_same_email = ""
         member_set.each do |m|
           mbrs_w_same_email << "#{m.fname} #{m.lname}, #{m.callsign}\n"
-          puts "#{m.fname} #{m.lname}, #{m.callsign}, #{m.email}"
         end
         mbrs_w_same_email.chomp!()
         session[:msg] = "this auth_user shares email (#{email}) with\n#{mbrs_w_same_email}"
