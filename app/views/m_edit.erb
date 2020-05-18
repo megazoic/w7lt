@@ -21,7 +21,12 @@
 	<p>Address:</p>
 	<label for="email">email</label>
 	<input type="text" name="email" value="<%=@member[:email]%>" id="email" onfocusout="validateEmail(this)">
-	<label for="street">Street</label>
+	 | OK to email about club activities?
+   <select id="ok_to_email" name="ok_to_email">
+   		<option value="true" <%=@member[:ok_to_email] == true ? "selected" : nil%>>Yes</option>
+   		<option value="false" <%=@member[:ok_to_email] == false ? "selected" : nil%>>No</option>
+      </select>
+  <br /><label for="street">Street</label>
 	<input type="text" name="street" value="<%=@member[:street]%>" id="street">
 	<label for="city">City</label>
 	<input type="text" name="city" value="<%=@member[:city]%>" id="city">

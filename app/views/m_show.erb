@@ -9,7 +9,7 @@
 <h1>Member: <%="#{@member[:fname]} #{@member[:lname]}, #{@member[:callsign]}"%></h1>
 <p>Address: <%="#{@member[:street]}"%><br />
 	<%="#{@member[:city]} #{@member[:state]} #{@member[:zip]}"%><br /></p>
-	<p>Email: <%=@member[:email]%>
+	<p>Email: <%=@member[:email]%> | Okay to use for contact about club activities? <%=@member[:ok_to_email] == true ? "Yes" : "No"%> 
 <p>Phone:<br /><span class="textColor">Home</span> <%="#{@member[:phh]} publish? "%><span class="highlight"><%=@member[:phh_pub].to_i == 0 ? "N" : "Y"%></span><br />
 <p><span class="textColor">Work</span> <%="#{@member[:phw]} publish? "%><span class="highlight"><%=@member[:phw_pub].to_i == 0 ? "N" : "Y"%></span><br />
 <p><span class="textColor">Mobile</span> <%="#{@member[:phm]} publish? "%><span class="highlight"><%=@member[:phm_pub].to_i == 0 ? "N" : "Y"%></span><br />
