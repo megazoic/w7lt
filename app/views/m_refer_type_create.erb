@@ -1,0 +1,51 @@
+<br /><h3>Referral Types currently available</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Desc</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<%for rt in @refer_types%>
+<tr>
+<td><%=rt[:name]%></td>
+<td><%=rt[:descr]%></td>
+<td><a href=<%=URI.escape("/m/member/refer/type/list/#{rt[:id]}")%>>List</a></td>
+</tr>
+<%end%>
+</tbody>
+</table>
+</br><h3>Edit Referral Types</h3>
+<%if @refer_types.length < 5%>
+  <%@refer_types.each do |rt|%>
+    <a href="/m/member/refer/type/create/<%=rt.id%>"><%=rt.name%></a></br>
+  <%end%>
+<%else%>
+  <table>
+    <%@refer_types.each_slice(2) do |rt|%>
+      <tr><td><a href="/m/member/refer/type/create/<%=rt[0].id%>"><%=rt[0].name%></a></td>
+      <%if rt.length == 2%>
+        <td><a href="/m/member/refer/type/create/<%=rt[1].id%>"><%=rt[1].name%></a></td></tr>
+      <%else%>
+        <td></td></tr>
+      <%end%>
+    <%end%>
+  </table>
+<%end%>
+
+</br><h3>Create/Edit New Referral Type</h3>
+<form action='/m/member/refer/type/create/<% if !@edit_refer_type.nil?%><%=@edit_refer_type.id%><%end%>' method='POST' name='new_refer_type' onsubmit="return validateReferTypeForm()">
+<%if !@edit_refer_type.nil?%>
+<input type='hidden' name='old_type_descr' id='old_type_descr' value='<%=@edit_refer_type.descr%>'>
+<input type='hidden' name='old_type_name' id='old_type_name' value='<%=@edit_refer_type.name%>'>
+<%end%>
+<br/><input type='text' name='refer_type_name' id='new_type_name' <% if !@edit_refer_type.nil?%>value='<%=@edit_refer_type.name%>'<%end%>>
+<label for="refer_type_name">Short Name of Referral Type</label>
+<br/><input type='text' name='refer_type_descr' <% if !@edit_refer_type.nil?%>value='<%=@edit_refer_type.descr%>'<%end%>>
+<label for="refer_type_name">Description of type</label>
+<br /><textarea name='refer_type_notes' id='refer_type_notes'>Notes for this action</textarea>
+<br/>
+<input type='submit' value='Submit'/> | <a href="/home">Cancel</a>
+</form>    

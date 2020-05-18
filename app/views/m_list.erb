@@ -6,11 +6,11 @@
 :arrl_expire	:ares	:net	:ve	:elmer :sota
 %>
 <div>
-  <h3>Members List: total number listed here: <%=@member.count%></h3>
+  <h3>Members List: total number listed here: <%=@members.count%></h3>
   <%if @qset%>
   <p>Filters in place</p>
 	  <%@qset.each do |k,v|%>
-    	<p><%=k%> : value <%=v%></p>
+    	<p><%=k%> : value= <%=v%></p>
   	  <%end%>
   <%end%>
 </div>
@@ -20,20 +20,20 @@
 			<th>First Name</th>
 			<th>Last Name</th>
 			<th>call</th>
-			<th>paid <%=Time.new.year%></th>
+      <% if @refer_type == 'all' %>
+        <th>Referral Type</th>
+      <% end %>
 			<th></th>
 		</tr>
-		<% for member in @member %>
+		<% @members.each do |m| %>
 		<tr>
-		<td><%=member[:fname]%></td>
-		<td><%=member[:lname]%></td>
-		<td><%=member[:callsign]%></td>
-		<td><%=member[:paid_up]%></td>
-    <%if @event == true%>
-      <td><a href="/m/event/new/<%= member[:id]%>">select</a></td>
-    <%else%>
-		  <td><a href="/r/member/show/<%= member[:id]%>">view</a><%if session[:auth_user_roles].include?('mbr_mgr')%> | <a href="/m/member/edit/<%= member[:id]%>">edit</a><%end%><%if session[:auth_user_roles].include?('auth_u')%> | <a href="/m/payment/new/<%= member[:id]%>">pay</a><%end%></td>
-    <%end%>
+		<td><%=m[:fname]%></td>
+		<td><%=m[:lname]%></td>
+		<td><%=m[:callsign]%></td>
+    <% if @refer_type == 'all' %>
+      <td><%=MemberTracker::ReferType[m[:refer_type_id]].name%></td>
+    <% end %>
+		<td><a href="/r/member/show/<%= m[:id]%>">view</a><%if session[:auth_user_roles].include?('mbr_mgr')%> | <a href="/m/member/edit/<%= m[:id]%>">edit</a><%end%></td>
 		</tr>
 		<% end %>
 	</table>

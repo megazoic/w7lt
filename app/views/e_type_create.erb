@@ -37,10 +37,10 @@
   </table>
 <%end%>
 
-</br><h3>Create/Edit New Event Event</h3>
+</br><h3>Create/Edit New Event</h3>
 <form action='/m/event/type/create/<% if !@edit_event_type.nil?%><%=@edit_event_type.id%><%end%>' method='POST' name='new_event_type' onsubmit="return validateEventTypeForm()">
-<input type='hidden' id='editing_old_type' value=<% if !@edit_event_type.nil? %>'1'<%else%>'0'<%end%>>
-<input type='hidden' id='old_type_names' value='<%=@old_type_names%>'>
+<input type='hidden' name='editing_old_type' id='editing_old_type' value=<% if !@edit_event_type.nil? %>'1'<%else%>'0'<%end%>>
+<input type='hidden' name='old_type_names' id='old_type_names' value='<%=@old_type_names%>'>
 <br/><input type='text' name='event_type_name' id='new_type_name' <% if !@edit_event_type.nil?%>value='<%=@edit_event_type.name%>'<%end%>>
 <label for="event_name">Short Name of Event</label>
 <br/><input type='text' name='event_type_descr' <% if !@edit_event_type.nil?%>value='<%=@edit_event_type.descr%>'<%end%>>

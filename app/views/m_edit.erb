@@ -63,6 +63,16 @@
   <br />
   <label for="notes_field">Leave notes for this member here</label>
   <textarea name="notes" id="notes_field" rows="3" cols="65"></textarea>
+  <br />How did this member hear about the club?
+  <select id="refer" name="refer_type_id">
+  <option value=nil>Don&apos;t know</option>
+    <%MemberTracker::ReferType.each do |rt|%>
+  		<option value=<%=rt.id%> <%=@member[:refer_type_id] == rt.id ? "selected" : nil%>><%=rt.name%></option>
+    <%end%>
+     </select>
+  <br />(If you don&apos;t see the type that you need to add,
+      finish with this member&apos;s entry, visit the create referral page and return to editing this member, 
+      <a href=''>or click here to modify referral types directly without saving this member&apos;s data</a>)
   <br />
 	<p>Other Affiliations and Volunteering</p>
 	<label for="arrl">ARRL</label>

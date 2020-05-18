@@ -15,6 +15,7 @@ require_relative 'paymentMethod'
 require_relative 'auditLog'
 require_relative 'event'
 require_relative 'eventType'
+require_relative 'referType'
 
 module MemberTracker
   #using modular (cf classical) approach (see https://www.toptal.com/ruby/api-with-sinatra-and-sequel-ruby-tutorial)
@@ -204,14 +205,14 @@ module MemberTracker
         #there is a request for paid up status
         if pu.condition == true
           #asking for members who are paid up through the current year
-          @member = Member.where(@qset){paid_up >= Time.now.strftime("%Y").to_i}
+          @members = Member.where(@qset){paid_up >= Time.now.strftime("%Y").to_i}
         else
           #asking for members who are NOT paid up through the current year
-          @member = Member.where(@qset){paid_up < Time.now.strftime("%Y").to_i}
+          @members = Member.where(@qset){paid_up < Time.now.strftime("%Y").to_i}
         end
       else
         #asking for all recorded members
-        @member = Member.where(@qset)
+        @members = Member.where(@qset)
       end
       erb :m_list, :layout => :layout_w_logout
     end
@@ -421,8 +422,8 @@ module MemberTracker
       @event_types = EventType.all
       #build a list of existing event type names to validate duplicates
       @old_type_names = ""
-      @event_types.each do |ut|
-        @old_type_names << "#{ut.name},"
+      @event_types.each do |et|
+        @old_type_names << "#{et.name},"
       end
       @old_type_names = @old_type_names[0...-1]
       erb :e_type_create, :layout => :layout_w_logout
@@ -648,7 +649,7 @@ module MemberTracker
       erb :l_list, :layout => :layout_w_logout
     end
     get '/r/member/list/?:event?' do
-      @member = DB[:members].select(:id, :lname, :fname, :callsign, :paid_up, :mbr_type).order(:lname, :fname).all
+      @members = DB[:members].select(:id, :lname, :fname, :callsign, :paid_up, :mbr_type).order(:lname, :fname).all
       @tmp_msg = session[:msg]
       session[:msg] = nil
       #if looking for an event contact
@@ -760,6 +761,75 @@ module MemberTracker
         end
       end
       redirect "/r/member/show/#{mbr_id}"
+    end
+    get '/m/member/refer/type/list/:id' do
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
+      @referrals = nil
+      @refer_type = 'all'
+      if params[:id] == 'all'
+        @members = Member.order(:lname, :refer_type_id).exclude(refer_type_id: nil).all
+        @qset = {"refer_type" => @refer_type}
+      else
+        @members = Member.where(:refer_type_id =>params[:id]).all
+        @refer_type = ReferType.where(:id => params[:id]).first.name
+        #remind the user about which refer type you are displaying
+        @qset = {"refer_type" => @refer_type}
+      end
+      erb :m_list, :layout => :layout_w_logout
+    end
+    get '/m/member/refer/type/create/?:id?' do
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
+      @edit_refer_type = nil
+      if !params[:id].nil?
+        @edit_refer_type = ReferType[params[:id]]
+      end
+      @refer_types = ReferType.all
+      erb :m_refer_type_create, :layout => :layout_w_logout
+    end
+    post '/m/member/refer/type/create/:id?' do
+      #params are {"refer_type_name"=>"instagram", "refer_type_descr"=>"instagram.com", "id"=>nil}
+      #first validate that the fields are filled out
+      if params[:refer_type_name].empty?
+        session[:msg] = "The referal type could not be created/updated\nmissing name field for refer type"
+        redirect "/m/member/refer/type/list/all"
+      end
+      rt_notes = ''
+      if !params[:id].nil?
+        rt_notes = "made change to refer type: old name is #{params[:old_type_name]}, old descr is #{params[:old_type_descr]}\n"
+        rt_notes = rt_notes << "new name is #{params[:refer_type_name]}, new descr is #{params[:refer_type_descr]}"
+        if params[:refer_type_notes] != 'Notes for this action'
+          rt_notes << "\n#{params[:refer_type_notes]}"
+        end
+      end
+      DB.transaction do
+        #if id => nil, creating a new type else, editing an existing referal type
+        rt = nil
+        if params[:id].nil?
+          rt = ReferType.new(name: params[:refer_type_name], descr: params[:refer_type_descr])
+          rt_notes = "added new referral type; name #{params[:refer_type_name]}, descr #{params[:refer_type_descr]}"
+          if params[:refer_type_notes] != 'Notes for this action'
+            rt_notes << "\n#{params[:refer_type_notes]}"
+          end
+        else
+          rt = ReferType[params[:id]]
+          rt.update(name: params[:refer_type_name], descr: params[:refer_type_descr])
+        end
+        l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, notes: rt_notes, action_id: @action.get_action_id("mbr_edit"))
+        l.save
+        rt.save
+      rescue StandardError => e
+          session[:msg] = "The referal type could not be created/updated\n#{e}"
+          redirect "/m/member/refer/type/list/all"
+      end
+      if params[:id].nil?
+        session[:msg] = "The referal type was successfully created"
+        redirect "/m/member/refer/type/list/all"
+      else
+        session[:msg] = "The referal type was successfully edited"
+        redirect "/m/member/refer/type/list/#{params[:id]}"
+      end
     end
     get '/m/unit/list/:unit_type' do
       @tmp_msg = session[:msg]

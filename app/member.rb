@@ -8,6 +8,7 @@ module MemberTracker
     many_to_many :events, left_key: :mbr_id, right_key: :event_id, join_table: :members_events
     one_to_many :payments, :class=>"MemberTracker::Payment", key: :mbr_id
     one_to_many :audit_logs, :class=>"MemberTracker::AuditLog", key: :mbr_id
+    many_to_one :refer_types, :class=>"MemberTracker::ReferType", key: :refer_type_id
     #keep sk last so can remove for payment route
     @mbr_types = ['family', 'student', 'full', 'honorary', 'none', 'sk']
     @modes = {'1' => 'phone', '2' => 'cw', '3' => 'rtty', '4' => 'msk:ft8/jt65', '5' => 'digital:other',

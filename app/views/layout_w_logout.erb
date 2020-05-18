@@ -15,6 +15,7 @@
   <tr><td><a href="/r/dump/mbr">Members Table</a></td><td><a href="/r/member/list">List members</a></td></tr>
   <%if session[:auth_user_roles].include?('mbr_mgr')%>
   <tr><td><a href="/m/query">Query the member data</a></td><td><a href="/m/member/create">Add a new member</a></td></tr>
+  <tr><td><a href="/m/member/refer/type/list/all">List all Member referrals</a></td><td><a href="/m/member/refer/type/create">Create/Edit Referral Types</a></td></tr>
   <tr><td><a href='/m/unit/list/all'>View/Edit all units</a></td><td><a href='/m/unit/create'>Build a new Unit</a></td></tr>
   <tr><td><a href="/r/member/list">Record payment</a></td><td><a href="/m/payments/show">View payments</a></td></tr>
   <tr><td><a href='/m/unit/type/create/'>Create/Edit/View unit types</a></td><td>Payment Rpt <a href='/m/payments/report/all/html'>HTML</a> | <a href='/m/payments/report/all/csv'>CSV</a></td></tr>
