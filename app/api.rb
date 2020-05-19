@@ -216,6 +216,32 @@ module MemberTracker
       end
       erb :m_list, :layout => :layout_w_logout
     end
+    get '/m/event/edit/:id' do
+      @event = Event[params[:id]]
+      @event_types = EventType.all
+      @mbrs = Member.select(:id, :fname, :lname, :callsign).all
+      #need to parse the log; should be in two parts 1) general notes 2) guest's not added to db
+      #notes = @event.log.first.notes.split("\n")
+      prev_event_log = @event.log_dataset.where(action_id: @action.get_action_id("event")).order(:id).all.shift
+      notes = prev_event_log.notes.split("\n")
+      @guest_notes = ''
+      @pared_notes = ''
+      if notes.length > 1
+        @guest_notes = notes.pop
+        #remove 'guest attendees:'
+        m = /guest attendees:(.*)/.match(@guest_notes)
+        if !m.nil?
+          @guest_notes = m[1]
+        end
+        @pared_notes = notes * "-"
+      end
+      #get members who have already been entered as attending this event
+      @mbrs_attending = []
+      @event.members.each do |mbr|
+        @mbrs_attending << mbr.id
+      end
+      erb :e_edit, :layout => :layout_w_logout
+    end
     get '/m/event/create' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
@@ -226,7 +252,7 @@ module MemberTracker
     post '/m/event/create' do
 =begin
       params {"general_notes"=>"a newer one", "event_type_id"=>"1", "name"=>"andSo", "descr"=>"a desc",
-      "duration"=>"3", "duration_units"=>"hrs", "guest_notes"=>"last,name;last2,name2",
+      "duration"=>"3" OR "none", "duration_units"=>"hrs", "guest_notes"=>"last,name;last2,name2",
       "g0:fname"=>"Myron", "g0:lname"=>"Dembo", "g0:callsign"=>"A7MYR", "g0:email"=>"*guest email",
       "g0:notes"=>"some notes for guest0",..., "mbr_id"=>"478", "id:481"=>"1", "id:479"=>"1"}
 =end
@@ -243,8 +269,8 @@ module MemberTracker
       elsif !/202\d-[01]\d-[0-3]\d\s+[012]\d:[0-5]\d/.match(params[:event_date]) #'MM-DD-YYYY HH:MM'
         session[:msg] = "Error; the event could not be created\nEvent date incorrectly formatted"
         valid_form = false
-      elsif (params[:duration] != "0" && params[:duration_units].nil?) ||
-        (params[:duration] == "0" && !params[:duration_units].nil?)
+      elsif (params[:duration] != "none" && params[:duration_units].nil?) ||
+        (params[:duration] == "none" && !params[:duration_units].nil?)
         session[:msg] = "Error, both a duration and a duration units must be selected"
         valid_form = false
       end
@@ -313,7 +339,7 @@ module MemberTracker
         if existing_event_id.nil?
           l.notes = "#{params[:general_notes]}"
         else
-          l.notes = "MODIFIED EVENT NOTES: previous auth user\n#{recent_log_vitals[:a_user]}," +
+          l.notes = "MODIFIED EVENT NOTES: previous auth user: #{recent_log_vitals[:a_user]},\n" +
             " previous notes made back on #{recent_log_vitals[:ts]}, that log id: #{recent_log_vitals[:log_id]}" +
             "\nNEW NOTES: #{params[:general_notes]}"
         end
@@ -326,7 +352,12 @@ module MemberTracker
       end
       params[:ts] = "#{DateTime.parse(params[:event_date])}"
       params.delete(:event_date)
+      if params[:duration] == "none"
+        params.delete(:duration)
+        params.delete(:duration_units)
+      end
       #at this point params should be params are {"event_type_id"=>"1", "name"=>"fdim :update ;update2", "descr"=>"a desc :update :update2", "duration"=>"3", "duration_units"=>"hrs", "mbr_id"=>"481", "ts"=>"2020-05-15 15:01:28 -0700"}
+      #OR "duration"=> key removed, "duration_units"=> key removed
       event = nil
       if !existing_event_id.nil?
         event = Event[existing_event_id]
@@ -529,32 +560,6 @@ module MemberTracker
       end
       @e_contact = Member.select(:fname, :lname, :callsign).where(id: @event.mbr_id).first
       erb :e_attendees, :layout => :layout_w_logout
-    end
-    get '/m/event/edit/:id' do
-      @event = Event[params[:id]]
-      @event_types = EventType.all
-      @mbrs = Member.select(:id, :fname, :lname, :callsign).all
-      #need to parse the log; should be in two parts 1) general notes 2) guest's not added to db
-      #notes = @event.log.first.notes.split("\n")
-      prev_log = @event.log_dataset.order(:id).all.shift
-      notes = prev_log.notes.split("\n")
-      @guest_notes = ''
-      @pared_notes = ''
-      if notes.length > 1
-        @guest_notes = notes.pop
-        #remove 'guest attendees:'
-        m = /guest attendees:(.*)/.match(@guest_notes)
-        if !m.nil?
-          @guest_notes = m[1]
-        end
-        @pared_notes = notes * "-"
-      end
-      #get members who have already been entered as attending this event
-      @mbrs_attending = []
-      @event.members.each do |mbr|
-        @mbrs_attending << mbr.id
-      end
-      erb :e_edit, :layout => :layout_w_logout
     end
     get '/m/log/create/:id?' do
       if params[:id].nil?
