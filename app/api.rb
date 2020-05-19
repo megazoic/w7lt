@@ -620,6 +620,8 @@ module MemberTracker
               h = Hash.new
               if !l.member.nil?
                 h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"
+              else
+                h[:mbr_name] = "N/A"
               end
               ts = l.ts.strftime("%m-%d-%Y")
               h[:time] = "#{ts}"
