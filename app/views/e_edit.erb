@@ -18,7 +18,7 @@ Event Type:
 <input type='text' name='descr' value='<%=@event[:descr]%>'>
 <br /><label for="duration">Duration of event (hrs)</label>
 <select name='duration' id='duration'>
-<option>'none'</option>
+<option>none</option>
 <%5.times do |t|%>
   <option <%if @event[:duration] == t+1%>selected='selected'<%end%>><%=t+1%></option>
 <%end%>

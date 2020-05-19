@@ -222,7 +222,7 @@ module MemberTracker
       @mbrs = Member.select(:id, :fname, :lname, :callsign).all
       #need to parse the log; should be in two parts 1) general notes 2) guest's not added to db
       #notes = @event.log.first.notes.split("\n")
-      prev_event_log = @event.log_dataset.where(action_id: @action.get_action_id("event")).order(:id).all.shift
+      prev_event_log = @event.log_dataset.order(:id).where(action_id: @action.get_action_id("event")).all.pop
       notes = prev_event_log.notes.split("\n")
       @guest_notes = ''
       @pared_notes = ''
@@ -257,6 +257,7 @@ module MemberTracker
       "g0:notes"=>"some notes for guest0",..., "mbr_id"=>"478", "id:481"=>"1", "id:479"=>"1"}
 =end
       ######validate presence of contact member, event type, date, if duration also units ###########
+      puts "params #{params}"
       valid_form = true
       if params[:mbr_id].nil?
         #invalid cuz no event contact
