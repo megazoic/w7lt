@@ -32,6 +32,7 @@ module MemberTracker
     end
     enable :sessions
     before do # need to comment this for RSpec
+      puts "session #{session}"
       next if request.path_info == '/login'
       if session[:auth_user_id].nil?
         redirect '/login'
@@ -83,11 +84,13 @@ module MemberTracker
       erb :login, :layout => :layout
     end
     post '/login' do
+      puts "params are #{params}"
       # only if passes test in auth_user
       #puts "request body is #{request.body.read}"
       #puts "params pwd is #{params[:password]} and email is #{params[:email]}"
       #for RSpec test JSON.parse() request.body.read )
       auth_user_result = @auth_user.authenticate(params)
+      puts "auth u res #{auth_user_result}"
       if auth_user_result['error'] == 'expired'
         #this auth_user has been removed and needs to be reset by admin
         session.clear
@@ -104,6 +107,7 @@ module MemberTracker
         session[:msg] = "Please contact admin, your account has been deactivated."
         redirect "/login"
       elsif auth_user_result.has_key?('auth_user_id')
+        puts "in correct"
         ######begin for rack testing ########
         #response.set_cookie "auth_user_id", :value => auth_user_result['auth_user_id']
         #response.set_cookie "auth_user_authority",
@@ -127,6 +131,7 @@ module MemberTracker
       redirect '/login'
     end
     get '/home' do
+      puts "in home"
       @member_lnames = Member.select(:id, :lname).order(:lname).all
       @tmp_msg = session[:msg]
       session[:msg] = nil
