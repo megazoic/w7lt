@@ -1,6 +1,6 @@
 require_relative 'app/api'
 run MemberTracker::API.new
-=begin
+
 use Rack::Session::Cookie,
         :key          => 'rack.session', 
         :httponly     => true,
@@ -8,4 +8,3 @@ use Rack::Session::Cookie,
         :path         => '/',
         :expire_after => 86400,
         :secret       => ENV.fetch('SESSION_SECRET')
-=end

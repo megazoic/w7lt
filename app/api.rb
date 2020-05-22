@@ -1185,7 +1185,7 @@ module MemberTracker
         @old_type_names << "#{ut.type},"
       end
       @old_type_names = @old_type_names[0...-1]
-      erb :create_unit_type, :layout => :layout_w_logout
+      erb :u_type_create, :layout => :layout_w_logout
     end
     post '/m/unit/type/create/:id?' do
       #expecting {"unit_type_name"=>"type5", "unit_type_descr"=>"a new type"}
