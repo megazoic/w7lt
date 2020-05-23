@@ -206,9 +206,11 @@ module MemberTracker
         if pu.condition == true
           #asking for members who are paid up through the current year
           @members = Member.where(@qset){paid_up >= Time.now.strftime("%Y").to_i}
+          @qset[:paid_up] = "true"
         else
           #asking for members who are NOT paid up through the current year
           @members = Member.where(@qset){paid_up < Time.now.strftime("%Y").to_i}
+          @qset[:paid_up] = "false"
         end
       else
         #asking for all recorded members

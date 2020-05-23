@@ -20,6 +20,7 @@
 			<th>First Name</th>
 			<th>Last Name</th>
 			<th>call</th>
+      <th>Member Type</th>
       <% if @refer_type == 'all' %>
         <th>Referral Type</th>
       <% end %>
@@ -30,6 +31,7 @@
 		<td><%=m[:fname]%></td>
 		<td><%=m[:lname]%></td>
 		<td><%=m[:callsign]%></td>
+    <td><%=m[:mbr_type] == 'none' ? 'guest' : m[:mbr_type]%></td>
     <% if @refer_type == 'all' %>
       <td><%=MemberTracker::ReferType[m[:refer_type_id]].name%></td>
     <% end %>
