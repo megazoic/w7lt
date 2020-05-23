@@ -65,7 +65,7 @@
   <textarea name="notes" id="notes_field" rows="3" cols="65"></textarea>
   <br />How did this member hear about the club?
   <select id="refer" name="refer_type_id">
-  <option value=nil>Don&apos;t know</option>
+  <option value='none'>Don&apos;t know</option>
     <%MemberTracker::ReferType.each do |rt|%>
   		<option value=<%=rt.id%> <%=@member[:refer_type_id] == rt.id ? "selected" : nil%>><%=rt.name%></option>
     <%end%>

@@ -49,19 +49,15 @@ module MemberTracker
         if auth_user.new_login == 1
           t = Time.now
           #give the new authorized user 2 days to login
-          if t - auth_user.time_pwd_set > 172800
+          if t - auth_user.time_pwd_set > 259200
             message['error'] = 'expired'
-            #remove auth_user as time as expired
-            auth_user.remove_all_roles
-            auth_user.delete
+            #set auth_user as inactive
+            @role = Role.new
+            auth_user.role_id = @role.get_role_id('inactive')
+            auth_user.save
           else
             #this is a new user that needs to change password
-            #first get their roles
-            au_roles = []
-            auth_user.roles.each do |r|
-              au_roles << r.name
-            end
-            message['auth_user_roles'] = au_roles
+            message['auth_user_roles'] = auth_user.get_roles('authenticate')
             message['error'] = 'new_user'
           end
           message['auth_user_id'] = auth_user.id
