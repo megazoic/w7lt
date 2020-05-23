@@ -1245,6 +1245,7 @@ module MemberTracker
       end
       if gio.groupsIOError["error"].to_i == 0
         @unmatched = gio.unmatched
+        #puts "in groups.io and unmatched is #{@unmatched}"
         erb :groupsio, :layout => :layout_w_logout
       else
         #failed send message
