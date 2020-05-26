@@ -105,5 +105,5 @@
   	<input type="hidden" name=<%="mode_#{v}"%> value="0">
   	<input type="checkbox" name=<%="mode_#{v}"%> id=<%="mode_#{v}"%> value="1" <%=@member[:modes].include?(k.to_s)  ? "checked='checked'" : nil%>>
   <%end%></p>	<hr />
- 	<input type="submit" value="Submit" onsubmit="validateMbrForm()"> | <a href="/m/list/members">Cancel</a>
+ 	<input type="submit" value="Submit" onsubmit="validateMbrForm()"> | <a href="/r/member/list">Cancel</a>
 </form>

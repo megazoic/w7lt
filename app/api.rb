@@ -1421,7 +1421,7 @@ module MemberTracker
               session[:msg] = "The data was not entered successfully\nthis member in fam unit that already paid"
               log_pay.notes = augmented_notes
               log_pay.save
-              redirect "/m/list/members"
+              redirect "/r/member/list"
             else
               #remove this member from unit it is assumed they are too old to use family membership
               augmented_notes << "\n****member currently paid up is trying to pay again*****\nwill remove from fam unit"
