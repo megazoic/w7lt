@@ -680,17 +680,24 @@ module MemberTracker
       erb :m_show, :layout => :layout_w_logout
     end
     get '/m/member/edit/:id' do
+      @existing_mbrs = []
       @member = Member[params[:id].to_i]
       @modes = Member.modes
       erb :m_edit, :layout => :layout_w_logout
     end
     get '/m/member/create' do
+      #need to avoid dups when creating a new member
+      @existing_mbrs = []
+      @member = {}
       @member = {:lname => '', :modes => ''}
       @modes = Member.modes
       erb :m_edit, :layout => :layout_w_logout
     end
     post '/m/member/create' do
       #this route used to update an existing member or save a new member
+      #these will be used to avoid dups when creating a new member
+      @existing_mbrs = []
+      @member = {}
       #this action is also logged
       mbr_id = params[:id]
       #save notes for log
@@ -726,6 +733,18 @@ module MemberTracker
         params[:fname] = params[:fname].upcase
         params[:lname] = params[:lname].upcase
         params[:email] = params[:email].upcase
+        #if coming back with override = 1, let this go through, else...
+        if !params.has_key?("override")
+          #need to validate that this member is not already in the db
+          @existing_mbrs = Member.where(fname: params[:fname], lname: params[:lname]).all
+          if !@existing_mbrs.empty?
+            #we have a possible existing member here
+            @member = params
+            @modes = Member.modes
+            #Send this back for validation
+            return erb :m_edit
+          end
+        end
         #set the default mbr_type until a payment is made (this is also done on mbrs table)
         #note, none is also used to describe a 'guest'
         params[:mbr_type] = 'none'
