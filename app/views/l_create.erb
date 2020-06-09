@@ -6,7 +6,7 @@
 <%else%>
   Creating log for <%="#{@member.fname} #{@member.lname} #{@member.callsign}"%>
   <input type='hidden' name='action' value='mbr_edit'>  
-  <input type='hidden' name='mbr_id' value=<%=@member.id%>>  
+  <input type='hidden' name='mbr_id' value=<%=@member.id%>>
 <%end%>
 </h4>
 <textarea name='notes' id='notes' class='lgtext'></textarea>

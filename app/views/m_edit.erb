@@ -5,7 +5,7 @@
 :license_class	:arrl
 :arrl_expire	:ares	:net	:ve	:elmer :sota
 %>
-<h3>Edit existing OR add new member: <span class="textColor"><%="#{@member[:fname]} #{@member[:lname]}"%></span></h3>
+<h3>Edit existing OR add new member: <span class="textColor"><%="#{@mbr[:fname]} #{@mbr[:lname]}"%></span></h3>
 <div id="dup_new_mbr">
 <%if !@existing_mbrs.empty?%>
   ########################################<br />
@@ -29,53 +29,54 @@
   <% end %>
   <br />
 	<label for="fname">First*</label>
-	<input type="text" name="fname" value="<%=@member[:fname]%>" id="fname" onfocusout="validateFirstName(this)">
+	<input type="text" name="fname" value="<%=@mbr[:fname]%>" id="fname" onfocusout="validateFirstName(this)">
 	<label for="lname">Last*</label>
-	<input type="text" name="lname" value="<%=@member[:lname]%>" id="lname" onfocusout="validateLastName(this)">
+	<input type="text" name="lname" value="<%=@mbr[:lname]%>" id="lname" onfocusout="validateLastName(this)">
 	<label for="callsign">Callsign</label>
-	<input type="text" name="callsign" value="<%=@member[:callsign]%>" id="callsign" size="10"><br />
+	<input type="text" name="callsign" value="<%=@mbr[:callsign]%>" id="callsign" size="10"><br />
+  *required field<br />
 	<p>Address:</p>
 	<label for="email">email</label>
-	<input type="text" name="email" value="<%=@member[:email]%>" id="email" onfocusout="validateEmail(this)">
+	<input type="text" name="email" value="<%=@mbr[:email]%>" id="email" onfocusout="validateEmail(this)">
 	 | OK to email about club activities?
    <select id="ok_to_email" name="ok_to_email">
-   		<option value="true" <%=@member[:ok_to_email] == true ? "selected" : nil%>>Yes</option>
-   		<option value="false" <%=@member[:ok_to_email] == false ? "selected" : nil%>>No</option>
+   		<option value="true" <%=@mbr[:ok_to_email] == true ? "selected" : nil%>>Yes</option>
+   		<option value="false" <%=@mbr[:ok_to_email] == false ? "selected" : nil%>>No</option>
       </select>
   <br /><label for="street">Street</label>
-	<input type="text" name="street" value="<%=@member[:street]%>" id="street">
+	<input type="text" name="street" value="<%=@mbr[:street]%>" id="street">
 	<label for="city">City</label>
-	<input type="text" name="city" value="<%=@member[:city]%>" id="city">
+	<input type="text" name="city" value="<%=@mbr[:city]%>" id="city">
 	<label for="state">State</label>
-	<input type="text" name="state" value="<%=@member[:state]%>" id="state"><br />
+	<input type="text" name="state" value="<%=@mbr[:state]%>" id="state"><br />
 	<label for="fname">Zip Code</label>
-	<input type="text" name="zip" value="<%=@member[:zip]%>" id="zip" size="10" onfocusout="validateZip(this)"> format XXXXX-XXXX (last 4 optional)<br />
+	<input type="text" name="zip" value="<%=@mbr[:zip]%>" id="zip" size="10" onfocusout="validateZip(this)"> format XXXXX-XXXX (last 4 optional)<br />
 	<p>Phone: XXX-XXX-XXXX Format</p>
 	<label for="phh">Home</label>
-	<input type="text" name="phh" value="<%=@member[:phh]%>" id="phh" onfocusout="validatePh(this)">
+	<input type="text" name="phh" value="<%=@mbr[:phh]%>" id="phh" onfocusout="validatePh(this)">
 	<label for="phh_pub">Ok to Publish? (check if Yes)</label>
 	<input type="hidden" name="phh_pub" value="0">
-	<input type="checkbox" name="phh_pub" id="phh_pub" value="1" <%=@member[:phh_pub]==1  ? "check='checked'" : nil%>><br />
+	<input type="checkbox" name="phh_pub" id="phh_pub" value="1" <%=@mbr[:phh_pub]==1  ? "check='checked'" : nil%>><br />
 	<label for="phw">Work</label>
-	<input type="text" name="phw" value="<%=@member[:phw]%>" id="phw"  onfocusout="validatePh(this)">
+	<input type="text" name="phw" value="<%=@mbr[:phw]%>" id="phw"  onfocusout="validatePh(this)">
 	<label for="phw_pub">Ok to Publish?</label>
 	<input type="hidden" name="phw_pub" value="0">
-	<input type="checkbox" name="phw_pub" id="phw_pub" value="1" <%=@member[:phw_pub]==1  ? "check='checked'" : nil%>><br />
+	<input type="checkbox" name="phw_pub" id="phw_pub" value="1" <%=@mbr[:phw_pub]==1  ? "check='checked'" : nil%>><br />
 	<label for="phm">Mobile</label>
-	<input type="text" name="phm" value="<%=@member[:phm]%>" id="phm"  onfocusout="validatePh(this)">
+	<input type="text" name="phm" value="<%=@mbr[:phm]%>" id="phm"  onfocusout="validatePh(this)">
 	<label for="phm_pub">Ok to Publish?</label>
 	<input type="hidden" name="phm_pub" value="0">
-	<input type="checkbox" name="phm_pub" id="phm_pub" value="1" <%=@member[:phm_pub]==1  ? "check='checked'" : nil%>><br />
+	<input type="checkbox" name="phm_pub" id="phm_pub" value="1" <%=@mbr[:phm_pub]==1  ? "check='checked'" : nil%>><br />
 	License class <select id="license_class" name="license_class">
-		<option value="tech" <%=@member[:license_class] == 'tech' ? "selected" : nil%>>Tech</option>
-		<option value="general" <%=@member[:license_class] == 'general' ? "selected" : nil%>>General</option>
-		<option value="extra" <%=@member[:license_class] == 'extra' ? "selected" : nil%>>Extra</option>
-		<option value="none" <%=@member[:license_class] == 'none' ? "selected" : nil%>>None</option>
+		<option value="tech" <%=@mbr[:license_class] == 'tech' ? "selected" : nil%>>Tech</option>
+		<option value="general" <%=@mbr[:license_class] == 'general' ? "selected" : nil%>>General</option>
+		<option value="extra" <%=@mbr[:license_class] == 'extra' ? "selected" : nil%>>Extra</option>
+		<option value="none" <%=@mbr[:license_class] == 'none' ? "selected" : nil%>>None</option>
 	</select>
 	<br />
   Member since: (YYYY-MM) format
   <input type="text" name="mbr_since" id="mbr_since" onfocusout="validateMbrSince(this)"
-    value=<%=(@member[:mbr_since] == '' || @member[:mbr_since].nil?) ? Time.now.strftime("%Y-%m") : @member[:mbr_since].strftime("%Y-%m")%>>
+    value=<%=(@mbr[:mbr_since] == '' || @mbr[:mbr_since].nil?) ? Time.now.strftime("%Y-%m") : @mbr[:mbr_since].strftime("%Y-%m")%>>
   <br />
   <label for="notes_field">Leave notes for this member here</label>
   <textarea name="notes" id="notes_field" rows="3" cols="65"></textarea>
@@ -83,7 +84,7 @@
   <select id="refer" name="refer_type_id">
   <option value='none'>Don&apos;t know</option>
     <%MemberTracker::ReferType.each do |rt|%>
-  		<option value=<%=rt.id%> <%=@member[:refer_type_id] == rt.id ? "selected" : nil%>><%=rt.name%></option>
+  		<option value=<%=rt.id%> <%=@mbr[:refer_type_id] == rt.id ? "selected" : nil%>><%=rt.name%></option>
     <%end%>
      </select>
   <br />(If you don&apos;t see the type that you need to add,
@@ -93,33 +94,33 @@
 	<p>Other Affiliations and Volunteering</p>
 	<label for="arrl">ARRL</label>
 	<input type="hidden" name="arrl" value="0">
-	<input type="checkbox" name="arrl" id="arrl" value="1" <%=@member[:arrl] == 1  ? "checked='checked'" : nil%> onClick="arrlSet(this);">
-	Expire date YYYY-MM-DD <input type="text" name="arrl_expire" id="arrl_expire" value="<%=@member[:arrl_expire]%>"  <%if @member[:arrl] == 0 %>disabled="disabled"<% end %> onfocusout="validateArrlExpDate(this)">
+	<input type="checkbox" name="arrl" id="arrl" value="1" <%=@mbr[:arrl] == 1  ? "checked='checked'" : nil%> onClick="arrlSet(this);">
+	Expire date YYYY-MM-DD <input type="text" name="arrl_expire" id="arrl_expire" value="<%=@mbr[:arrl_expire]%>"  <%if @mbr[:arrl] == 0 %>disabled="disabled"<% end %> onfocusout="validateArrlExpDate(this)">
 	<br/>
 	<label for="ares">ARES</label>
 	<input type="hidden" name="ares" value="0">
-	<input type="checkbox" name="ares" id="ares" value="1" <%=@member[:ares] == 1  ? "checked='checked'" : nil%>>
+	<input type="checkbox" name="ares" id="ares" value="1" <%=@mbr[:ares] == 1  ? "checked='checked'" : nil%>>
 	<br />
 	<label for="net">Portland NET</label>
 	<input type="hidden" name="net" value="0">
-	<input type="checkbox" name="net" id="net" value="1" <%=@member[:net] == 1  ? "checked='checked'" : nil%>>
+	<input type="checkbox" name="net" id="net" value="1" <%=@mbr[:net] == 1  ? "checked='checked'" : nil%>>
 	<br />
 	<label for="ve">VE</label>
 	<input type="hidden" name="ve" value="0">
-	<input type="checkbox" name="ve" id="ve" value="1" <%=@member[:ve] == 1  ? "checked='checked'" : nil%>>
+	<input type="checkbox" name="ve" id="ve" value="1" <%=@mbr[:ve] == 1  ? "checked='checked'" : nil%>>
 	<br />
 	<label for="elmer">Elmer</label>
 	<input type="hidden" name="elmer" value="0">
-	<input type="checkbox" name="elmer" id="elmer" value="1" <%=@member[:elmer] == 1  ? "checked='checked'" : nil%>>
+	<input type="checkbox" name="elmer" id="elmer" value="1" <%=@mbr[:elmer] == 1  ? "checked='checked'" : nil%>>
 	<br />
 	<label for="sota">SOTA</label>
-	<input type="checkbox" name="sota" id="sota" value="1" <%=@member[:sota] == 1  ? "checked='checked'" : nil%>>
-	<input type="hidden" name="id" value="<%=@member[:id]%>">
+	<input type="checkbox" name="sota" id="sota" value="1" <%=@mbr[:sota] == 1  ? "checked='checked'" : nil%>>
+	<input type="hidden" name="id" value="<%=@mbr[:id]%>">
   <p>Modes:
   <%@modes.each do |k,v|%>
   	<label for=<%="mode_#{v}"%>><%="#{v}"%></label>
   	<input type="hidden" name=<%="mode_#{v}"%> value="0">
-  	<input type="checkbox" name=<%="mode_#{v}"%> id=<%="mode_#{v}"%> value="1" <%=@member[:modes].include?(k.to_s)  ? "checked='checked'" : nil%>>
+  	<input type="checkbox" name=<%="mode_#{v}"%> id=<%="mode_#{v}"%> value="1" <%=@mbr[:modes].include?(k.to_s)  ? "checked='checked'" : nil%>>
   <%end%></p>	<hr />
  	<input type="submit" value="Submit" onsubmit="validateMbrForm()"> | <a href="/r/member/list">Cancel</a>
 </form>

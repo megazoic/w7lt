@@ -33,5 +33,24 @@ module MemberTracker
       #matching_members.each {|m| data_out << m.values}
       #data_out
     end
+    def validate_dupes(guest_to_test)
+      #expecting guests_to_test is hash containing at least 2/3 [:fname, :lname, :callsign]
+      #mbrs = Member.select(:fname, :lname, :callsign, :email).all
+      #first, need to make sure hash is in correct format
+      need_to_transform = false
+      guest_to_test.each do |k,v|
+        if k.is_a?(String)
+          need_to_transform = true
+        end
+      end
+      if need_to_transform == true
+        guest_to_test.transform_keys!(&:to_sym)
+      end
+      dupe_member = Member.where(guest_to_test).first
+      if !dupe_member.nil?
+        return 1
+      end
+      return 0
+    end
   end
 end

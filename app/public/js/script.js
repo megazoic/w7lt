@@ -395,7 +395,7 @@ function validateCreateEventForm(){
 	var duration = $('duration').value;
 	var duration_unit_hrs = $('durat_hrs').checked;
 	var duration_unit_days = $('durat_days').checked;
-	if (duration != "0" && (duration_unit_hrs == false && duration_unit_days == false)){
+	if (duration != "none" && (duration_unit_hrs == false && duration_unit_days == false)){
 		alert("if a duration for this event is selected, a unit must also be chosen");
 		return false;
 	}

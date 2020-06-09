@@ -259,7 +259,6 @@ module MemberTracker
       "g0:notes"=>"some notes for guest0",..., "mbr_id"=>"478", "id:481"=>"1", "id:479"=>"1"}
 =end
       ######validate presence of contact member, event type, date, if duration also units ###########
-      puts "params #{params}"
       valid_form = true
       if params[:mbr_id].nil?
         #invalid cuz no event contact
@@ -291,9 +290,9 @@ module MemberTracker
       params.delete("has_guests")
       count = 0
       #Guest = Struct.new(:number, :attendees, :new_guests, :tmp_vitals, :msng_values, :duplicate)
-      #Struct holds attendees (mbrs who are already in db), new_guests (those to be entered), vitals a temp hash
-      #new_guests hash may have the following keys ("fname", "lname", "callsign", "notes")
-      guest = Event::Guest.new(true,[],[],{},'',[])
+      #Struct holds attendees (mbrs who are already in db), new_guests (those to be entered, array of hashes),
+      #vitals a temp hash, new_guests hash may have the following keys ("fname", "lname", "callsign", "notes")
+      guest = Event::Guest.new(nil,[],[],{},'',[])
       params.each do |k,v|
         #expect "id:481"=>"1"
         m_attendees = /id:(\d+)/.match(k)
@@ -303,30 +302,33 @@ module MemberTracker
           guest.attendees << m_attendees[1].to_i
           params.delete(k)
         elsif !m_new_guests.nil?
-          #want only boxes that were filled out (eg. not "g2:callsign"=>"*guest callsign")
+          #want only boxes that were filled out (eg. not default "g2:callsign"=>"*guest callsign")
           if m_new_guests[1].to_i != guest.number
-            #reset
+            #reset the guest we are collecting info on
             guest.number = m_new_guests[1].to_i
             if !guest.tmp_vitals.empty?
               guest.new_guests << guest.tmp_vitals
               guest.tmp_vitals = {}
             end
           end
+          #do we have data to enter for this guest?
           if v[0...2] != "*g" && v != ''
             #upcase everything but the general_notes
             if !/notes/.match(k)
               v.upcase!
             end
+            #build temp hash "fname" => "GUESTSFIRSTNAME"
             guest.tmp_vitals["#{m_new_guests[2]}"] = v.strip
           end
           params.delete(k)
         end
       end
-      #add coordinator to attendee list if not already there
+     #add coordinator to attendee list if not already there
       if !guest.attendees.include?(params[:mbr_id].to_i)
         guest.attendees << params[:mbr_id].to_i
       end
       if !guest.tmp_vitals.empty?
+        #add this hash to the array of new guest hashes
         guest.new_guests << guest.tmp_vitals
       end
       l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: @action.get_action_id("event"))
@@ -382,8 +384,6 @@ module MemberTracker
           end
           if !guest.new_guests.empty? && existing_event_id.nil?
             #we don't expect to have new guests with event update
-            #need to check if we already have the guest in our database
-            mbrs = Member.select(:fname, :lname, :callsign, :email).all
             guest.new_guests.each do |ng|
               #expecting 2 out of 4 keys (not including "notes")
               guest_notes = ''
@@ -395,26 +395,15 @@ module MemberTracker
                 guest.msng_values = "This guest has too few fields entered #{ng}; enter as new member and add to event attendee list"
                 next
               end
-              #need to add guests to database before adding them to this event
-              log_guest = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: @action.get_action_id("mbr_edit"), event_id: event.id)
-              possible_duplicate = {}
-              number_duplicate_keys = 0
-              ng.each do |k,v|
-                v.upcase!
-                mbrs.each do |mbr|
-                  if !mbr[k.to_sym].nil?
-                    if mbr[k.to_sym].upcase == v
-                      number_duplicate_keys = number_duplicate_keys + 1
-                      possible_duplicate = {:mbr_dup => "#{mbr[:id]}:#{mbr[:fname]}, #{mbr[:lname]}, #{mbr[:callsign]}", :guest_dup => ng}
-                    end
-                  end
-                end
-              end
-              if number_duplicate_keys > 2
-                #found and recorded a duplicate need to drop this guest
-                guest.duplicate << possible_duplicate
+              #test for duplicates. expecting 0 not a dupe, 1 is a dupe
+              if @member.validate_dupes(ng) == 1
+                #Houston, we have a problem
+                guest.duplicate << ng
+                guest.msng_values = "A guest with same credentials as a member was found. #{ng}"
                 next
               end
+              #need to add guests to database before adding them to this event
+              log_guest = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: @action.get_action_id("mbr_edit"), event_id: event.id)
               #need to check for which keys are present, the members table only needs an email
               #and need to use dummy email if other fields are present
               if !ng.has_key?("email")
@@ -681,15 +670,14 @@ module MemberTracker
     end
     get '/m/member/edit/:id' do
       @existing_mbrs = []
-      @member = Member[params[:id].to_i]
+      @mbr = Member[params[:id].to_i]
       @modes = Member.modes
       erb :m_edit, :layout => :layout_w_logout
     end
     get '/m/member/create' do
       #need to avoid dups when creating a new member
       @existing_mbrs = []
-      @member = {}
-      @member = {:lname => '', :modes => ''}
+      @mbr = {:lname => '', :modes => ''}
       @modes = Member.modes
       erb :m_edit, :layout => :layout_w_logout
     end
@@ -697,7 +685,7 @@ module MemberTracker
       #this route used to update an existing member or save a new member
       #these will be used to avoid dups when creating a new member
       @existing_mbrs = []
-      @member = {}
+      @mbr = {}
       #this action is also logged
       mbr_id = params[:id]
       #save notes for log
@@ -722,7 +710,6 @@ module MemberTracker
       #remove these k,v pairs and add packed modes back
       params.reject! {|k,v| /mode_/.match(k)}
       params["modes"] = modes[0...-1]
-      
       #this could be a new member or existing member
       if mbr_id == ''
         #new member
@@ -736,13 +723,14 @@ module MemberTracker
         #if coming back with override = 1, let this go through, else...
         if !params.has_key?("override")
           #need to validate that this member is not already in the db
-          @existing_mbrs = Member.where(fname: params[:fname], lname: params[:lname]).all
-          if !@existing_mbrs.empty?
+          #@existing_mbrs = Member.where(fname: params[:fname], lname: params[:lname]).all
+          if @member.validate_dupes({fname: params[:fname], lname: params[:lname]}) == 1
             #we have a possible existing member here
-            @member = params
+            @mbr = params
             @modes = Member.modes
             #Send this back for validation
-            return erb :m_edit
+            @tmp_msg = "looks like this member has already been entered into our db, need to update?"
+            return erb :m_edit, :layout => :layout_w_logout
           end
         end
         #set the default mbr_type until a payment is made (this is also done on mbrs table)
@@ -768,10 +756,25 @@ module MemberTracker
         mbr_record = Member[params[:id].to_i]
         params.reject!{|k,v| k == "id"}
         params["mbr_since"] = Date.strptime(params["mbr_since"], '%Y-%m')
-        #set the character case to upper for name and email
+        #set the character case to upper for name, email and callsign
         params["fname"] = params["fname"].upcase
         params["lname"] = params["lname"].upcase
         params["email"] = params["email"].upcase
+        params["callsign"].empty? ? nil : params["callsign"] = params["callsign"].upcase
+        #log a change in callsign
+        if !mbr_record["callsign"].nil?
+          if params["callsign"] != mbr_record["callsign"].upcase
+            augmented_notes << "\nchange_call:#{mbr_record["callsign"]}:#{params["callsign"]}"
+          end
+        else
+          if !params["callsign"].empty?
+            if notes.empty?
+              notes << "add_call:#{params["callsign"]}"
+            else
+              notes << "\nadd_call:#{params["callsign"]}"
+            end
+          end
+        end
         begin
           DB.transaction do
             mbr_record.update(params)
