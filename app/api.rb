@@ -138,8 +138,14 @@ module MemberTracker
         @m = nil
         @m = Member.all
         @m.each do |m|
-          if !m[:modes].nil?
-            m[:modes].gsub!(",", "|")
+          #if !m[:modes].nil?
+          #  m[:modes].gsub!(",", "|")
+          #end
+          #clear out commas
+          m.each do |k,v|
+            if !m[k].nil? && m[k].is_a?(String)
+              m[k].gsub!(",", "|")
+            end
           end
         end
         @modes = Member.modes
