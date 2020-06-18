@@ -194,16 +194,17 @@ function validateAssignRoleForm(){
 function validateMbrPayForm(){
 	var paid_up = $("paid_up_field").value;
 	var mbr_type = $("mbr_type").value;
-	var pay_amt = $("payment_amt_field");
 	var pay_mthd = $("payment_method_field");
 	var pmText = pay_mthd.options[pay_mthd.selectedIndex].text
 	var pay_type = $("payment_type_field");
 	var ptText = pay_type.options[pay_type.selectedIndex].text;
+	const date_now = new Date().getFullYear();
+	const pay_amt = (paid_up - date_now) * payFees[mbr_type];
 	//cannot submit if payment field is invalid
-	if (pay_amt.getAttribute('isInValid') == 'invalid' || pay_amt.value == ''){
+	/*if (pay_amt.getAttribute('isInValid') == 'invalid' || pay_amt.value == ''){
 		alert("Enter a number in the amount field");
 		return false;
-	}
+	}*/
 	//cannot submit if payment type, methods are not selected
 	if (pay_mthd.value == '' || pay_type.value == ''){
 		alert("You must select a payment type and method");
@@ -211,7 +212,8 @@ function validateMbrPayForm(){
 	}
 	//need to taylor the confirm to dues/non-dues payments
 	if (ptText == 'Dues'){
-		yes = confirm("Is this correct?\n\n" + "Member type: " + mbr_type + "\nPaid through: " + paid_up);
+		yes = confirm("Is this correct?\n\n" + "Member type: " + mbr_type + "\nPaid through: " + paid_up +
+		"\nPay Amount: " + pay_amt);
 	}else{
 		yes = confirm("Is this correct?\n\n" + "Payment type: " + ptText + "\nMethod: " + pmText + "\nAmount: " + pay_amt.value);
 	}

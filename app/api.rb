@@ -23,6 +23,7 @@ module MemberTracker
   Paid_up = Struct.new(:active, :condition)
   class API < Sinatra::Base
     def initialize()
+      @payment = Payment.new
       @member = Member.new
       @auth_user = Auth_user.new
       @role = Role.new
@@ -1361,6 +1362,7 @@ module MemberTracker
       @mbrTypes.pop
       @payType = PaymentType.all
       @payMethod = PaymentMethod.all
+      @payFees = Payment.fees
       erb :m_pay, :layout => :layout_w_logout
     end
     post '/m/payment/new' do
@@ -1380,6 +1382,7 @@ module MemberTracker
       al_save = false
       #check to see if 'dues' is selected as :payment_type if so, store family ids
       mbr_family_ids = []
+      pay_amt = nil
       mbr_family_unit_id = nil
       if PaymentType[params[:payment_type]].type == 'Dues'
         #going to put this info in the log
@@ -1462,6 +1465,8 @@ module MemberTracker
         #if family then the other family members paid_up status happens in the DB.transaction
         m.paid_up = params[:paid_up]
         m.mbr_type = params[:mbr_type]
+        #need to calculate the amount of payment
+        pay_amt = (m.paid_up.to_i - DateTime.now.year) * Payment.fees[m.mbr_type].to_i
         #if params[:mbr_paid_up_old] != params[:paid_up]
         if augmented_notes != ''
           augmented_notes << "\n"
@@ -1477,7 +1482,7 @@ module MemberTracker
         log_pay.action_id = @action.get_action_id("donation")
       end
       pay = Payment.new(:mbr_id => params[:mbr_id], :a_user_id => session[:auth_user_id], :payment_type_id => params[:payment_type],
-        :payment_method_id => params[:payment_method], :payment_amount => params[:payment_amt], :ts => Time.now)
+        :payment_method_id => params[:payment_method], :payment_amount => pay_amt, :ts => Time.now)
       begin
         DB.transaction do
           if PaymentType[params[:payment_type]].type == 'Dues'
