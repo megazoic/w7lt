@@ -1598,6 +1598,7 @@ module MemberTracker
       erb :p_edit, :layout => :layout_w_logout
     end
     post '/m/payments/edit' do
+      puts "params #{params}"
       #params are {"pay_id"=>"28", "pay_log_id"=>"552", "payment_type"=>"2", "payment_method"=>"2", "payment_amt"=>"18.0", "notes"=>"some notes"}
       #only changing payment type, method, amount and log notes
       payTypes = {}
@@ -1615,7 +1616,8 @@ module MemberTracker
       if (pa == "" || pm == "" || pt == "")
         session[:msg] = 'Edit payment was UNSUCCESSFUL please make sure all fields are entered'
         redirect "/m/payments/edit/#{params[:pay_id]}"
-      elsif (pt != pay.paymentType.to_s && (payTypes[pt] == "Dues" || payTypes[pay.paymentType.id] == "Dues"))
+      elsif (pt != pay.paymentType.id.to_s && (payTypes[pt] == "Dues" || payTypes[pay.paymentType.id] == "Dues"))
+        #expecting params to be passing ids rather than the text representation
         #need to ask user to delete rather than edit this payment, then start over
         session[:msg] = 'Edit payment was UNSUCCESSFUL (cannot change dues type) please delete this payment and start over'
         redirect "/m/payments/edit/#{params[:pay_id]}"
