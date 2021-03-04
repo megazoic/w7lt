@@ -1465,8 +1465,12 @@ module MemberTracker
         #if family then the other family members paid_up status happens in the DB.transaction
         m.paid_up = params[:paid_up]
         m.mbr_type = params[:mbr_type]
-        #need to calculate the amount of payment
-        pay_amt = (m.paid_up.to_i - DateTime.now.year) * Payment.fees[m.mbr_type].to_i
+        #dues payment can be from other_pmt or pay_amt depending on which entry chosen
+        if params.has_key?(:pay_amt)
+          pay_amt = params[:pay_amt].to_i
+        else
+          pay_amt = params[:other_pmt].to_i
+        end
         #if params[:mbr_paid_up_old] != params[:paid_up]
         if augmented_notes != ''
           augmented_notes << "\n"

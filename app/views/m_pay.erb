@@ -22,12 +22,16 @@
       <option value=<%="#{mt}"%> <%=@mbr_type_selected == mt ? "selected" : nil%>><%=mt%></option>
     <%end%>
     </select>
-    <br/>Fee Schedule is
+    <br/><br/>Payment Amount: (Pick one, or...)
     <table>
     <%@payFees.each do |k,v|%>
-    <tr><td><%=k%></td><td><%="$#{v}"%></td></tr>
+      <%next if k == "none"%>
+    <tr><td><%=k%></td><td><%="$#{v}"%></td><td><input type="radio" name="pay_amt" id="pay_amt_<%=k%>" value="<%=v%>" /></td></tr>
     <%end%>
     </table>
+    <br/>Choose this to enter payment if different from above, remember to leave notes why you chose other<br/>
+    <label for="other_pmt_field">Other Payment Amount (dollar amount only):</label>
+    <input type="text" name="other_pmt" id="other_pmt_field" maxlength="3" size="4" />
     <br/>
     <%if @mbr_pay[:mbr_type] == 'family'%>
       <br/><%@mbr_family.each {|mbr|%><%="#{mbr} "%><%}%>membership will also be renewed
