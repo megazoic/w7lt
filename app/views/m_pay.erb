@@ -5,7 +5,7 @@
 </script>
 <form action='/m/payment/new' method='POST' name="mbrPay" onsubmit="return validateMbrPayForm()">
   <input type="hidden" name="mbr_id" value=<%=@mbr_pay[:id]%>>
-  <input type="hidden" name="mbr_type_old" value=<%=@mbr_pay[:mbr_type]%>>
+  <input type="hidden" name="mbr_type_old" id="old_mbr_type" value=<%=@mbr_pay[:mbr_type]%>>
   <input type="hidden" name="mbr_paid_up_old" value=<%=@mbr_pay[:paid_up]%>>
   <label for="payment_type_field">Payment type is </label>
   <select name="payment_type" id="payment_type_field" onchange="duesSet(this)">
@@ -29,7 +29,7 @@
     <input type="text" name="other_pmt" id="other_pmt_field" maxlength="3" size="4" disabled/>
     <br/>
     <%if @mbr_pay[:mbr_type] == 'family'%>
-      <br/><%@mbr_family.each {|mbr|%><%="#{mbr} "%><%}%>membership will also be renewed
+      <br/><%@mbr_family.each {|mbr|%><%="#{mbr} "%><%}%>membership will also be renewed unless this renewal is non-family type
     <%end%>
     <br/>
     <p><%="#{@mbr_pay[:fname]} #{@mbr_pay[:lname]} is currently paid through #{@mbr_pay[:paid_up]}"%><br/><br/>

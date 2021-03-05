@@ -1425,6 +1425,19 @@ module MemberTracker
           log_unit.unit_id = u.id
           if m.paid_up < Time.now.year
             #unit hasn't paid (yet), find unit
+            #were there only two members in this family unit?
+            if u.members.length < 3
+              #rename unit
+              u.name = "retired: #{u.name}, #{m.fname} #{m.lname}"
+              #change member type of remaining member to 'none'
+              u.members.each do |m|
+                if m.id != :mbr_id
+                  m_to_change = Member[m.id]
+                  m_to_change.mbr_type = 'none'
+                  m_to_change.save
+                end
+              end
+            end
             #change unit active to 0 (not a functional unit)
             old_active = u.active
             u.active = 0

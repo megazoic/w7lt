@@ -197,7 +197,7 @@ function validateAssignRoleForm(){
 }
 function validateMbrPayForm(){
 	var paid_up = $("paid_up_field").value;
-	//var mbr_type = $("mbr_type").value;
+	var old_mbr_type = $("old_mbr_type").value;
 	var pay_mthd = $("payment_method_field");
 	var pmText = pay_mthd.options[pay_mthd.selectedIndex].text;
 	var pay_type = $("payment_type_field");
@@ -205,8 +205,6 @@ function validateMbrPayForm(){
 	//test if have two payment amounts (radio and other)
 	var other_pay = $("other_pmt").checked;
 	var other_pay_amt = $("other_pmt_field").value;
-	//var pay_amt_selected = $("mbr_type").value;
-	//var pay_amt = $("mbr_type").value;
 	var pay_amt = "";
 	var pay_amt_name = "";
         var x = document.getElementById("mbr_type");
@@ -219,23 +217,7 @@ function validateMbrPayForm(){
 			pay_amt = match[1];
           	}
         }
-	//use regexp to compare member type with payment amount
-	//shouldn't have a member type of 'full; but payment 'family'
-	/*
-	// if pay_amt_id == "pay_amt_full" for example
-	var pattern = /pay_amt_(.*)/;
-	const match = pay_amt_id.match(pattern);
-	// match[1] should be 'full'
-	
-	*/
         var other_pay_amt = document.getElementById("other_pmt_field").value;
-	//const date_now = new Date().getFullYear();
-	//const pay_amt = (paid_up - date_now) * payFees[mbr_type];
-	//cannot submit if payment field is invalid
-	/*if (pay_amt.getAttribute('isInValid') == 'invalid' || pay_amt.value == ''){
-		alert("Enter a number in the amount field");
-		return false;
-	}*/
 	//cannot submit if payment type, methods are not selected
 	if (pay_mthd.value == '' || pay_type.value == ''){
 		alert("You must select a payment type and method");
@@ -243,7 +225,7 @@ function validateMbrPayForm(){
 	}
 	//need to taylor the confirm to dues/non-dues payments
 	if (ptText == 'Dues'){
-		//test to see if payment amount radio button or other payment amount is selected
+		//test to see if payment amount other checkbox or regular payment amount is selected
 		//not both
 	        if (other_pay == true && other_pay_amt != ""){
 			if (isNaN(other_pay_amt)){
@@ -257,13 +239,12 @@ function validateMbrPayForm(){
 			yes = confirm("Is this correct?\n\n" + "Member type: " + pay_amt_name + "\nPaid through: " + paid_up +
 			"\nPay Amount: $" + other_pay_amt + "\nPayment Method: " + pmText);
 	        }else if (other_pay == false && other_pay_amt == ""){
-			//test to see if member type and payment amount match
-			/*if (pay_amt_name != mbr_type){
-				alert("member type and payment amount need to match");
-				return false;
-			}*/
-			yes = confirm("Is this correct?\n\n" + "Member type: " + pay_amt_name + "\nPaid through: " + paid_up +
-			"\nPay Amount: $" + pay_amt + "\nPayment Method: " + pmText);
+			var outline = "Is this correct?\n\n" + "Member type: " + pay_amt_name + "\nPaid through: " + paid_up +
+			"\nPay Amount: $" + pay_amt + "\nPayment Method: " + pmText
+			if (old_mbr_type == 'family' && pay_amt_name != 'family'){
+				outline = outline + "\n***Member type will no longer be family***";
+			}
+			yes = confirm(outline);
 	        }else{
 	        	alert("If choose other memeber type, must fill out amount");
 			return false;
