@@ -17,21 +17,16 @@
   <br />
   <div id="message">
     Member Type:
-    <select id="mbr_type" name="mbr_type">
-    <%@mbrTypes.each do |mt|%>
-      <option value=<%="#{mt}"%> <%=@mbr_type_selected == mt ? "selected" : nil%>><%=mt%></option>
-    <%end%>
-    </select>
-    <br/><br/>Payment Amount: (Pick one, or...)
-    <table>
+    <select id="mbr_type" name="mbr_type" >
     <%@payFees.each do |k,v|%>
       <%next if k == "none"%>
-    <tr><td><%=k%></td><td><%="$#{v}"%></td><td><input type="radio" name="pay_amt" id="pay_amt_<%=k%>" value="<%=v%>" /></td></tr>
+      <option value=<%=k%> id=<%="pay_#{v}"%> <%=@mbr_type_selected == k ? "selected" : nil%>><%="#{k}: $#{v}"%></option>
     <%end%>
-    </table>
-    <br/>Choose this to enter payment if different from above, remember to leave notes why you chose other<br/>
-    <label for="other_pmt_field">Other Payment Amount (dollar amount only):</label>
-    <input type="text" name="other_pmt" id="other_pmt_field" maxlength="3" size="4" />
+    </select>
+    <br/><br/>
+    <input type="checkbox" name="other_pmt" id="other_pmt" onchange="other_pmtSet(this)"/>
+    <label for="other_pmt">Need to record non-standard payment (dollar amount only)</label></br>
+    <input type="text" name="other_pmt" id="other_pmt_field" maxlength="3" size="4" disabled/>
     <br/>
     <%if @mbr_pay[:mbr_type] == 'family'%>
       <br/><%@mbr_family.each {|mbr|%><%="#{mbr} "%><%}%>membership will also be renewed

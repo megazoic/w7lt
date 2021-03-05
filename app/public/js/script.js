@@ -28,6 +28,10 @@ function duesSet(selectElement){
 		$("message").style.display = "none";
 	}
 }
+function other_pmtSet(){
+	//enable textbox for other payment amount
+	$("other_pmt_field").disabled = false;
+}
 function guestsSet(inputElement){
 	//set visibility of new guests table in e_create.erb
 	if (inputElement.checked){
@@ -193,24 +197,26 @@ function validateAssignRoleForm(){
 }
 function validateMbrPayForm(){
 	var paid_up = $("paid_up_field").value;
-	var mbr_type = $("mbr_type").value;
+	//var mbr_type = $("mbr_type").value;
 	var pay_mthd = $("payment_method_field");
 	var pmText = pay_mthd.options[pay_mthd.selectedIndex].text;
 	var pay_type = $("payment_type_field");
 	var ptText = pay_type.options[pay_type.selectedIndex].text;
 	//test if have two payment amounts (radio and other)
+	var other_pay = $("other_pmt").checked;
 	var other_pay_amt = $("other_pmt_field").value;
-	var pay_amt_selected = false;
-	var pay_amt = 0;
+	//var pay_amt_selected = $("mbr_type").value;
+	//var pay_amt = $("mbr_type").value;
+	var pay_amt = "";
 	var pay_amt_name = "";
-        var x = document.getElementsByName("pay_amt");
+        var x = document.getElementById("mbr_type");
         for (var i = 0; i < x.length; i++){
-        	if (x[i].checked){
-      	  		pay_amt_selected = true;
-			pay_amt = x[i].value;
-			var pattern = /pay_amt_(.*)/;
+        	if (x[i].selected){
+      	  		//pay_amt_selected = true;
+			pay_amt_name = x[i].value;
+			var pattern = /pay_(.*)/;
 			const match = x[i].id.match(pattern);
-			pay_amt_name = match[1];
+			pay_amt = match[1];
           	}
         }
 	//use regexp to compare member type with payment amount
@@ -237,29 +243,29 @@ function validateMbrPayForm(){
 	}
 	//need to taylor the confirm to dues/non-dues payments
 	if (ptText == 'Dues'){
-		if (mbr_type == "none"){
-			alert("A dues payment cannot be made for a member type of none");
-			return false;
-		}
 		//test to see if payment amount radio button or other payment amount is selected
 		//not both
-	        if (pay_amt_selected == false && other_pay_amt != ""){
+	        if (other_pay == true && other_pay_amt != ""){
 			if (isNaN(other_pay_amt)){
 				alert("other payment amount must be a number");
 				return false;
 			}
-			yes = confirm("Is this correct?\n\n" + "Member type: " + mbr_type + "\nPaid through: " + paid_up +
-			"\nPay Amount: " + other_pay_amt + "\nPayment Method: " + pmText);
-	        }else if (pay_amt_selected == true && other_pay_amt == ""){
-			//test to see if member type and payment amount match
-			if (pay_amt_name != mbr_type){
-				alert("member type and payment amount need to match");
+			if ($("notes_field").value == ""){
+				alert("must place note why using other payment");
 				return false;
 			}
-			yes = confirm("Is this correct?\n\n" + "Member type: " + mbr_type + "\nPaid through: " + paid_up +
-			"\nPay Amount: " + pay_amt + "\nPayment Method: " + pmText);
+			yes = confirm("Is this correct?\n\n" + "Member type: " + pay_amt_name + "\nPaid through: " + paid_up +
+			"\nPay Amount: $" + other_pay_amt + "\nPayment Method: " + pmText);
+	        }else if (other_pay == false && other_pay_amt == ""){
+			//test to see if member type and payment amount match
+			/*if (pay_amt_name != mbr_type){
+				alert("member type and payment amount need to match");
+				return false;
+			}*/
+			yes = confirm("Is this correct?\n\n" + "Member type: " + pay_amt_name + "\nPaid through: " + paid_up +
+			"\nPay Amount: $" + pay_amt + "\nPayment Method: " + pmText);
 	        }else{
-	        	alert("check payment amount fields; cannot both be empty or > 1 type chosen");
+	        	alert("If choose other memeber type, must fill out amount");
 			return false;
 	        }
 	}else{
