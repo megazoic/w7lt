@@ -196,7 +196,7 @@ function validateAssignRoleForm(){
 	}
 }
 function validateMbrPayForm(){
-	var halfpmt = $("half_pmt").value
+	var halfpmt = $("half_pmt").checked
 	var paid_up = $("paid_up_field").value;
 	var old_mbr_type = $("old_mbr_type").value;
 	var pay_mthd = $("payment_method_field");
@@ -217,7 +217,7 @@ function validateMbrPayForm(){
 			const match = x[i].id.match(pattern);
 			pay_amt = match[1];
 			//need to half this if checkbox selected
-			if (halfpmt == 'on'){
+			if (halfpmt == true){
 				var pmt = parseInt(pay_amt);
 				pay_amt = (pmt/2).toString();
 			}

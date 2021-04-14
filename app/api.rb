@@ -1325,6 +1325,10 @@ module MemberTracker
       session[:msg] = nil
       @mbr_pay = Member.select(:id, :fname, :lname, :callsign, :paid_up, :mbr_type)[params[:id].to_i]
       #if mbr_type is 'family' then count all family members that will be updated
+      #clean up paid_up if not a year, view will handle this
+      if !/\d\d\d\d/.match(@mbr_pay[:paid_up].to_s)
+        @mbr_pay[:paid_up] = 'none'
+      end
       @mbr_family = []
       if @mbr_pay.mbr_type == 'family' || @mbr_pay.mbr_type == 'none'
         #find the id for the family unit
@@ -1563,6 +1567,7 @@ module MemberTracker
               fu.save
             end
             #log these to the auditlog table for the paying member
+            puts 
             if (params[:mbr_paid_up_old] != params[:paid_up])
               auditlog_hash["pay_mbr_paid_up"].set("a_user_id" => session[:auth_user_id], "column" => "paid_up",
               "changed_date" => Time.now, "old_value" => params[:mbr_paid_up_old], "new_value" => params[:paid_up],

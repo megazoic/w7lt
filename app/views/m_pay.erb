@@ -36,9 +36,14 @@
     <%end%>
     <br/>
     <p><%="#{@mbr_pay[:fname]} #{@mbr_pay[:lname]} is currently paid through #{@mbr_pay[:paid_up]}"%><br/><br/>
+    <% if @mbr_pay[:paid_up] == 'none' %>
+      <% start_cnt = 0 %>
+    <% else %>
+      <% start_cnt = (@mbr_pay[:paid_up].to_i < Time.now.year) ? 0 : 1 %>
+    <% end %>
     <label for="paid_up_field">Select a year that this member will be paid up through </label>
     <select name="paid_up" id="paid_up_field">
-      <%(0..4).each do |yr|%>
+      <%(start_cnt..4).each do |yr|%>
         <option value=<%="#{Time.now.year + yr}"%>><%=Time.now.year + yr%></option>
       <% end %>
     </select>
