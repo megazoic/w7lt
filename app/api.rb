@@ -1486,6 +1486,11 @@ module MemberTracker
         else #need to find amt from payment model
           payFees = Payment.fees
           pay_amt = payFees[params[:mbr_type]]
+          #if half_pmt is 'on' then only paying half amount for 2nd half of year
+          if params[:half_pmt] == 'on'
+            pay_amt = (pay_amt.to_f/2).to_s # half this pay_amt
+            augmented_notes << "**** Member paid 1/2 price for 1/2 yr"
+          end
         end
         #if params[:mbr_paid_up_old] != params[:paid_up]
         if augmented_notes != ''
