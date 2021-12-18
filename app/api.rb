@@ -1374,7 +1374,6 @@ module MemberTracker
       #{mbr_id, mbr_type_old=>(eg.)full, mbr_paid_up_old, payment_type=>2, mbr_type,
       #paid_up, payment_method=>1, [pay_amt, other_pmt] notes=>}
       #need to create a log for this transaction
-      puts params
       augmented_notes = params[:notes]
       log_pay = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now)
       log_unit = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: @action.get_action_id("unit"))
