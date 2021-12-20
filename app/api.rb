@@ -1508,6 +1508,8 @@ module MemberTracker
       else #end if Dues
         #payment must be a donation, set up for log
         log_pay.action_id = @action.get_action_id("donation")
+        #find pay amount
+        pay_amt = params[:nonDues_pmt]
       end
       pay = Payment.new(:mbr_id => params[:mbr_id], :a_user_id => session[:auth_user_id], :payment_type_id => params[:payment_type],
         :payment_method_id => params[:payment_method], :payment_amount => pay_amt, :ts => Time.now)

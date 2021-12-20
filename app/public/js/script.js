@@ -23,9 +23,12 @@ function duesSet(selectElement){
 	//get the payment_type inner text
 	var seText = selectElement.options[selectElement.selectedIndex].text;
 	if (seText == 'Dues'){
+		$("nonDues").style.display = "none";
 		$("message").style.display = "block";
 	}else{
 		$("message").style.display = "none";
+		$("nonDues").style.display = "block";
+		$("nonDues_pmt_field").disabled = false;
 	}
 }
 function other_pmtSet(){
@@ -208,22 +211,7 @@ function validateMbrPayForm(){
 	var other_pay_amt = $("other_pmt_field").value;
 	var pay_amt = "";
 	var pay_amt_name = "";
-        var x = document.getElementById("mbr_type");
-        for (var i = 0; i < x.length; i++){
-        	if (x[i].selected){
-      	  		//pay_amt_selected = true;
-			pay_amt_name = x[i].value;
-			var pattern = /pay_(.*)/;
-			const match = x[i].id.match(pattern);
-			pay_amt = match[1];
-			//need to half this if checkbox selected
-			if (halfpmt == true){
-				var pmt = parseInt(pay_amt);
-				pay_amt = (pmt/2).toString();
-			}
-          	}
-        }
-        var other_pay_amt = document.getElementById("other_pmt_field").value;
+        //var other_pay_amt = document.getElementById("other_pmt_field").value;
 	//cannot submit if payment type, methods are not selected
 	if (pay_mthd.value == '' || pay_type.value == ''){
 		alert("You must select a payment type and method");
@@ -233,6 +221,21 @@ function validateMbrPayForm(){
 	if (ptText == 'Dues'){
 		//test to see if payment amount other checkbox or regular payment amount is selected
 		//not both
+	        var x = document.getElementById("mbr_type");
+	        for (var i = 0; i < x.length; i++){
+	        	if (x[i].selected){
+	      	  		//pay_amt_selected = true;
+				pay_amt_name = x[i].value;
+				var pattern = /pay_(.*)/;
+				const match = x[i].id.match(pattern);
+				pay_amt = match[1];
+				//need to half this if checkbox selected
+				if (halfpmt == true){
+					var pmt = parseInt(pay_amt);
+					pay_amt = (pmt/2).toString();
+				}
+	          	}
+	        }
 	        if (other_pay == true && other_pay_amt != ""){
 			if (isNaN(other_pay_amt)){
 				alert("other payment amount must be a number");
@@ -256,6 +259,14 @@ function validateMbrPayForm(){
 			return false;
 	        }
 	}else{
+		// test for valid entry in textbox here
+		var nonDues_pmt_valid = $("nonDues_pmt_field").getAttribute('isInValid');
+		if (nonDues_pmt_valid == 'invalid'){
+			alert("Please correct non-dues amount field");
+			return false;
+		}
+		// get pay amt
+		var pay_amt = $("nonDues_pmt_field").value
 		yes = confirm("Is this correct?\n\n" + "Payment type: " + ptText + "\nMethod: " + pmText + "\nAmount: " + pay_amt);
 	}
 	if (yes){

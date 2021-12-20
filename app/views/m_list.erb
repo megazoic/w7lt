@@ -36,7 +36,7 @@
     <% if @refer_type == 'all' %>
       <td><%=MemberTracker::ReferType[m[:refer_type_id]].name%></td>
     <% end %>
-		<td><a href="/r/member/show/<%= m[:id]%>">view</a><%if session[:auth_user_roles].include?('mbr_mgr')%> | <a href="/m/member/edit/<%= m[:id]%>">edit</a> | <a href="/m/payment/new/<%= m[:id]%>">renew</a><%end%></td>
+		<td><a href="/r/member/show/<%= m[:id]%>">view</a><%if session[:auth_user_roles].include?('mbr_mgr')%> | <a href="/m/payment/new/<%= m[:id]%>">payment</a></a><%end%></td>
 		</tr>
 		<% end %>
 	</table>

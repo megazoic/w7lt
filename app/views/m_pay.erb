@@ -29,7 +29,7 @@
     <br/><br/>
     <input type="checkbox" name="other_pmt" id="other_pmt" onchange="other_pmtSet(this)"/>
     <label for="other_pmt">Need to record non-standard payment (dollar amount only)</label></br>
-    <input type="text" name="other_pmt" id="other_pmt_field" maxlength="3" size="4" disabled/>
+    <input type="text" name="other_pmt" id="other_pmt_field" maxlength="5" size="4" disabled/>
     <br/>
     <%if @mbr_pay[:mbr_type] == 'family'%>
       <br/><%@mbr_family.each {|mbr|%><%="#{mbr} "%><%}%>membership will also be renewed unless this renewal is non-family type
@@ -47,6 +47,10 @@
         <option value=<%="#{Time.now.year + yr}"%>><%=Time.now.year + yr%></option>
       <% end %>
     </select>
+  </div>
+  <div id="nonDues">
+  <label for="nonDues_amt_field">Payment amount (with or without decimal eg 23.00 or 23)</label>
+    <input type="text" name="nonDues_pmt" id="nonDues_pmt_field" maxlength="7" size="4" disabled onfocusout="validatePayAmt(this)"/>
   </div>
   <br/>
   <label for="payment_method_field">Payment method is </label>
