@@ -170,16 +170,6 @@ function validateEmail(textbox){
 		textbox.setAttribute('isInValid','');
 	}
 }
-function validateQueryForm(){
-	var formInvalid = true
-	var queryType = $(query_select);
-	if (queryType == "paid_up"){
-		//check to see radio button selected
-	}
-	if (queryType == "mbr_type"){
-		//check to see radio button selected
-	}
-}
 function validateAssignRoleForm(){
 	var roles = document.querySelectorAll('input[type="checkbox"]');
 	//test to see if at least one checkbox is checked
