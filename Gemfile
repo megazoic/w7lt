@@ -4,7 +4,7 @@ ruby '2.6.6'
 
 
 
-gem 'puma', '4.3.9'
+gem 'puma', '4.3.11'
 gem 'rake', '13.0.1'
 gem 'rspec', '3.9.0'
 gem 'coderay', '1.1.2'
