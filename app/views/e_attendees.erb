@@ -23,6 +23,10 @@ Contact for event: <%="#{@e_contact[:fname]} #{@e_contact[:lname]}, #{@e_contact
 <%end%>
 </table>
 <br />
+<h3>Email list of attendees</h3>
+<%=@attendee_emails%>
+<br />
+<br />
 <%if !@guests.empty?%>
 Attendees just added to database enclosed in {} those who aren't in the database enclosed in [] (should these be entered?)'</br>
 <%@guests.each do |guest|%>
