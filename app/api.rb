@@ -134,6 +134,23 @@ module MemberTracker
       erb :home, :layout => :layout_w_logout
     end
     ################### START MEMBER MGR ##################
+    get '/r/member/mbr_rpt' do
+      #@current_yr = Date.year
+      erb :m_ARRL_query, :layout => :layout_w_logout
+    end
+    post '/r/member/mbr_rpt' do
+      year_1 = params[:year].to_i + 1
+      m = DB.from(:members).where(paid_up: params[:year].to_i..year_1)
+      @rpt = Hash.new
+      @rpt[:not_arrl] = m.where(arrl: 0).count
+      @rpt[:arrl] = m.where(arrl: 1).count
+      @rpt[:lic_none] = m.where(license_class: "none").count
+      @rpt[:lic_tech] = m.where(license_class: "tech").count
+      @rpt[:lic_gen] = m.where(license_class: "general").count
+      @rpt[:lic_extra] = m.where(license_class: "extra").count
+      @rpt[:total] = m.count
+      erb :m_ARRL_rpt, :layout => :layout_w_logout
+    end
     get '/r/dump/:table' do
       if params[:table] == 'mbr'
         @m = nil

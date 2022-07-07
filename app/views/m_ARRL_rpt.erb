@@ -1,0 +1,14 @@
+<h2>Union of PARC and ARRL membership</h2>
+<table>
+<tr><td>Yes ARRL</td><td><%=@rpt[:arrl]%></td></tr>
+<tr><td>No ARRL</td><td><%=@rpt[:not_arrl]%></td></tr>
+<tr><td>Total</td><td><%=@rpt[:total]%></td></tr>
+</table>
+</br>
+<h2>Breakdown by license class</h2>
+<table>
+<tr><td>None</td><td><%=@rpt[:lic_none]%></td></tr>
+<tr><td>Tech</td><td><%=@rpt[:lic_tech]%></td></tr>
+<tr><td>General</td><td><%=@rpt[:lic_gen]%></td></tr>
+<tr><td>Extra</td><td><%=@rpt[:lic_extra]%></td></tr>
+</table>

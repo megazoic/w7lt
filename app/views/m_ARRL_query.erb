@@ -1,0 +1,11 @@
+<h2>Select current year to begin counting from</h2>
+  <h4>the db will be queried from a range [selected year -> plus one]</h4>
+<form action='/r/member/mbr_rpt' method='POST' name="rptYear">
+<select name='year'>
+<option><%=Date.today.year%></option>
+<option><%=Date.today.year-1%></option>
+<option><%=Date.today.year-2%></option>
+</select>
+<br />
+<input type="submit" value="Submit"> | <a href="/r/member/list">Cancel</a>
+</form>
