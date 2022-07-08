@@ -159,11 +159,19 @@ module MemberTracker
           #if !m[:modes].nil?
           #  m[:modes].gsub!(",", "|")
           #end
-          #clear out commas
+          #clear out commas and replace callsign
+          replaceCallSign = 0
           m.each do |k,v|
             if !m[k].nil? && m[k].is_a?(String)
               m[k].gsub!(",", "|")
+              if k == :license_class && m[k] == 'none'
+                replaceCallSign = 1
+              end
             end
+          end
+          if replaceCallSign == 1
+            puts "replace cs for #{m[:fname]} #{m[:lname]}"
+            m[:callsign] = 'NO CALL'
           end
         end
         @modes = Member.modes
@@ -766,6 +774,25 @@ module MemberTracker
         #set the default mbr_type until a payment is made (this is also done on mbrs table)
         #note, none is also used to describe a 'guest'
         params[:mbr_type] = 'none'
+        #check callsign and license class TODO also, this should be an associate member if paying
+        if params[:license_class] == 'none'
+          if params[:callsign] == ''
+            #need to put a standardized non-callsign if empty 
+            params[:callsign] = 'NO CALL'
+          else
+            #TODO reject this as there has to be a license class with a callsign
+            #still need to pass existing params back to new/edit member form
+            #session[:msg] = "The new member could not be created\nneed a license class"
+            #redirect "/r/member/show/#{mbr_id}"
+          end
+        else
+          if params[:callsign] == ''
+            #TODO reject this need a callsign if license class is other than none
+            #still need to pass existing params back to new/edit member form
+            #session[:msg] = "The new member could not be created\nneed a callsign"
+            #redirect "/r/member/show/#{mbr_id}"
+          end
+        end
         mbr_record = Member.new(params)
         begin
           DB.transaction do

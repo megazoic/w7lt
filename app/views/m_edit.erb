@@ -68,10 +68,10 @@
 	<input type="hidden" name="phm_pub" value="0">
 	<input type="checkbox" name="phm_pub" id="phm_pub" value="1" <%=@mbr[:phm_pub]==1  ? "check='checked'" : nil%>><br />
 	License class <select id="license_class" name="license_class">
+    <option value="none" <%=@mbr[:license_class] == 'none' ? "selected" : nil%>>None</option>
 		<option value="tech" <%=@mbr[:license_class] == 'tech' ? "selected" : nil%>>Tech</option>
 		<option value="general" <%=@mbr[:license_class] == 'general' ? "selected" : nil%>>General</option>
 		<option value="extra" <%=@mbr[:license_class] == 'extra' ? "selected" : nil%>>Extra</option>
-		<option value="none" <%=@mbr[:license_class] == 'none' ? "selected" : nil%>>None</option>
 	</select>
 	<br />
   Member since: (YYYY-MM) format

@@ -271,7 +271,7 @@ function validateMbrForm(){
 	var lastName = $("lname").getAttribute('isInValid');
 	var mbr_since = $("mbr_since").getAttribute('isInValid');
 	if (firstName == 'invalid' || lastName == 'invalid' || mbr_since == 'invalid'){
-		alert("Please be sure to include a first and\nlast name as well as proper date format\nbefore submitting this form")
+		alert("Please be sure to include a first and\nlast name as well as proper date format\nbefore submitting this form");
 		return false;
 	}
 	var arrlDate = $("arrl_expire").getAttribute('isInValid');
@@ -299,6 +299,18 @@ function validateMbrForm(){
 				return false;
 			}
 		}
+	}
+	//check that license class and callsign match
+	var licenseClass = $("license_class").value
+	var callSign = $("callsign").value
+	if (licenseClass != "none"){
+		if (callSign == ""){
+			alert("Please enter a callsign or choose license class as none");
+			return false;
+		}
+	}else if (callSign != ""){
+		alert("Please remove callsign or choose a license class");
+		return false;
 	}
 }
 function validateUnitEditForm(){
