@@ -16,6 +16,8 @@ require_relative 'auditLog'
 require_relative 'event'
 require_relative 'eventType'
 require_relative 'referType'
+require_relative 'mbrRenewal'
+require_relative 'renewalEventType'
 
 module MemberTracker
   #using modular (cf classical) approach (see https://www.toptal.com/ruby/api-with-sinatra-and-sequel-ruby-tutorial)
@@ -133,6 +135,116 @@ module MemberTracker
       session[:msg] = nil
       erb :home, :layout => :layout_w_logout
     end
+    ################### START API #########################
+    get '/api/mbr_renewal/find', :provides => 'json' do
+      #find most recent date email reminders were sent out or date only individuals without emails were retreived
+      start_date = MbrRenewal.getRenewRangeStart
+      if start_date == "error"
+        return JSON.generate("bad date range")
+      end
+      #end date is (two weeks from today - 365)
+      end_date = Date.today.prev_year + MbrRenewal::RENEWAL_WINDOW
+      mbrs = DB[:members]
+      # Don't want to keep shortening a members annual membership when they renew before membership expires so...
+      # Have 2 ways to find out who needs reminder. 1) via payment records (mbrs2renw_pmt hash), 2) via Member::mbrship_renewal_date
+      # (mbrs2renw_mbrRnwl hash)
+      # Both methods use same date range to determine members who's renewal date is coming up (from today -- MbrRenewal::RENEWAL_WINDOW)
+      # These two collections need to be compared to generate (5) separate categories with different actions for each
+      # A) those falling in both categories, B) in pmt and have mbr date later in time, C) in pmt and have mbr date earlier
+      # D) in mbr and have pmt date later in time, E) in mbr and have pmt date earlier. Actions A) send reminder, B) no action,
+      # C) send reminder + update Member::mbrship_renewal_date, D) update Member::mbrship_renewal_date, E) send reminder
+      # arrays with members who need an action taken, rest are ignored
+      update_mbrship_renewal_date = []
+      pmts_in_range = Payment.where(payment_type_id: 5, ts: start_date..end_date)
+      mbrRenwls_in_range = Member.where(mbrship_renewal_date: start_date..end_date)
+      mbrs2renw_pmt = {}
+      mbrs2renw_mbrRnwl = {}
+      pmts_in_range.each do |p|
+        mbrs2renw_pmt.update({Member[p[:mbr_id]].id => {:fname => Member[p[:mbr_id]].fname, :lname => Member[p[:mbr_id]].lname,
+        :callsign => Member[p[:mbr_id]].callsign, :email => [Member[p[:mbr_id]].email],
+        :pay_date => p[:ts]}})
+      end
+      #check to see if unsubscribed or about to exceed number of contacts allowed
+      mbrs2renw_pmt.delete_if{|k,v|
+        (Member[k].halt_mbrship_renewal == true) || (Member[k].mbrship_renewal_contacts >= 2)}
+      
+      mbrRenwls_in_range.each do |mr|
+        #only take those who have not unsubscribed to renewal reminders and previous contact attempts < 2
+        if (mr[:halt_mbrship_renewal] == 0) && (mr[:mbrship_renewal_contacts] < 2)
+          mbrs2renw_mbrRnwl << {mr[:id] => {:fname => mr[:fname], :lname => mr[:lname],
+          :callsign => mr[:callsign], :email => mr[:email]}}
+        end
+      end
+      #merge the two (removing duplicates) mbrs2renw_pmt values are kept when keys(ids) same in both hashes
+      mbrs2renw_all = mbrs2renw_mbrRnwl.merge(mbrs2renw_pmt)
+      #extract the keys
+      pmt_arry_ids = []
+      mbrs2renw_pmt.each {|k,v| pmt_arry_ids << k}
+      mbrRnwl_arry_ids = []
+      mbrs2renw_mbrRnwl.each {|k,v| mbrRnwl_arry_ids << k}
+      #now want the two difference sets
+      diff_pmt_arry_ids = pmt_arry_ids - mbrRnwl_arry_ids #unique to pmt
+      diff_mbrRnwl_arry_ids = mbrRnwl_arry_ids - pmt_arry_ids #unique to mbrRnwl
+      #need the intersection set
+      send_reminder = pmt_arry_ids & mbrRnwl_arry_ids
+      #now need to separate within these two groups (unique to pmt [diff_pmt_arry_ids] or to mbrRnwl
+      #[diff_mbrRnwl_arry_ids]) those who's mbr_renewal_date or last dues payment dates
+      #occur after the end date for the window (from today -- MbrRenewal::RENEWAL_WINDOW)
+      #so, have to iterate through each looking for corresponding records after end_date of range
+      all_latr_pmts = Payment.where(ts: end_date..Date.today, payment_type_id: 5).select(:mbr_id, :ts)
+      #union of diff_mbrRnwl_arry_ids with all_latr_pmts = member is late making a payment
+      all_latr_pmts.each {|lp|
+        if diff_mbrRnwl_arry_ids.include?(lp[:mbr_id])
+          update_mbrship_renewal_date << lp
+          diff_mbrRnwl_arry_ids.delete(lb[:mbr_id])
+        end
+      }
+      #now diff_mbrRnwl_arry_ids only contains ids that need a reminder sent
+      send_reminder.concat(diff_mbrRnwl_arry_ids)
+      #next work with other difference array. here, we have to use these ids to get Member::mbrship_renewal_date
+      #and delete from array those ids with Member::mbrship_renewal_date > end_date (let them drop, they will come up again later)
+      diff_pmt_arry_ids.each {|dp|
+        if Date.parse(Member[dp].mbrship_renewal_date.to_s) > end_date
+          diff_pmt_arry_ids.delete(dp)
+        end
+      }
+      #those remaining diff_pmt_arry_ids go into update and send reminder
+      send_reminder.concat(diff_pmt_arry_ids)
+      update_mbrship_renewal_date.concat(diff_pmt_arry_ids)
+      #to follow up on updating the Member table, use update_mbrship_renewal_date with mbrs2renw_all
+      #dont need to set Member::mbrship_renewal_active for these
+      if !update_mbrship_renewal_date.empty?
+        update_mbrship_renewal_date.each {|mbr_id|
+          mbrs.where(id: mbr_id).update(mbrship_renewal_date: mbrs2renw_all[mbr_id][:pay_date])
+        }
+      end
+      #return remaining mbrs who need reminders sent, but first look for missing emails and record to Member table
+      missing_email = []
+      send_reminders_out = []
+      send_reminder.each{|mbr_id|
+        #set members here as Member::mbrship_renewal_active true
+        mbrs.where(id: mbr_id).update(mbrship_renewal_active: true)
+        send_reminders_out << mbrs2renw_all[mbr_id]
+        if mbrs2renw_all[mbr_id][:email][0] == 'NA'
+          missing_email << mbr_id
+        end
+      }
+      #deal with missing emails
+      if !missing_email.empty?
+        missing_email.each do |mbr_id|
+          #need to record this in Mbr_renewals (a_user_id, mbr_id, renewal_event_type_id, notes)
+          MbrRenewal.create(a_user_id: session[:auth_user_id], mbr_id: mbr_id, renewal_event_type_id: RenewalEventType.getID('missing email'),
+          notes: 'automated entry', ts: DateTime.now)
+        end
+      end
+      
+      if send_reminders_out.empty?
+        JSON.generate("empty search")
+      else
+        JSON.generate(send_reminders_out)
+      end
+    end
+    ################### END API ###########################
     ################### START MEMBER MGR ##################
     get '/r/member/mbr_rpt' do
       #@current_yr = Date.year
