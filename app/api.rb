@@ -1485,7 +1485,26 @@ module MemberTracker
     get '/m/payment/new/:id' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
-      @mbr_pay = Member.select(:id, :fname, :lname, :callsign, :paid_up, :mbr_type)[params[:id].to_i]
+      #need to replace :paid_up with :renew_date and :last_pmt_date
+      @mbr_pay = Member.select(:id, :fname, :lname, :callsign, :mbrship_renewal_date,
+      :mbr_type, :mbrship_renewal_contacts, :mbrship_renewal_active, :halt_mbrship_renewal)[params[:id].to_i]
+      #want to get a date range over the last year from today then order dues payments, pick most recent
+      today = DateTime.now
+      yr_ago = today -365
+      last_dues_payment = Payment.select(:ts).where(payment_type_id: 5, mbr_id: params[:id].to_i, ts: yr_ago..today).order(:ts).last
+      #test for no payments
+      if last_dues_payment.nil?
+        @mbr_pay[:last_dues_pmt_date] = "none prior"
+      else
+        @mbr_pay[:last_dues_pmt_date] = last_dues_payment.strftime('%Y, month: %m, day: %d')
+      end
+      @mbr_renewal_events = MbrRenewal.select(:ts, :renewal_event_type_id, :notes).where(mbr_id: params[:id].to_i).all
+      #get the renewal event types
+      @mbr_renewal_events.each do |event|
+        event_type = RenewalEventType.select(:name).where(id: event.values[:renewal_event_type_id]).first
+        event.values[:renewal_event_type] = event_type.values[:name]
+        event.values.reject!{|k,v| k == :renewal_event_type_id}
+      end
       #if mbr_type is 'family' then count all family members that will be updated
       #clean up paid_up if not a year, view will handle this
       if !/\d\d\d\d/.match(@mbr_pay[:paid_up].to_s)
