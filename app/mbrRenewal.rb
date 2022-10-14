@@ -23,25 +23,26 @@ module MemberTracker
         return "error"
       end
       date - (365 - RENEWAL_WINDOW)
-=begin
-      renwl_recs = DB.from(:mbr_renewals).select(:renewal_event_type_id, :ts).all
-      d = Date.today
-      date = Date.civil(d.year-1, d.month, d.day)
-      date = Time.parse(date.to_s)
-      renwl_recs.each do |rr|
-        if (rr[:renewal_event_type_id] == (rs_id | no_eml))
-          puts "in renwl_rec condition met and date: #{date}"
-          date = rr[:ts] if (rr[:ts] > date)
-        end
-      end
-      #need date format
-      date = Date.parse(date.to_s)
-      #find date that is year earlier + 2 weeks
-      date - (365 - RENEWAL_WINDOW)
-=end
     end
-    def MbrRenewal.cmparePmtWithMbr(mbr, pmt)
-      #need to parse out these two arrays and obtain 5 separate collections
+    def MbrRenewal.getNewMbrshipRenewalDate(mbr_id)
+      renewal_date = nil
+      #calculate the new date based on renewal event today
+      if !Member[mbr_id].mbrship_renewal_date.nil?
+        begin_date_window = Date.parse(Member[mbr_id].mbrship_renewal_date.to_s) + 334
+        end_date_window = Date.parse(Member[mbr_id].mbrship_renewal_date.to_s) + 379
+        today = Date.parse(Time.now.to_s)
+        if (begin_date_window...end_date_window).include?(today)
+          #within window, just update the existing Time
+          new_mrd = Date.parse(mbrship_renewal_date_hash[:old].to_s)+365
+          renewal_date = DateTime.parse(new_mrd.to_s)
+        else
+          #changing mbrship_renewal_date since either too early or too late
+          renewal_date = Time.now
+        end
+      else #no prior renewal date
+        renewal_date = Time.now
+      end
+      renewal_date
     end
   end
 end

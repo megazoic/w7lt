@@ -5,8 +5,8 @@
 </script>
 <form action='/m/payment/new' method='POST' name="mbrPay" onsubmit="return validateMbrPayForm()">
   <input type="hidden" name="mbr_id" value=<%=@mbr_pay[:id]%>>
+  <input type="hidden" name="mbrship_renewal_date_old" value=<%=@mbr_pay[:mbrship_renewal_date]%>>
   <input type="hidden" name="mbr_type_old" id="old_mbr_type" value=<%=@mbr_pay[:mbr_type]%>>
-  <input type="hidden" name="mbr_paid_up_old" value=<%=@mbr_pay[:paid_up]%>>
   <label for="payment_type_field">Payment type is </label>
   <select name="payment_type" id="payment_type_field" onchange="duesSet(this)">
     <option value="">--Choose type--</option>
@@ -25,17 +25,24 @@
     </select>
     <br/><br/>
     <input type="checkbox" name="other_pmt" id="other_pmt" onchange="other_pmtSet(this)"/>
-    <label for="other_pmt">Need to record non-standard payment (dollar amount only)</label></br>
+    <label for="other_pmt">Need to record non-standard payment</label></br>
     <input type="text" name="other_pmt" id="other_pmt_field" maxlength="5" size="4" disabled/>
-    <label for="other_pmt_field">Notes about this non-standard payment</label>
+    <label for="other_pmt_field">Enter this non-standard payment here (dollar amount only)</label>
     <br/>
+    <%if !@mbr_pay[:renewal_too_early].nil?%>
+      <p style="color: red;">This member is renewing too early, their next renewal date is one year from <%=Date.parse(@mbr_pay[:mbrship_renewal_date].to_s)%>.</p>
+      <p>Their renewal date will be set with today&#39;s date effectively shortening their last dues payment
+    <%end%>
+      
     <%if @mbr_pay[:mbr_type] == 'family'%>
       <br/><%@mbr_family.each {|mbr|%><%="#{mbr} "%><%}%>membership will also be renewed unless this renewal is non-family type
+      <p>If dues payment is for non-family type, then this family member will be removed from family unit and no other members of this
+      family will have a membership renewal.
     <%end%>
     <br/>
     <p>After this payment is submitted, <%="#{@mbr_pay[:fname]} #{@mbr_pay[:lname]} will have the following
-    membership renewal date #{@mbr_pay[:mbrship_renewal_date].to_date + 365}."%>
-    <p>Edit member details to change this date after you submit this payment<br/>
+    membership renewal date #{(@mbr_pay[:new_renewal_date].strftime('%d, %b %Y'))}."%>
+    <p>If needed, use the edit member details page to change this date after you submit this payment<br/>
     <table>
         <thead>
             <tr>
@@ -49,7 +56,11 @@
             </tr>
             <tr>
                 <td>times contacted: <%=@mbr_pay[:mbrship_renewal_contacts]%></td>
-                <td>current renewal date: <%=@mbr_pay[:mbrship_renewal_date].strftime('%Y month: %m, day: %d')%></td>
+                <%if @mbr_pay[:mbrship_renewal_date].nil? %>
+                  <td>current renewal date: N.A.</td>
+                <% else %>
+                  <td>current renewal date: <%=@mbr_pay[:mbrship_renewal_date].strftime('%d, %b %Y')%></td>
+                <% end %>
             </tr>
         </tbody>
     </table>
@@ -70,7 +81,7 @@
             <tr>
                 <td><%=event[:renewal_event_type]%></td>
                 <td><%=event[:notes]%></td>
-                <td><%=event[:ts].strftime('%Y month: %m, day: %d')%></td>
+                <td><%=event[:ts].strftime('%Y %b %a')%></td>
             </tr>
         <%end%>
        </tbody>
