@@ -78,7 +78,9 @@ input[type=submit] {
   left: -35px;
   content: "&#10004;";
 }
-
+.renew {
+	color: red;
+}
 /* Add a red text color and an "x" icon when the requirements are wrong */
 .invalid {
   color: red;

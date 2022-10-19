@@ -14,7 +14,8 @@
   	  <%end%>
   <%end%>
 </div>
-<br/>A Member Type of 'guest' means these have not yet been assigned or the member is a non-paying guest.
+<br/><p>A Member Type of 'guest' means these have not yet been assigned or the member is a non-paying guest.
+<p>Types in red represent expired memberships
 <div>
 	<table>
 		<tr>
@@ -32,7 +33,11 @@
 		<td><%=m[:fname]%></td>
 		<td><%=m[:lname]%></td>
 		<td><%=m[:callsign]%></td>
-    <td><%=m[:mbr_type] == 'none' ? 'guest' : m[:mbr_type]%></td>
+    <%if (m[:mbrship_renewal_date].nil? == true) || (m[:mbrship_renewal_date].to_date + 365 < Date.today)%>
+      <td><%=m[:mbr_type] == 'none' ? 'guest' : m[:mbr_type]%></td>
+    <%else%>
+      <td class="renew"><%=m[:mbr_type] == 'none' ? 'guest' : m[:mbr_type]%></td>
+    <%end%>
     <% if @refer_type == 'all' %>
       <td><%=MemberTracker::ReferType[m[:refer_type_id]].name%></td>
     <% end %>

@@ -798,7 +798,7 @@ module MemberTracker
       erb :l_list, :layout => :layout_w_logout
     end
     get '/r/member/list/?:event?' do
-      @members = DB[:members].select(:id, :lname, :fname, :callsign, :paid_up, :mbr_type).order(:lname, :fname).all
+      @members = DB[:members].select(:id, :lname, :fname, :callsign, :mbrship_renewal_date, :mbr_type).order(:lname, :fname).all
       @tmp_msg = session[:msg]
       session[:msg] = nil
       #if looking for an event contact
@@ -812,6 +812,19 @@ module MemberTracker
       @tmp_msg = session[:msg]
       session[:msg] = nil
       @member = Member[params[:id].to_i]
+      #convert mbrship_renewal_date
+      if !@member[:mbrship_renewal_date].nil?
+        rd = @member[:mbrship_renewal_date].to_date + 365
+        if rd < Date.today
+          @member[:renew_due] = true
+        else
+          @member[:renew_due] =  false
+        end
+        @member[:renewal_date] = rd.strftime("%b, %Y")
+      else
+        @member[:mbrship_renewal_date] = "NA"
+        @member[:renew_due] = true
+      end
       @modes = Member.modes
       if @member[:modes] == ''
         @member[:modes] = 'none'
@@ -1069,7 +1082,7 @@ module MemberTracker
           else
             renew_date = "NA"
           end
-          unit_meta[:unit_notes] = "Renew date: #{renew_date}"
+          unit_meta[:unit_notes] = "Renew: #{renew_date}"
         else
           (!u.name.nil? && u.name != '') ? unit_meta[:unit_notes] = "#{u.name}" : unit_meta[:unit_notes] = "N/A"
         end
