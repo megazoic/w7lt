@@ -1063,7 +1063,13 @@ module MemberTracker
           end
           unit_meta[:unit_notes] = "Elmer: #{elmer_mbr}"
         elsif @u_c[0] == 'family' || unit_meta[:unit_type] == 'family'
-          unit_meta[:unit_notes] = "Paid_up: #{Member[u.members.first.id].paid_up}"
+          rd = Member[u.members.first.id].mbrship_renewal_date
+          if !rd.nil?
+            renew_date = rd.to_datetime.strftime('%b %Y')
+          else
+            renew_date = "NA"
+          end
+          unit_meta[:unit_notes] = "Renew date: #{renew_date}"
         else
           (!u.name.nil? && u.name != '') ? unit_meta[:unit_notes] = "#{u.name}" : unit_meta[:unit_notes] = "N/A"
         end
