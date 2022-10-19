@@ -33,7 +33,7 @@ module MemberTracker
         today = Date.parse(Time.now.to_s)
         if (begin_date_window...end_date_window).include?(today)
           #within window, just update the existing Time
-          new_mrd = Date.parse(mbrship_renewal_date_hash[:old].to_s)+365
+          new_mrd = Date.parse(Member[mbr_id].mbrship_renewal_date.to_s)+365
           renewal_date = DateTime.parse(new_mrd.to_s)
         else
           #changing mbrship_renewal_date since either too early or too late

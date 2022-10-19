@@ -3,6 +3,7 @@
 <form action='/m/payments/destroy' method='POST' name="mbrPayDestroy" onsubmit="validatePayDestroy()">
 <input type="hidden" name="pay_id" value=<%=@payment[:id]%>>
 <input type="hidden" name="confirm" id="confirmIt" value="No">
+<input type="hidden" name"notes" value="">
 <label for="notes">Log notes</label>
 <input type="text" name="notes">
 </br>
