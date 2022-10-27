@@ -742,7 +742,7 @@ module MemberTracker
           session[:msg] = "there are no logs to view"
           redirect '/home'
         end
-        Log.where(a_user_id: session[:auth_user_id]).order(:ts, :action_id).each do |l|
+        Log.where(a_user_id: session[:auth_user_id]).reverse_order(:ts).order_append(:action_id).each do |l|
           h = Hash.new
           if !l.member.nil?
             h[:mbr_name] = "#{l.member.fname} #{l.member.lname}"
@@ -2122,6 +2122,80 @@ module MemberTracker
       else
         erb :p_report_html, :layout => :layout_w_logout
       end
+    end
+    get '/m/mbr_renewals/show' do
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
+      #get data from table mbr_renewals and display
+      mrs = DB[:mbr_renewals].order(:ts).all
+      @renewals = []
+      mrs.each do |mr|
+        @renewals << {id: mr[:id], fname: Member[mr[:mbr_id]].fname, lname: Member[mr[:mbr_id]].lname,
+          recorded_by: Auth_user[mr[:a_user_id]].member.callsign,
+          event_type: RenewalEventType[mr[:renewal_event_type_id]].name,
+          notes: mr[:notes], ts: mr[:ts]}
+      end
+      erb :m_rnwal_show, :layout => :layout_w_logout
+    end
+    get '/m/mbr_renewals/edit/:id' do
+      mr = MbrRenewal[params[:id]].values
+      @mbr_renewal = {mbrship_renewal_date: Member[mr[:mbr_id]].mbrship_renewal_date,
+        halt_mbrship_renewal: Member[mr[:mbr_id]].halt_mbrship_renewal,
+        mbrship_renewal_active: Member[mr[:mbr_id]].mbrship_renewal_active,
+        mbrship_renewal_contacts: Member[mr[:mbr_id]].mbrship_renewal_contacts,
+        fname: Member[mr[:mbr_id]].fname, lname: Member[mr[:mbr_id]].lname}
+      @mbr_renewal.merge!(mr)
+      @renewal_event_types_array = DB[:renewal_event_types].select(:id, :name).all
+      erb :m_rnwal_edit, :layout => :layout_w_logout
+    end
+    post '/m/mbr_renewals/edit' do
+      #{"rnwal_id"=>"1", "mbrship_renewal_date"=>"10/22/22", "halt_mbrship_renewal"=>"true", "mbrship_renewal_active"=>"false", "mbrship_renewal_contacts"=>"0", "event_type"=>"2", "notes"=>"test new"}
+     mbr_renewal_record = 
+      DB[:mbr_renewals].select(:a_user_id, :renewal_event_type_id, :notes, :ts, :mbr_id).where(id: params[:rnwal_id]).first
+      member_record = DB[:members].select(:mbrship_renewal_date, :halt_mbrship_renewal,
+      :mbrship_renewal_active, :mbrship_renewal_contacts).where(id: mbr_renewal_record[:mbr_id]).first
+      #check to see what has changed and enter that into log
+      member_record[:mbrship_renewal_date] = member_record[:mbrship_renewal_date].strftime("%D")
+      augmented_notes = ""
+      member_record.each do |k, v|
+        if member_record[k].to_s != params[k]
+          augmented_notes << "#{k}: old record #{member_record[k]}, new record #{params[k]}\n"
+        end
+      end
+      if mbr_renewal_record[:renewal_event_type_id] != params[:event_type].to_i
+        augmented_notes << "old event type: #{RenewalEventType[mbr_renewal_record[:renewal_event_type_id]].name},
+        new event type: #{RenewalEventType[params[:event_type].to_i].name}\n"
+      end
+      if mbr_renewal_record[:notes] != params[:notes]
+        augmented_notes << "old notes #{mbr_renewal_record[:notes]},
+        new notes #{params[:notes]}\n"
+      end
+      old_a_user_cs = Member[Auth_user[mbr_renewal_record[:a_user_id]].values[:mbr_id]].callsign
+      new_a_user_cs = Member[Auth_user[session[:auth_user_id]].values[:mbr_id]].callsign
+      if old_a_user_cs != new_a_user_cs
+        augmented_notes << "old authorized user: #{old_a_user_cs}, new authorized user: #{new_a_user_cs}"
+      end
+      begin
+        DB.transaction do
+          MbrRenewal[params[:rnwal_id]].update({a_user_id: session[:auth_user_id], renewal_event_type_id: params["event_type"],
+            notes: params[:notes], ts: DateTime.now})
+          params.delete_if{|k,v| ["rnwal_id", "event_type", "notes"].any?(k)}
+          #only update values that have changed
+          params.each do |k,v|
+            #:mbrship_renewal_date, :halt_mbrship_renewal, :mbrship_renewal_active, :mbrship_renewal_contacts
+            if member_record[k] == v
+              params.delete(k)
+            end
+          end
+          Member[mbr_renewal_record[:mbr_id]].update(params)
+          l = Log.new(mbr_id: mbr_renewal_record[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: Action.get_action_id("mbr_renew"))
+          l.save
+        end
+        session[:msg] = "The existing renewal record was successfully updated"
+      rescue StandardError => e
+        session[:msg] = "The existing renewal could not be updated\n#{e}"
+      end
+      redirect '/m/mbr_renewals/show'
     end
     ################### START ADMIN #######################
     get '/a/auth_user/list' do
