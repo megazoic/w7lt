@@ -54,6 +54,18 @@ function authUserStatusSet(inputElement){
 	}
 }
 //**************VALIDATORS*****************************
+function validateMbrRnwlDate(textbox){
+	//need to match MM/DD/YY
+	var tb = textbox.value.trim();
+	var datePattern = /^(0[1-9]|1[012])\/(0[1-9]|[12][0-9]|3[01])\/\d\d$/
+	if(!tb.match(datePattern) && tb != ''){
+		textbox.style.borderColor = 'red';
+		textbox.setAttribute('isInValid','invalid');
+	}else{
+		textbox.style.borderColor = 'black';
+		textbox.setAttribute('isInValid','');
+	}
+}
 function validatePayAmt(textbox){
 	var tb = textbox.value.trim();
 	var amtPattern = /^\d{1,}(\.\d{1,2})?$/
@@ -262,6 +274,31 @@ function validateMbrPayForm(){
 	if (yes){
 		return true;
 	}else{
+		return false;
+	}
+}
+function validateRnwlForm(){
+	var rnwlDate = $("mbrship_renewal_date").getAttribute('isInValid');
+	if (rnwlDate == 'invalid'){
+		alert("check date format")
+		return false;
+	}
+}
+function validateNewRnwlForm(){
+	var rnwlDate = $("mbrship_renewal_date").getAttribute('isInValid');
+	if (rnwlDate == 'invalid'){
+		alert("check date format");
+		return false;
+	}
+	var radios = document.getElementsByTagName('input');
+	var btn_checked = false;
+	for (var i = 0; i < radios.length; i++) {
+	    if (radios[i].type === 'radio' && radios[i].checked && radios[i].name === 'event_type') {
+		    btn_checked = true;
+	    }
+    	}
+	if (btn_checked == false){
+		alert("an event type needs to be checked");
 		return false;
 	}
 }

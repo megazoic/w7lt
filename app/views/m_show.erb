@@ -29,7 +29,8 @@ Volunteer:<br />VE <span class="highlight"><%=@member[:ve].to_i == 0 ? "N" : "Y"
 <%end%>
 <br />
 <h4>How did this member find us? <%if @member.refer_types.nil?%>We don&apos;t know<%else%><%=@member.refer_types.name%><%end%></h4>
-<%if session[:auth_user_roles].include?('mbr_mgr') || MemberTracker::Auth_user[session[:auth_user_id]].member.id == @member[:id]%><a href="/m/member/edit/<%= @member[:id]%>">Edit Member Details</a><%end%><br />
+<%if session[:auth_user_roles].include?('mbr_mgr') || MemberTracker::Auth_user[session[:auth_user_id]].member.id == @member[:id]%><p><a href="/m/member/edit/<%= @member[:id]%>">Edit Member Details</a>
+  <p><a href="/m/mbr_renewals/new/<%= @member[:id]%>">Add Renewal Data</a><%end%><br />
 <h4>Log notes:</h4>
 <a href="/m/log/create/<%=@member[:id]%>">Add a log note for this member</a>
 <br />

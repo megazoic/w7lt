@@ -2127,7 +2127,7 @@ module MemberTracker
       @tmp_msg = session[:msg]
       session[:msg] = nil
       #get data from table mbr_renewals and display
-      mrs = DB[:mbr_renewals].order(:ts).all
+      mrs = DB[:mbr_renewals].reverse_order(:ts).all
       @renewals = []
       mrs.each do |mr|
         @renewals << {id: mr[:id], fname: Member[mr[:mbr_id]].fname, lname: Member[mr[:mbr_id]].lname,
@@ -2150,10 +2150,22 @@ module MemberTracker
     end
     post '/m/mbr_renewals/edit' do
       #{"rnwal_id"=>"1", "mbrship_renewal_date"=>"10/22/22", "halt_mbrship_renewal"=>"true", "mbrship_renewal_active"=>"false", "mbrship_renewal_contacts"=>"0", "event_type"=>"2", "notes"=>"test new"}
-     mbr_renewal_record = 
-      DB[:mbr_renewals].select(:a_user_id, :renewal_event_type_id, :notes, :ts, :mbr_id).where(id: params[:rnwal_id]).first
+      #check date
+      begin
+         Date.strptime(params[:mbrship_renewal_date],'%D')
+      rescue StandardError => e
+         session[:msg] = "The existing renewal could not be updated\n#{e}"
+         redirect '/m/mbr_renewals/show'
+      end
+      rdate = Date.strptime(params[:mbrship_renewal_date],'%D')
+      if (rdate.year < 2022 || rdate.year > Date.today.year + 2)
+        session[:msg] = "The existing renewal could not be updated: Incorrect renewal year"
+        redirect '/m/mbr_renewals/show'
+      end
+      mbr_renewal_record = 
+       DB[:mbr_renewals].select(:a_user_id, :renewal_event_type_id, :notes, :ts, :mbr_id).where(id: params[:rnwal_id]).first
       member_record = DB[:members].select(:mbrship_renewal_date, :halt_mbrship_renewal,
-      :mbrship_renewal_active, :mbrship_renewal_contacts).where(id: mbr_renewal_record[:mbr_id]).first
+       :mbrship_renewal_active, :mbrship_renewal_contacts).where(id: mbr_renewal_record[:mbr_id]).first
       #check to see what has changed and enter that into log
       member_record[:mbrship_renewal_date] = member_record[:mbrship_renewal_date].strftime("%D")
       augmented_notes = ""
@@ -2194,6 +2206,56 @@ module MemberTracker
         session[:msg] = "The existing renewal record was successfully updated"
       rescue StandardError => e
         session[:msg] = "The existing renewal could not be updated\n#{e}"
+      end
+      redirect '/m/mbr_renewals/show'
+    end
+    get '/m/mbr_renewals/new/:id' do
+      #need to associate with a member
+      @mbr_renewal = DB[:members].select(:id, :lname, :fname, :callsign, :mbrship_renewal_date, :halt_mbrship_renewal,
+      :mbrship_renewal_active, :mbrship_renewal_contacts).where(id: params[:id]).first
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
+      @renewal_event_types_array = DB[:renewal_event_types].select(:id, :name).all
+      erb :m_rnwal_new, :layout => :layout_w_logout
+    end
+    post '/m/mbr_renewals/new' do
+      #params are: {"mbr_id"=>"330", "mbrship_renewal_date"=>"02/01/22", "halt_mbrship_renewal"=>"false", "mbrship_renewal_active"=>"false", "mbrship_renewal_contacts"=>"1", "event_type"=>"3", "notes"=>"Enter notes here"}
+      #----------------------check date------------------------------------------
+      begin
+         Date.strptime(params[:mbrship_renewal_date],'%D')
+      rescue StandardError => e
+         session[:msg] = "The existing renewal could not be updated\n#{e}"
+         redirect '/m/mbr_renewals/show'
+      end
+      rdate = Date.strptime(params[:mbrship_renewal_date],'%D')
+      if (rdate.year < 2022 || rdate.year > Date.today.year + 2)
+        session[:msg] = "The existing renewal could not be updated: Incorrect renewal year"
+        redirect '/m/mbr_renewals/show'
+      end
+      #fix params date string to datetime object
+      params[:mbrship_renewal_date] = Date.strptime(params["mbrship_renewal_date"],'%D')
+      #----------------------end check date--------------------------------------
+      #see if there are any changes to be made to the members table
+      mbr_renewal = DB[:members].select(:mbrship_renewal_date, :halt_mbrship_renewal,
+        :mbrship_renewal_active, :mbrship_renewal_contacts).where(id: params[:mbr_id]).first
+      mbr_id = params.delete(:mbr_id)
+      #remove from hash if no change to be made
+      mbr_renewal.delete_if {|k,v| params[k] == v}
+      #create a new membership renewal data point
+      mbr_renewals = DB[:mbr_renewals]
+      begin
+        DB.transaction do
+          #write members table data
+          if !mbr_renewal.empty?
+            DB[:members].where(id: mbr_id).update(mbr_renewal)
+          end
+          #write renewals table data
+          DB[:mbr_renewals].insert(a_user_id: session[:auth_user_id], mbr_id: mbr_id, renewal_event_type_id: params[:event_type],
+            notes: params[:notes], ts: DateTime.now)
+        end
+        session[:msg] = 'Renewal was successfully recorded'
+      rescue StandardError => e
+        session[:msg] = "The data was not entered successfully\n#{e}"
       end
       redirect '/m/mbr_renewals/show'
     end

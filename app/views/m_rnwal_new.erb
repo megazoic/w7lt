@@ -1,12 +1,10 @@
-<h3>Edit existing Member renewal information for <span class="textColor"><%="#{@mbr_renewal[:fname]} #{@mbr_renewal[:lname]}"%></span></h3>
-<form action='/m/mbr_renewals/edit' method='POST' name="mbrRenewal" onsubmit="return validateRnwlForm()">
-	<input type="hidden" name="rnwal_id" value="<%=@mbr_renewal[:id]%>">
-	<!-- add validation -->
-<br />
+<h3>Enter New Member renewal information for <span class="textColor"><%="#{@mbr_renewal[:fname]} #{@mbr_renewal[:lname]}"%></span></h3>
+<form action='/m/mbr_renewals/new' method='POST' name="mbrRenewal" onsubmit="return validateNewRnwlForm()">
+	<input type="hidden" name="mbr_id" value="<%=@mbr_renewal[:id]%>">
+  <br />
 	<h5>Member Table info</h5>
 	<label for="mbrship_renewal_date">Membership Renewal Date (MM/DD/YY)</label>
 	<input type="text" name="mbrship_renewal_date" value="<%=@mbr_renewal[:mbrship_renewal_date].strftime("%D")%>" id="mbrship_renewal_date" onfocusout="validateMbrRnwlDate(this)">
-	<!--onfocusout="validateFirstName(this)"-->
 	<br />Halt Membership Renewals?
 	<label for="halt_mbrship_renewal_true">True</label>
 	<input type="radio" name="halt_mbrship_renewal" <% if @mbr_renewal[:halt_mbrship_renewal] == true %>checked<%end%> id="halt_mbrship_renewal_true" value="true">
@@ -20,9 +18,9 @@
 	<br />
 	<label for="mbrship_renewal_contacts">Times contacted</label>
 	<select name="mbrship_renewal_contacts" id=mbrship_renewal_contacts>
-		<option value="0"<%if @mbr_renewal[:mbrship_renewal_contacts] == 0%>selected = true<%end%>>0</option>
-		<option value="1"<%if @mbr_renewal[:mbrship_renewal_contacts] == 1%>selected = true<%end%>>1</option>
-		<option value="2"<%if @mbr_renewal[:mbrship_renewal_contacts] == 2%>selected = true<%end%>>2</option>
+		<option value="0" <%if @mbr_renewal[:mbrship_renewal_contacts] == 0%>selected = true<%end%>>0</option>
+		<option value="1" <%if @mbr_renewal[:mbrship_renewal_contacts] == 1%>selected = true<%end%>>1</option>
+		<option value="2" <%if @mbr_renewal[:mbrship_renewal_contacts] == 2%>selected = true<%end%>>2</option>
 	</select>
 	<br />
 	<hr />
@@ -32,7 +30,6 @@
 		<%@renewal_event_types_array.each do |et|%>
 		<tr>
 			<td><input type="radio" name="event_type" id=<%="et_#{et[:id]}"%>
-				<% if @mbr_renewal[:renewal_event_type_id] == et[:id] %>checked<%end%>
 				 value=<%=et[:id]%>></td>
 			<td><label for=<%="et_#{et[:id]}"%>><%=et[:name]%></label></td>
 		</tr>
@@ -40,7 +37,7 @@
 	</table>
 	<br />
 	<label for="notes">Notes:</label>
-	<input type="text" name="notes" value="<%=@mbr_renewal[:notes]%>" id="notes"/>
+	<input type="text" name="notes" value="Enter notes here" id="notes"/>
 	<br />
  	<input type="submit" value="Submit"/> | <a href="/m/mbr_renewals/show">Cancel</a>
 </form>
