@@ -283,8 +283,18 @@ function validateRnwlForm(){
 		alert("check date format")
 		return false;
 	}
+	var radios = document.getElementsByTagName('input');
+	for (var i = 0; i < radios.length; i++) {
+	    if (radios[i].type === 'radio' && radios[i].checked && radios[i].name === 'event_type') {
+		    if (notes === 'Enter notes here' && radios[i].value === '6'){
+			alert("if you have renewal event type of OTHER, please enter notes");
+			return false;
+		    }
+	    }
+    	}
 }
 function validateNewRnwlForm(){
+	var notes = $("notes").value
 	var rnwlDate = $("mbrship_renewal_date").getAttribute('isInValid');
 	if (rnwlDate == 'invalid'){
 		alert("check date format");
@@ -295,6 +305,10 @@ function validateNewRnwlForm(){
 	for (var i = 0; i < radios.length; i++) {
 	    if (radios[i].type === 'radio' && radios[i].checked && radios[i].name === 'event_type') {
 		    btn_checked = true;
+		    if (notes === 'Enter notes here' && radios[i].value === '6'){
+			alert("if you have renewal event type of OTHER, please enter notes");
+			return false;
+		    }
 	    }
     	}
 	if (btn_checked == false){

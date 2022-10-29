@@ -166,11 +166,11 @@ module MemberTracker
       end
       #check to see if unsubscribed or about to exceed number of contacts allowed
       mbrs2renw_pmt.delete_if{|k,v|
-        (Member[k].halt_mbrship_renewal == true) || (Member[k].mbrship_renewal_contacts >= 2)}
+        (Member[k].mbrship_renewal_halt == true) || (Member[k].mbrship_renewal_contacts >= 2)}
       
       mbrRenwls_in_range.each do |mr|
         #only take those who have not unsubscribed to renewal reminders and previous contact attempts < 2
-        if (mr[:halt_mbrship_renewal] == 0) && (mr[:mbrship_renewal_contacts] < 2)
+        if (mr[:mbrship_renewal_halt] == 0) && (mr[:mbrship_renewal_contacts] < 2)
           mbrs2renw_mbrRnwl << {mr[:id] => {:fname => mr[:fname], :lname => mr[:lname],
           :callsign => mr[:callsign], :email => mr[:email]}}
         end
@@ -811,7 +811,17 @@ module MemberTracker
     get '/r/member/show/:id' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
-      @member = Member[params[:id].to_i]
+      @member = Member[params[:id]]
+      @mbr_renewals = DB[:mbr_renewals].select(:id, :a_user_id, :renewal_event_type_id,
+        :notes, :ts).where(mbr_id: params[:id]).reverse_order(:ts).all
+      #replace timestamp, authorized user id, event type id
+      if !@mbr_renewals.empty?
+        @mbr_renewals.each do |mr|
+          mr.store(:ts, mr[:ts].strftime("%D"))
+          mr.store(:a_user_id, Auth_user[mr[:a_user_id]].member.callsign)
+          mr.store(:event_type_id, RenewalEventType[mr[:renewal_event_type_id]].name)
+        end
+      end
       #convert mbrship_renewal_date
       if !@member[:mbrship_renewal_date].nil?
         rd = @member[:mbrship_renewal_date].to_date + 365
@@ -820,10 +830,6 @@ module MemberTracker
         else
           @member[:renew_due] =  false
         end
-        @member[:renewal_date] = rd.strftime("%b, %Y")
-      else
-        @member[:mbrship_renewal_date] = "NA"
-        @member[:renew_due] = true
       end
       @modes = Member.modes
       if @member[:modes] == ''
@@ -1505,7 +1511,7 @@ module MemberTracker
       @tmp_msg = session[:msg]
       session[:msg] = nil
       @mbr_pay = Member.select(:id, :fname, :lname, :callsign, :mbrship_renewal_date,
-      :mbr_type, :mbrship_renewal_contacts, :mbrship_renewal_active, :halt_mbrship_renewal)[params[:id].to_i]
+      :mbr_type, :mbrship_renewal_contacts, :mbrship_renewal_active, :mbrship_renewal_halt)[params[:id].to_i]
       #want to get a date range over the last year from today then order dues payments, pick most recent
       today = DateTime.now
       yr_ago = DateTime.parse((Date.parse(today.to_s) -365).to_s)
@@ -1609,7 +1615,7 @@ module MemberTracker
           #new member, set affected cols
           new_mbr = true
           ach["mbrship_renewal_date"] =['nil', Time.now]
-          ach["halt_mbrship_renewal"] = ['nil', 0]
+          ach["mbrship_renewal_halt"] = ['nil', 0]
           ach["mbrship_renewal_active"] = ['nil', 0]
           ach["mbrship_renewal_contacts"] = ['nil', 0]
           ach["mbr_type"] = ['none', params[:mbr_type]]
@@ -1626,7 +1632,7 @@ module MemberTracker
             end
           end
           #since renewing membership, reset these for new values
-          ach["halt_mbrship_renewal"] = [Member[params[:mbr_id]].halt_mbrship_renewal, 0]
+          ach["mbrship_renewal_halt"] = [Member[params[:mbr_id]].mbrship_renewal_halt, 0]
           ach["mbrship_renewal_active"] = [Member[params[:mbr_id]].mbrship_renewal_active, 0]
           ach["mbrship_renewal_contacts"] = [Member[params[:mbr_id]].mbrship_renewal_contacts, 0]
           #load new mbrship_renewal_date for this member
@@ -1730,7 +1736,7 @@ module MemberTracker
         #if family then the other family members Members table change happens in the DB.transaction
         #now, for this member
         m.update({mbr_type: ach["mbr_type"][1], mbrship_renewal_date: ach["mbrship_renewal_date"][1],
-          halt_mbrship_renewal: ach["halt_mbrship_renewal"][1], mbrship_renewal_contacts: ach["mbrship_renewal_contacts"][1],
+          mbrship_renewal_halt: ach["mbrship_renewal_halt"][1], mbrship_renewal_contacts: ach["mbrship_renewal_contacts"][1],
           mbrship_renewal_active: ach["mbrship_renewal_active"][1]})
         #dues payment can be from other_pmt or pay_amt depending on which entry chosen
         if params.has_key?(:other_pmt)
@@ -1775,7 +1781,7 @@ module MemberTracker
                 fam_names << "\nmbr_id#:#{fm.id}, #{fm.fname}, #{fm.lname}"
                 #add all cols in AuditLog::COLS_TO_TRACK
                 fm.mbrship_renewal_date = ach["mbrship_renewal_date"][1]
-                fm.halt_mbrship_renewal = ach["halt_mbrship_renewal"][1]
+                fm.mbrship_renewal_halt = ach["mbrship_renewal_halt"][1]
                 fm.mbrship_renewal_active = ach["mbrship_renewal_active"][1]
                 fm.mbrship_renewal_contacts = ach["mbrship_renewal_contacts"][1]
                 #test to see if mbr_type old is different from what is happening with this payment
@@ -1798,7 +1804,7 @@ module MemberTracker
                 end
                 #reset this member's Member table row
                 fm.update({mbr_type: ach["mbr_type"][1], mbrship_renewal_date: ach["mbrship_renewal_date"][1],
-                  halt_mbrship_renewal: ach["halt_mbrship_renewal"][1], mbrship_renewal_contacts: ach["mbrship_renewal_contacts"][1],
+                  mbrship_renewal_halt: ach["mbrship_renewal_halt"][1], mbrship_renewal_contacts: ach["mbrship_renewal_contacts"][1],
                   mbrship_renewal_active: ach["mbrship_renewal_active"][1]})
                 fm.save
               end
@@ -2006,7 +2012,7 @@ module MemberTracker
         audit_log_ids = []
         #load any auditLogs associated with this payment
         #expecting at most, six types of audit logs based on auditLog::COLS_TO_TRACK
-        #"mbrship_renewal_date", "halt_mbrship_renewal", "mbrship_renewal_active",
+        #"mbrship_renewal_date", "mbrship_renewal_halt", "mbrship_renewal_active",
         #"mbrship_renewal_contacts", "mbr_type", "fam_unit_active"
         #generate a hash for each
         array_of_audit_log_hashes = []
@@ -2050,7 +2056,7 @@ module MemberTracker
                 end
                 m[alh["column"].to_sym] = alh["old_value"]
                 m.save
-              when "halt_mbrship_renewal", "mbrship_renewal_active","mbrship_renewal_contacts"
+              when "mbrship_renewal_halt", "mbrship_renewal_active","mbrship_renewal_contacts"
                 m = Member[alh["mbr_id"]]
                 m[alh["column"].to_sym] = alh["old_value"]
                 m.save
@@ -2068,7 +2074,7 @@ module MemberTracker
                 if alh["old_value"] == 'none'
                   #this will be the only auditlog for this member but other columns need to be reset
                   m.mbrship_renewal_date = nil
-                  m.halt_mbrship_renewal = false
+                  m.mbrship_renewal_halt = false
                   m.mbrship_renewal_active = false
                   m.mbrship_renewal_contacts = 0
                 end
@@ -2140,7 +2146,7 @@ module MemberTracker
     get '/m/mbr_renewals/edit/:id' do
       mr = MbrRenewal[params[:id]].values
       @mbr_renewal = {mbrship_renewal_date: Member[mr[:mbr_id]].mbrship_renewal_date,
-        halt_mbrship_renewal: Member[mr[:mbr_id]].halt_mbrship_renewal,
+        mbrship_renewal_halt: Member[mr[:mbr_id]].mbrship_renewal_halt,
         mbrship_renewal_active: Member[mr[:mbr_id]].mbrship_renewal_active,
         mbrship_renewal_contacts: Member[mr[:mbr_id]].mbrship_renewal_contacts,
         fname: Member[mr[:mbr_id]].fname, lname: Member[mr[:mbr_id]].lname}
@@ -2149,7 +2155,7 @@ module MemberTracker
       erb :m_rnwal_edit, :layout => :layout_w_logout
     end
     post '/m/mbr_renewals/edit' do
-      #{"rnwal_id"=>"1", "mbrship_renewal_date"=>"10/22/22", "halt_mbrship_renewal"=>"true", "mbrship_renewal_active"=>"false", "mbrship_renewal_contacts"=>"0", "event_type"=>"2", "notes"=>"test new"}
+      #{"rnwal_id"=>"1", "mbrship_renewal_date"=>"10/22/22", "mbrship_renewal_halt"=>"true", "mbrship_renewal_active"=>"false", "mbrship_renewal_contacts"=>"0", "event_type"=>"2", "notes"=>"test new"}
       #check date
       begin
          Date.strptime(params[:mbrship_renewal_date],'%D')
@@ -2158,13 +2164,13 @@ module MemberTracker
          redirect '/m/mbr_renewals/show'
       end
       rdate = Date.strptime(params[:mbrship_renewal_date],'%D')
-      if (rdate.year < 2022 || rdate.year > Date.today.year + 2)
+      if (rdate.year < 2020 || rdate.year > Date.today.year + 2)
         session[:msg] = "The existing renewal could not be updated: Incorrect renewal year"
         redirect '/m/mbr_renewals/show'
       end
       mbr_renewal_record = 
        DB[:mbr_renewals].select(:a_user_id, :renewal_event_type_id, :notes, :ts, :mbr_id).where(id: params[:rnwal_id]).first
-      member_record = DB[:members].select(:mbrship_renewal_date, :halt_mbrship_renewal,
+      member_record = DB[:members].select(:mbrship_renewal_date, :mbrship_renewal_halt,
        :mbrship_renewal_active, :mbrship_renewal_contacts).where(id: mbr_renewal_record[:mbr_id]).first
       #check to see what has changed and enter that into log
       member_record[:mbrship_renewal_date] = member_record[:mbrship_renewal_date].strftime("%D")
@@ -2194,7 +2200,7 @@ module MemberTracker
           params.delete_if{|k,v| ["rnwal_id", "event_type", "notes"].any?(k)}
           #only update values that have changed
           params.each do |k,v|
-            #:mbrship_renewal_date, :halt_mbrship_renewal, :mbrship_renewal_active, :mbrship_renewal_contacts
+            #:mbrship_renewal_date, :mbrship_renewal_halt, :mbrship_renewal_active, :mbrship_renewal_contacts
             if member_record[k] == v
               params.delete(k)
             end
@@ -2210,8 +2216,8 @@ module MemberTracker
       redirect '/m/mbr_renewals/show'
     end
     get '/m/mbr_renewals/new/:id' do
-      #need to associate with a member
-      @mbr_renewal = DB[:members].select(:id, :lname, :fname, :callsign, :mbrship_renewal_date, :halt_mbrship_renewal,
+      #need to associate with a member (the :id in the url)
+      @mbr_renewal = DB[:members].select(:id, :lname, :fname, :callsign, :mbrship_renewal_date, :mbrship_renewal_halt,
       :mbrship_renewal_active, :mbrship_renewal_contacts).where(id: params[:id]).first
       @tmp_msg = session[:msg]
       session[:msg] = nil
@@ -2219,7 +2225,7 @@ module MemberTracker
       erb :m_rnwal_new, :layout => :layout_w_logout
     end
     post '/m/mbr_renewals/new' do
-      #params are: {"mbr_id"=>"330", "mbrship_renewal_date"=>"02/01/22", "halt_mbrship_renewal"=>"false", "mbrship_renewal_active"=>"false", "mbrship_renewal_contacts"=>"1", "event_type"=>"3", "notes"=>"Enter notes here"}
+      #params are: {"mbr_id"=>"330", "mbrship_renewal_date"=>"02/01/22", "mbrship_renewal_halt"=>"false", "mbrship_renewal_active"=>"false", "mbrship_renewal_contacts"=>"1", "event_type"=>"3", "notes"=>"Enter notes here"}
       #----------------------check date------------------------------------------
       begin
          Date.strptime(params[:mbrship_renewal_date],'%D')
@@ -2228,7 +2234,7 @@ module MemberTracker
          redirect '/m/mbr_renewals/show'
       end
       rdate = Date.strptime(params[:mbrship_renewal_date],'%D')
-      if (rdate.year < 2022 || rdate.year > Date.today.year + 2)
+      if (rdate.year < 2020 || rdate.year > Date.today.year + 2)
         session[:msg] = "The existing renewal could not be updated: Incorrect renewal year"
         redirect '/m/mbr_renewals/show'
       end
@@ -2236,7 +2242,7 @@ module MemberTracker
       params[:mbrship_renewal_date] = Date.strptime(params["mbrship_renewal_date"],'%D')
       #----------------------end check date--------------------------------------
       #see if there are any changes to be made to the members table
-      mbr_renewal = DB[:members].select(:mbrship_renewal_date, :halt_mbrship_renewal,
+      mbr_renewal = DB[:members].select(:mbrship_renewal_date, :mbrship_renewal_halt,
         :mbrship_renewal_active, :mbrship_renewal_contacts).where(id: params[:mbr_id]).first
       mbr_id = params.delete(:mbr_id)
       #remove from hash if no change to be made

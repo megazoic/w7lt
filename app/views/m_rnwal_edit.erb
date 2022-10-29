@@ -8,10 +8,10 @@
 	<input type="text" name="mbrship_renewal_date" value="<%=@mbr_renewal[:mbrship_renewal_date].strftime("%D")%>" id="mbrship_renewal_date" onfocusout="validateMbrRnwlDate(this)">
 	<!--onfocusout="validateFirstName(this)"-->
 	<br />Halt Membership Renewals?
-	<label for="halt_mbrship_renewal_true">True</label>
-	<input type="radio" name="halt_mbrship_renewal" <% if @mbr_renewal[:halt_mbrship_renewal] == true %>checked<%end%> id="halt_mbrship_renewal_true" value="true">
-	<label for="halt_mbrship_renewal_false">False</label>
-		<input type="radio" name="halt_mbrship_renewal" <% if @mbr_renewal[:halt_mbrship_renewal] == false %>checked<%end%> id="halt_mbrship_renewal_false" value="false">
+	<label for="mbrship_renewal_halt_true">True</label>
+	<input type="radio" name="mbrship_renewal_halt" <% if @mbr_renewal[:mbrship_renewal_halt] == true %>checked<%end%> id="mbrship_renewal_halt_true" value="true">
+	<label for="mbrship_renewal_halt_false">False</label>
+		<input type="radio" name="mbrship_renewal_halt" <% if @mbr_renewal[:mbrship_renewal_halt] == false %>checked<%end%> id="mbrship_renewal_halt_false" value="false">
 	<br />Membership Renewal Active?
 	<label for="mbrship_renewal_active_true">True</label>
 	<input type="radio" name="mbrship_renewal_active" <% if @mbr_renewal[:mbrship_renewal_active] == true %>checked<%end%> id="mbrship_renewal_active_true" value="true">
