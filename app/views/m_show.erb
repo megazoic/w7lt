@@ -70,7 +70,7 @@ Volunteer:<br />VE <span class="highlight"><%=@member[:ve].to_i == 0 ? "N" : "Y"
         <td><%=mr[:a_user_id]%></td>
         <td><%=mr[:notes][0,20]%></td>
         <td><%=mr[:ts]%></td>
-        <td><a href="/m/mbr_renewals/edit/#{mr[:id]}">edit</a></td>
+        <td><a href=<%="/m/mbr_renewals/edit/#{mr[:id]}"%>>edit</a></td>
       </tr>
     <%end%>
     </table>

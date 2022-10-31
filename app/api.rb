@@ -282,7 +282,6 @@ module MemberTracker
             end
           end
           if replaceCallSign == 1
-            puts "replace cs for #{m[:fname]} #{m[:lname]}"
             m[:callsign] = 'NO CALL'
           end
         end
@@ -839,7 +838,7 @@ module MemberTracker
     end
     get '/m/member/edit/:id' do
       @existing_mbrs = []
-      @mbr = Member[params[:id].to_i]
+      @mbr = Member[params[:id]]
       @modes = Member.modes
       erb :m_edit, :layout => :layout_w_logout
     end
@@ -941,13 +940,15 @@ module MemberTracker
         end
       else
         #existing member
-        mbr_record = Member[params[:id].to_i]
+        mbr_record = Member[params[:id]]
         params.reject!{|k,v| k == "id"}
         params["mbr_since"] = Date.strptime(params["mbr_since"], '%Y-%m')
         #set the character case to upper for name, email and callsign
         params["fname"] = params["fname"].upcase
         params["lname"] = params["lname"].upcase
         params["email"] = params["email"].upcase
+        #fix renewal date
+        params["mbrship_renewal_date"] = Date.strptime(params["mbrship_renewal_date"],'%D')
         params["callsign"].empty? ? nil : params["callsign"] = params["callsign"].upcase
         #log a change in callsign
         if !mbr_record["callsign"].nil?
@@ -1463,7 +1464,6 @@ module MemberTracker
       end
       if gio.groupsIOError["error"].to_i == 0
         @unmatched = gio.unmatched
-        #puts "in groups.io and unmatched is #{@unmatched}"
         erb :groupsio, :layout => :layout_w_logout
       else
         #failed send message
@@ -1896,7 +1896,6 @@ module MemberTracker
       erb :p_edit, :layout => :layout_w_logout
     end
     post '/m/payments/edit' do
-      puts "params #{params}"
       #params are {"pay_id"=>"28", "pay_log_id"=>"552", "payment_type"=>"2", "payment_method"=>"2", "payment_amt"=>"18.0", "notes"=>"some notes"}
       #only changing payment type, method, amount and log notes
       payTypes = {}

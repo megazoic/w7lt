@@ -91,6 +91,9 @@
       finish with this member&apos;s entry, visit the create referral page and return to editing this member, 
       <a href=''>or click here to modify referral types directly without saving this member&apos;s data</a>)
   <br />
+	<label for="mbrship_renewal_date">Membership Renewal Date (MM/DD/YY)</label>
+	<input type="text" name="mbrship_renewal_date" value="<%=@mbr[:mbrship_renewal_date].strftime("%D")%>" id="mbrship_renewal_date" onfocusout="validateMbrRnwlDate(this)">
+  <br />
 	<p>Other Affiliations and Volunteering</p>
 	<label for="arrl">ARRL</label>
 	<input type="hidden" name="arrl" value="0">

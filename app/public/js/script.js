@@ -331,6 +331,11 @@ function validateMbrForm(){
 	var phoneMobile = $("phm").getAttribute('isInValid');
 	var email = $("email").getAttribute('isInValid');
 	var zip = $("zip").getAttribute('isInValid');
+	var mbrship_renewal_date = $("mbrship_renewal_date").getAttribute('isInValid');
+	if (mbrship_renewal_date == 'invalid'){
+		alert("please correct invalid membership renewal date");
+		return false;
+	}
 	var checkArray = []
 	checkArray["phh"] = phoneHome;
 	checkArray["phw"] = phoneWork;
