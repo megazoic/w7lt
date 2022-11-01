@@ -1,5 +1,5 @@
 #script to apply latest dues payment date to members#mbrship_renewal_date
-mbr_ids = MemberTracker::DB[:members].select(:id).all
+mbr_ids = DB[:members].select(:id).all
 mbr_ids.each do |mbr_id_hash|
   latest_dues_payment_date  = nil
   if !MemberTracker::Member[mbr_id_hash[:id]].payments.empty?
