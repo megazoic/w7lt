@@ -141,6 +141,8 @@ module MemberTracker
       start_date = MbrRenewal.getRenewRangeStart
       if start_date == "error"
         return JSON.generate("bad date range")
+      elsif start_date == "wait"
+        return JSON.generate("already checked today")
       end
       #end date is (two weeks from today - 365)
       end_date = Date.today.prev_year + MbrRenewal::RENEWAL_WINDOW
@@ -220,7 +222,7 @@ module MemberTracker
       end
       #return remaining mbrs who need reminders sent, but first look for missing emails and record to Member table
       missing_email = []
-      send_reminders_out = []
+      send_reminders_out = ["remember to enter reminder sent or missing email in mbr_renewals table"]
       send_reminder.each{|mbr_id|
         #set members here as Member::mbrship_renewal_active true
         mbrs.where(id: mbr_id).update(mbrship_renewal_active: true)
@@ -1515,7 +1517,7 @@ module MemberTracker
       #want to get a date range over the last year from today then order dues payments, pick most recent
       today = DateTime.now
       yr_ago = DateTime.parse((Date.parse(today.to_s) -365).to_s)
-      last_dues_payment = Payment.select(:ts).where(payment_type_id: 5, mbr_id: params[:id].to_i, ts: yr_ago..today).order(:ts).last
+      last_dues_payment = Payment.select(:ts).where(payment_type_id: 5, mbr_id: params[:id].to_i).order(:ts).last
       #test for no payments
       if last_dues_payment.nil?
         @mbr_pay[:last_dues_pmt_date] = "none prior"
@@ -1525,8 +1527,8 @@ module MemberTracker
       #if a renewal, need to warn if the member is paying too early
       #(before 11 mo have passed since renewal date)
       if !@mbr_pay[:mbrship_renewal_date].nil?
-        min_renew_date = Date.parse(@mbr_pay[:mbrship_renewal_date].to_s) + 334
-        if today < min_renew_date
+        earliest_renew_date = Date.parse(@mbr_pay[:mbrship_renewal_date].to_s) + MemberTracker::MbrRenewal::RENEW_TOO_EARLY
+        if today < earliest_renew_date
           @mbr_pay[:renewal_too_early] = 1
         end
       end
@@ -1605,7 +1607,6 @@ module MemberTracker
       mbr_split_frm_fam_unit = false
       pay_amt = nil
       mbr_family_unit_id = nil
-      #mbrship_renewal_date_hash = {old: nil, new: nil}
       if PaymentType[params[:payment_type]].type == 'Dues'
         #this could be a new member, an existing member renewing or a previous member with a lapse in dues payments
         #need an auditlog for this transaction
@@ -1775,7 +1776,7 @@ module MemberTracker
                 #test to see if any family member's paid up status is > than this one
                 if !fm.mbrship_renewal_date.nil? && (fm.mbrship_renewal_date > ach["mbrship_renewal_date"][1])
                   #bail with error
-                  session[:msg] = "UNSUCCESSFUL; family mbr #{fm.fname} #{fm.lname}: mbrship renewal date, #{fm.mbrship_renewal_date} conflicts with #{m.fname} #{m.lname}: mbrship renewal date #{mbrship_renewal_date_hash[:new]}"
+                  session[:msg] = "UNSUCCESSFUL; family mbr #{fm.fname} #{fm.lname}: mbrship renewal date, #{fm.mbrship_renewal_date} conflicts with #{m.fname} #{m.lname}: mbrship renewal date #{m.mbrship_renewal_date}"
                   redirect '/m/unit/list/family'
                 end
                 fam_names << "\nmbr_id#:#{fm.id}, #{fm.fname}, #{fm.lname}"

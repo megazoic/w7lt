@@ -33,7 +33,7 @@
 		<td><%=m[:fname]%></td>
 		<td><%=m[:lname]%></td>
 		<td><%=m[:callsign]%></td>
-    <%if (m[:mbrship_renewal_date].nil? == true) || (m[:mbrship_renewal_date].to_date + 365 < Date.today)%>
+    <%if (m[:mbrship_renewal_date].nil? == true) || (m[:mbrship_renewal_date].to_date + 365 > Date.today)%>
       <td><%=m[:mbr_type] == 'none' ? 'guest' : m[:mbr_type]%></td>
     <%else%>
       <td class="renew"><%=m[:mbr_type] == 'none' ? 'guest' : m[:mbr_type]%></td>

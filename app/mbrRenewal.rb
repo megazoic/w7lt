@@ -7,6 +7,7 @@ module MemberTracker
     many_to_one :member, :class=>Member, key: :mbr_id
     many_to_one :renewalEventType
     RENEWAL_WINDOW = 14 #14 days = 2 weeks
+    RENEW_TOO_EARLY = 334 #31 days, compare today's date with (mbrship_renewal_date + RENEW_TOO_EARLY)
     class << self
       attr_reader :mbr_types, :modes
     end
@@ -19,8 +20,10 @@ module MemberTracker
       latest_hash = DB.from(:mbr_renewals).where(renewal_event_type_id: [rs_id, no_eml]).reverse_order(:ts).first
       date = Date.parse(latest_hash[:ts].to_s)
       #catch entry that is same as today (i.e. already checked today)
-      if date >= Date.today 
+      if date > Date.today 
         return "error"
+      elsif date == Date.today
+        return "wait"
       end
       date - (365 - RENEWAL_WINDOW)
     end
