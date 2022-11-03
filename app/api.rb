@@ -136,7 +136,10 @@ module MemberTracker
       erb :home, :layout => :layout_w_logout
     end
     ################### START API #########################
-    get '/api/mbr_renewal/find', :provides => 'json' do
+    get '/api/mbr_renewal/find/:secret', :provides => 'json' do
+      if params[:secret] != "rocknradio"
+        return JSON.generate("sorry")
+      end
       #find most recent date email reminders were sent out or date only individuals without emails were retreived
       start_date = MbrRenewal.getRenewRangeStart
       if start_date == "error"
