@@ -35,6 +35,8 @@ namespace :db do
         when /^y/
           m = MemberTracker::Member[mbr_id_hash[:id]].set(mbrship_renewal_date: latest_dues_payment_date)
           m.save
+        when /^n/
+          print "skipping #{mbr_id_hash[:id]}\n"
         when /^q/
           break
         end
