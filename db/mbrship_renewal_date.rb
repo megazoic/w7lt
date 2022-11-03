@@ -6,7 +6,7 @@ mbr_ids.each do |mbr_id_hash|
     MemberTracker::Member[mbr_id_hash[:id]].payments.each do |p|
       if p[:payment_type_id] == 5
         if !latest_dues_payment_date.nil?
-          latest_dues_payment_date > p[:ts] ? latest_dues_payment_date = p[:ts] : nil
+          latest_dues_payment_date < p[:ts] ? latest_dues_payment_date = p[:ts] : nil
         else
           latest_dues_payment_date = p[:ts]
         end
