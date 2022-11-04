@@ -165,6 +165,18 @@ module MemberTracker
       mbrs2renw_pmt = {}
       mbrs2renw_mbrRnwl = {}
       pmts_in_range.each do |p|
+        #must first check to see if there are any later payments for a member and exclude this payment
+        later_dues_pmt = false
+        Member[p[:mbr_id]].payments.each do |mp|
+          if (mp[:ts] > p[:ts] && mp[:payment_type_id] == 5)
+            later_dues_pmt = true
+            break
+          end
+        end
+        if later_dues_pmt == true
+          #ignore this payment
+          next
+        end
         mbrs2renw_pmt.update({Member[p[:mbr_id]].id => {:fname => Member[p[:mbr_id]].fname, :lname => Member[p[:mbr_id]].lname,
         :callsign => Member[p[:mbr_id]].callsign, :email => [Member[p[:mbr_id]].email],
         :pay_date => p[:ts]}})
