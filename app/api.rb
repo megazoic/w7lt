@@ -1443,6 +1443,56 @@ module MemberTracker
       end
       redirect '/m/unit/type/create/'
     end
+    get '/m/unit/display/fam_unit/status' do
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
+      units = DB[:units].where(unit_type_id: 2)
+      @fam_mbrship_details = []
+      units.each do |u|
+        fam_hash = {}
+        fam_hash = {unit_id: u[:id], active: u[:active]}
+        mbrs_array = []
+      	MemberTracker::Unit[u[:id]].members.each do |m|
+          #convert mbrship_renewal_date
+          renew_due = false
+          rd = nil
+          if !m[:mbrship_renewal_date].nil?
+            rd = m[:mbrship_renewal_date].strftime("%D")
+            test_rd = m[:mbrship_renewal_date].to_date
+            if test_rd < (Date.today - 365)
+              renew_due = true
+            end
+          else
+            rd = "NA"
+          end
+          mbr_array = [m[:id], m[:fname], m[:lname], rd, renew_due]
+=begin
+          latest_dues_payment_date  = nil
+      		m.payments.each do |p|
+      			if p[:payment_type_id] == 5
+              pd = Date.parse(p[:ts].to_s).strftime("%D")
+              if pd.nil?
+                pd = "NA"
+              end
+              if !latest_dues_payment_date.nil?
+                latest_dues_payment_date < pd ? latest_dues_payment_date = pd : "NA"
+              else
+                latest_dues_payment_date = pd
+              end
+      			end
+      		end
+          if latest_dues_payment_date.nil?
+            latest_dues_payment_date = "NA"
+          end
+          mbr_array << latest_dues_payment_date
+=end
+          mbrs_array << mbr_array
+      	end
+        fam_hash[:mbrs] = mbrs_array
+        @fam_mbrship_details << fam_hash
+      end
+      erb :display_fam_renewal, :layout => :layout_w_logout
+    end
     get '/reset_password/:id' do
       #use @is_pwdreset to load password script from script.js by setting <body id="PwdReset"> in layout
       @is_pwdreset = true;
