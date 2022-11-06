@@ -166,7 +166,18 @@ function validateMbrSince(textbox){
 	textbox.setAttribute('isInValid','invalid');
 }
 function validateEmail(textbox){
-	var email = textbox.value.trim();
+	//need to see if the email has changed, if it has the email_bogus checkbox shld be unchecked
+	if ($('email_bogus').checked == true){
+		var old_email = $('old_email').value
+		var email = textbox.value.trim();
+		if (old_email != email){
+			$('email_bogus').setAttribute('isInvalid','invalid');
+		} else {
+			$('email_bogus').setAttribute('isInvalid','');
+		}
+	} else {
+		$('email_bogus').setAttribute('isInvalid','');
+	}
 	if (email == ""){
 		textbox.style.borderColor = 'black';
 		textbox.setAttribute('isInValid','');
@@ -356,6 +367,7 @@ function validateMbrForm(){
 			}
 		}
 	}
+	
 	//check that license class and callsign match
 	var licenseClass = $("license_class").value
 	var callSign = $("callsign").value
@@ -366,6 +378,12 @@ function validateMbrForm(){
 		}
 	}else if (callSign != ""){
 		alert("Please remove callsign or choose a license class");
+		return false;
+	}
+	//check that email hasn't been changed while email_bogus checkbox is checked
+	if ($("email_bogus").getAttribute('isInValid') == 'invalid' && $('email_bogus').checked == true){
+		alert("Changed email address cannot also be bogus");
+		//$("email_bogus").setAttribute('isInValid', '')
 		return false;
 	}
 }

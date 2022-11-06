@@ -81,6 +81,9 @@ input[type=submit] {
 .renew {
 	color: red;
 }
+.bogus_email {
+	color: red;
+}
 /* Add a red text color and an "x" icon when the requirements are wrong */
 .invalid {
   color: red;

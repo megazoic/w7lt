@@ -36,9 +36,13 @@
 	<input type="text" name="callsign" value="<%=@mbr[:callsign]%>" id="callsign" size="10"><br />
   *required field<br />
 	<p>Address:</p>
+  <input type="hidden" id="old_email" value="<%=@mbr[:email]%>">
 	<label for="email">email*</label>
-	<input type="text" name="email" value="<%=@mbr[:email]%>" id="email" onfocusout="validateEmail(this)">
-	 | OK to email about club activities?
+	<input type="text" name="email" value="<%=@mbr[:email]%>" id="email" onfocusout="validateEmail(this)" <%if @mbr[:email_bogus] == true %>class="invalid"<%end%>> |
+  	<label for="email_bogus">Is Email Bogus?</label>
+  	<input type="hidden" name="email_bogus" value="false">
+  	<input type="checkbox" name="email_bogus" id="email_bogus" value="true" <%=@mbr[:email_bogus] == true  ? "checked='checked'" : nil%>>
+	 <br />OK to email about club activities?
    <select id="ok_to_email" name="ok_to_email">
    		<option value="true" <%=@mbr[:ok_to_email] == true ? "selected" : nil%>>Yes</option>
    		<option value="false" <%=@mbr[:ok_to_email] == false ? "selected" : nil%>>No</option>
@@ -82,11 +86,11 @@
   <textarea name="notes" id="notes_field" rows="3" cols="65"></textarea>
   <br />How did this member hear about the club?
   <select id="refer" name="refer_type_id">
-  <option value='none'>Don&apos;t know</option>
+    <option value='none'>Don&apos;t know</option>
     <%MemberTracker::ReferType.each do |rt|%>
   		<option value=<%=rt.id%> <%=@mbr[:refer_type_id] == rt.id ? "selected" : nil%>><%=rt.name%></option>
     <%end%>
-     </select>
+  </select>
   <br />(If you don&apos;t see the type that you need to add,
       finish with this member&apos;s entry, visit the create referral page and return to editing this member, 
       <a href=''>or click here to modify referral types directly without saving this member&apos;s data</a>)

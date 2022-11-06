@@ -862,7 +862,7 @@ module MemberTracker
     get '/m/member/create' do
       #need to avoid dups when creating a new member
       @existing_mbrs = []
-      @mbr = {:lname => '', :modes => ''}
+      @mbr = {:lname => '', :modes => '', :mbrship_renewal_date => DateTime.now}
       @modes = Member.modes
       erb :m_edit, :layout => :layout_w_logout
     end
