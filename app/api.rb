@@ -2236,18 +2236,35 @@ module MemberTracker
       mbr_renewal_record = 
        DB[:mbr_renewals].select(:a_user_id, :renewal_event_type_id, :notes, :ts, :mbr_id).where(id: params[:rnwal_id]).first
       member_record = DB[:members].select(:mbrship_renewal_date, :mbrship_renewal_halt,
-       :mbrship_renewal_active, :mbrship_renewal_contacts).where(id: mbr_renewal_record[:mbr_id]).first
+       :mbrship_renewal_active, :mbrship_renewal_contacts, :email_bogus).where(id: mbr_renewal_record[:mbr_id]).first
       #check to see what has changed and enter that into log
       member_record[:mbrship_renewal_date] = member_record[:mbrship_renewal_date].strftime("%D")
       augmented_notes = ""
+      #if there is event_type pointing to 'bogus email' then need to set that field to 'true'
+      bogus_email_id = RenewalEventType::getID("bogus email").to_s
+      if bogus_email_id == params[:event_type]
+        if member_record[:email_bogus] == false
+          #replace params k,v with :email_bogus = true
+          params.delete(:event_type)
+          params[:email_bogus] = true
+        end
+      end
       member_record.each do |k, v|
-        if member_record[k].to_s != params[k]
+        if v.to_s != params[k]
           augmented_notes << "#{k}: old record #{member_record[k]}, new record #{params[k]}\n"
         end
       end
-      if mbr_renewal_record[:renewal_event_type_id] != params[:event_type].to_i
+      if params.has_key?(:event_type)
+        if mbr_renewal_record[:renewal_event_type_id] != params[:event_type].to_i
+          augmented_notes << "old event type: #{RenewalEventType[mbr_renewal_record[:renewal_event_type_id]].name},
+          new event type: #{RenewalEventType[params[:event_type].to_i].name}\n"
+        end
+      else
+        #dealing with 'bogus email' event type
         augmented_notes << "old event type: #{RenewalEventType[mbr_renewal_record[:renewal_event_type_id]].name},
-        new event type: #{RenewalEventType[params[:event_type].to_i].name}\n"
+        new event type: bogus email\n"
+        #need to add the key :event_type back in
+        params[:event_type] = bogus_email_id
       end
       if mbr_renewal_record[:notes] != params[:notes]
         augmented_notes << "old notes #{mbr_renewal_record[:notes]},
@@ -2270,6 +2287,8 @@ module MemberTracker
               params.delete(k)
             end
           end
+          #need to change params[:mbrship_renewal_date] to date
+          params[:mbrship_renewal_date] = Date.strptime(params[:mbrship_renewal_date],'%D')
           Member[mbr_renewal_record[:mbr_id]].update(params)
           l = Log.new(mbr_id: mbr_renewal_record[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: Action.get_action_id("mbr_renew"))
           l.save
@@ -2307,18 +2326,22 @@ module MemberTracker
       params[:mbrship_renewal_date] = Date.strptime(params["mbrship_renewal_date"],'%D')
       #----------------------end check date--------------------------------------
       #see if there are any changes to be made to the members table
-      mbr_renewal = DB[:members].select(:mbrship_renewal_date, :mbrship_renewal_halt,
+      member = DB[:members].select(:mbrship_renewal_date, :mbrship_renewal_halt,
         :mbrship_renewal_active, :mbrship_renewal_contacts).where(id: params[:mbr_id]).first
       mbr_id = params.delete(:mbr_id)
       #remove from hash if no change to be made
-      mbr_renewal.delete_if {|k,v| params[k] == v}
+      member.delete_if {|k,v| params[k] == v}
+      #if mbr_renewal_event_type is bogus_email need to update email_bogus one members table
+      if params[:event_type] == RenewalEventType::getID("bogus email").to_s
+        member[:email_bogus] = true
+      end
       #create a new membership renewal data point
       mbr_renewals = DB[:mbr_renewals]
       begin
         DB.transaction do
           #write members table data
-          if !mbr_renewal.empty?
-            DB[:members].where(id: mbr_id).update(mbr_renewal)
+          if !member.empty?
+            DB[:members].where(id: mbr_id).update(member)
           end
           #write renewals table data
           DB[:mbr_renewals].insert(a_user_id: session[:auth_user_id], mbr_id: mbr_id, renewal_event_type_id: params[:event_type],
