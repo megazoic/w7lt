@@ -18,7 +18,7 @@
 				<td><%=r[:event_type]%></td>
 				<td><%=r[:notes][0,20]%></td>
 				<td><%=r[:ts].strftime("%Y, %b, %d")%></td>
-				<%if session[:auth_user_roles].include?('mbr_mgr')%><td><a href="/m/mbr_renewals/edit/<%= r[:id]%>">edit</a></td><%end%>
+				<%if session[:auth_user_roles].include?('mbr_mgr')%><td><a href="/m/mbr_renewals/edit/<%= r[:id]%>">edit</a> | <a href="/m/mbr_renewals/destroy/<%= r[:id]%>">delete</a></td><%end%>
 			</tr>
 		<% end %>
 	</table>

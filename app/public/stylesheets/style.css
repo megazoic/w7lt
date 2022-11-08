@@ -67,7 +67,10 @@ input[type=submit] {
   padding: 20px;
   margin-top: 10px;
 }
-
+/*For columns in log table*/
+.notes{
+	max-width: 100px;
+}
 /* Add a green text color and a checkmark when the requirements are right */
 .valid {
   color: green;

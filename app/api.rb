@@ -2202,7 +2202,7 @@ module MemberTracker
       @renewals = []
       mrs.each do |mr|
         @renewals << {id: mr[:id], fname: Member[mr[:mbr_id]].fname, lname: Member[mr[:mbr_id]].lname,
-          recorded_by: Auth_user[mr[:a_user_id]].member.callsign,
+          mbr_callsign: Member[mr[:mbr_id]].callsign, recorded_by: Auth_user[mr[:a_user_id]].member.callsign,
           event_type: RenewalEventType[mr[:renewal_event_type_id]].name,
           notes: mr[:notes], ts: mr[:ts]}
       end
@@ -2350,6 +2350,38 @@ module MemberTracker
         session[:msg] = 'Renewal was successfully recorded'
       rescue StandardError => e
         session[:msg] = "The data was not entered successfully\n#{e}"
+      end
+      redirect '/m/mbr_renewals/show'
+    end
+    get '/m/mbr_renewals/destroy/:id' do
+      renewal_record = MbrRenewal[params[:id]]
+      @mbr_renewal_record = {id: params[:id], fname: Member[renewal_record[:mbr_id]].fname, lname: Member[renewal_record[:mbr_id]].lname,
+          recorded_by: Auth_user[renewal_record[:a_user_id]].member.callsign, mbr_callsign: Member[renewal_record[:mbr_id]].callsign,
+          event_type: RenewalEventType[renewal_record[:renewal_event_type_id]].name,
+          notes: renewal_record[:notes], ts: renewal_record[:ts]}
+      erb :rnwl_record_destroy, :layout => :layout_w_logout
+    end
+    post '/m/mbr_renewals/destroy' do
+      if params[:confirm] != 'Yes'
+        #js not enabled, need to find another way to confirm this action
+        session[:msg] = "Rnwl Record was not deleted, please enable Javascript on your browser"
+        redirect '/m/mbr_renewals/show'
+      end
+      mbr_renewal_records = DB[:mbr_renewals]
+      rnwl = mbr_renewal_records.where(id: params[:rnwl_id]).first
+      rnwl_auser = Auth_user[rnwl[:a_user_id]].member.callsign
+      rnwl_event_type = RenewalEventType[rnwl[:renewal_event_type_id]][:name]
+      rnwl_event_date = rnwl[:ts].strftime("%D")
+      autmented_notes = "deletion of member renewal record. Prev notes: #{rnwl[:notes]}\nReason for delete notes: #{params[:notes]}\nPrev authorized by #{rnwl_auser},
+        rnwl event type: #{rnwl_event_type}\n, on date #{rnwl_event_date}"
+      l = Log.new(mbr_id: rnwl[:mbr_id], a_user_id: session[:auth_user_id],
+        ts: Time.now, notes: autmented_notes, action_id: Action.get_action_id("mbr_renew"))
+      begin
+        mbr_renewal_records.where(id: params[:rnwl_id]).delete
+        l.save
+        session[:msg] = 'Renewal record was SUCCESSFULLY deleted'
+      rescue StandardError => e
+        session[:msg] = "The renewal record WAS NOT deleted\n#{e}"
       end
       redirect '/m/mbr_renewals/show'
     end

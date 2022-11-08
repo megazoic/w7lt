@@ -7,6 +7,7 @@
 <br/>
 <div>
 	<table>
+  <thead>
 		<tr>
     <% if @logs[0].key?(:mbr_name) %>
 			<th>Member</th>
@@ -15,11 +16,13 @@
       <% if @logs[0].key?(:action) %>
   			<th>Type</th>
       <% end %>
-			<th>Notes</th>
+			<th class="notes">Notes</th>
       <% if @logs[0].key?(:au_name) %>
         <th>Auth_user</th>
       <% end %>
 		</tr>
+    </thead>
+    <tbody>
 		<% for log in @logs %>
 		<tr>
 		<%if log.has_key?(:mbr_name)%><td><%=log[:mbr_name]%></td><%end%>
@@ -31,5 +34,6 @@
     <% end %>
 		</tr>
 		<% end %>
+    </tbody>
 	</table>
 </div>

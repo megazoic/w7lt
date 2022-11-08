@@ -1,0 +1,32 @@
+<h3>Delete Renewal Record for Member <%=@mbr_renewal_record[:mbr_callsign]%></h3>
+<br/>
+<div>
+	<table>
+		<tr>
+			<th>First Name</th>
+			<th>Last Name</th>
+			<th>Recorded By</th>
+			<th>Record Type</th>
+			<th>Notes</th>
+			<th>Date</th>
+		</tr>
+			<tr>
+				<td><%=@mbr_renewal_record[:fname]%></td>
+				<td><%=@mbr_renewal_record[:lname]%></td>
+				<td><%=@mbr_renewal_record[:recorded_by]%></td>
+				<td><%=@mbr_renewal_record[:event_type]%></td>
+				<td><%=@mbr_renewal_record[:notes][0,20]%></td>
+				<td><%=@mbr_renewal_record[:ts].strftime("%Y, %b, %d")%></td>
+			</tr>
+	</table>
+</div>
+
+<form action='/m/mbr_renewals/destroy' method='POST' name="mbrRenDestroy" onsubmit="validateRnwlDestroy()">
+<input type="hidden" name="rnwl_id" value=<%=@mbr_renewal_record[:id]%>>
+<input type="hidden" name="confirm" id="confirmIt" value="No">
+<input type="hidden" name"notes" value="">
+<label for="notes">Log notes</label>
+<input type="text" name="notes" placeholder="Enter Notes Here">
+</br>
+<input type="submit" value="Submit"> | <a href="/m/mbr_renewals/show">Cancel</a>
+</form>

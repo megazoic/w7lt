@@ -475,8 +475,16 @@ function validateUnitTypeForm(){
 }
 function validatePayDestroy(){
 	//need to ok this action
-	console.log ("in pay destroy");
 	var agree = confirm("Are you sure you want to delete this payment record?");
+	var confirmIt = $("confirmIt");
+	if (agree){
+		confirmIt.value = "Yes";
+	}
+	return true
+}
+function validateRnwlDestroy(){
+	//need to ok this action
+	var agree = confirm("Are you sure you want to delete this renewal record?");
 	var confirmIt = $("confirmIt");
 	if (agree){
 		confirmIt.value = "Yes";
