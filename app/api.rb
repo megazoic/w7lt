@@ -189,7 +189,7 @@ module MemberTracker
         #only take those who have not unsubscribed to renewal reminders and previous contact attempts < 2
         if (mr[:mbrship_renewal_halt] == 0) && (mr[:mbrship_renewal_contacts] < 2)
           mbrs2renw_mbrRnwl << {mr[:id] => {:fname => mr[:fname], :lname => mr[:lname],
-          :callsign => mr[:callsign], :email => mr[:email]}}
+          :callsign => mr[:callsign], :email => mr[:email], :mbr_type => mr[:mbr_type]}}
         end
       end
       #merge the two (removing duplicates) mbrs2renw_pmt values are kept when keys(ids) same in both hashes
@@ -1748,7 +1748,6 @@ module MemberTracker
               mbr_split_frm_fam_unit = true
             end
           else#unit hasn't paid (yet)
-            puts "in unit hasnt paid yet"
             #are there only two members in this family unit?
             if u.members.length < 3
               #rename unit
