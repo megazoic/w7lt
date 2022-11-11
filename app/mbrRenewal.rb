@@ -47,5 +47,26 @@ module MemberTracker
       end
       renewal_date
     end
+    def MbrRenewal.findAndPurgeFamily(mbrs2rnw_hash)
+      purged_hash = {}
+      mbrs2rnw_hash.each do |k,v|
+        #remove mbrs who do not have family mbr_type
+        if Member[k].mbr_type != 'family'
+          purged_hash << {k => v}
+        else
+          #find members in this unit
+          mbrs2purge = []
+          Member[k].units.each do |u|
+            if UnitType.getID("family") == u.unit_type_id
+              #check that they all have the same mbrship_renewal_date first
+              #then find which one made the most recent payment and check that was a dues payment for a family mbr type
+              #finally, add that member to the purged_hash, throw error if don't have a result here
+              u.members.each do |m|
+              end
+            end
+          end
+        end
+      end
+    end
   end
 end
