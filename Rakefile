@@ -69,7 +69,7 @@ namespace :db do
     tables.each do |t|
       DB[t].delete
     end
-    DB[:members].where(lname: 'tester').delete
     DB[:mbr_renewals].exclude(id: 1).sql.delete
+    DB[:members].where(lname: 'tester').delete
   end
 end

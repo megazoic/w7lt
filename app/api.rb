@@ -178,7 +178,7 @@ module MemberTracker
           next
         end
         mbrs2renw_pmt.update({Member[p[:mbr_id]].id => {:fname => Member[p[:mbr_id]].fname, :lname => Member[p[:mbr_id]].lname,
-        :callsign => Member[p[:mbr_id]].callsign, :email => [Member[p[:mbr_id]].email],
+        :callsign => Member[p[:mbr_id]].callsign, :email => Member[p[:mbr_id]].email,
         :pay_date => p[:ts]}})
       end
       #check to see if unsubscribed or about to exceed number of contacts allowed
@@ -255,8 +255,7 @@ module MemberTracker
           notes: 'automated entry', ts: DateTime.now)
         end
       end
-      
-      if send_reminders_out.empty?
+      if send_reminders_out[1].nil?
         JSON.generate("empty search")
       else
         JSON.generate(send_reminders_out)
