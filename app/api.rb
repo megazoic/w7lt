@@ -137,7 +137,7 @@ module MemberTracker
     end
     ################### START API #########################
     get '/api/mbr_renewal/find/:secret', :provides => 'json' do
-      if params[:secret] != "rocknradio"
+      if params[:secret] != ENV['MBRRENEW_SECRET']
         return JSON.generate("sorry")
       end
       #find most recent date email reminders were sent out or date only individuals without emails were retreived
