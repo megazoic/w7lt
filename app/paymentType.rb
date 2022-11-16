@@ -7,5 +7,15 @@ module MemberTracker
     class << self
       attr_reader :types
     end
+    def PaymentType.getID(name)
+      pts = DB.from(:payment_types).select(:id, :type).all
+      p_id = ''
+      pts.each do |pt|
+        if pt[:type] == name
+          p_id = pt[:id]
+        end
+      end
+      p_id
+    end
   end
 end

@@ -11,5 +11,22 @@ module MemberTracker
     class << self
       attr_reader :fees
     end
+    def Payment.findLatestDues(mbr_id, name)
+      latest_dp = nil
+      if !Member[mbr_id].payments.nil?
+        Member[mbr_id].payments.each do |p|
+          if p.payment_type_id = PaymentTypeId.getID(name)
+            if p.ts > latest_dp
+              latest_dp = p.ts
+            end
+          end
+        end
+      end
+      if latest_dp.nil
+        return "no dues payment of type #{name} was found for mbr #{mbr_id}"
+      else
+        return ts
+      end
+    end
   end
 end

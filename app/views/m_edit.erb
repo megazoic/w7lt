@@ -78,7 +78,7 @@
 		<option value="extra" <%=@member[:license_class] == 'extra' ? "selected" : nil%>>Extra</option>
 	</select>
 	<br />
-  Member since: (YYYY-MM) format
+  First recorded: (YYYY-MM) format
   <input type="text" name="mbr_since" id="mbr_since" onfocusout="validateMbrSince(this)"
     value=<%=(@member[:mbr_since] == '' || @member[:mbr_since].nil?) ? Time.now.strftime("%Y-%m") : @member[:mbr_since].strftime("%Y-%m")%>>
   <br />
@@ -96,7 +96,7 @@
       <a href=''>or click here to modify referral types directly without saving this member&apos;s data</a>)
   <br />
 	<label for="mbrship_renewal_date">Membership Renewal Date (MM/DD/YY)</label>
-	<input type="text" name="mbrship_renewal_date" value="<%=@member[:mbrship_renewal_date].strftime("%D")%>" id="mbrship_renewal_date" onfocusout="validateMbrRnwlDate(this)">
+	<input type="text" name="mbrship_renewal_date" <%if !@member[:mbrship_renewal_date].nil?%>value="<%=@member[:mbrship_renewal_date].strftime("%D")%>"<%end%> id="mbrship_renewal_date" onfocusout="validateMbrRnwlDate(this)">
   <br />
 	<p>Other Affiliations and Volunteering</p>
 	<label for="arrl">ARRL</label>

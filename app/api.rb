@@ -184,7 +184,6 @@ module MemberTracker
       #check to see if unsubscribed or about to exceed number of contacts allowed
       mbrs2renw_pmt.delete_if{|k,v|
         (Member[k].mbrship_renewal_halt == true) || (Member[k].mbrship_renewal_contacts >= 2)}
-      
       mbrRenwls_in_range.each do |mr|
         #only take those who have not unsubscribed to renewal reminders and previous contact attempts < 2
         if (mr[:mbrship_renewal_halt] == 0) && (mr[:mbrship_renewal_contacts] < 2)
@@ -192,6 +191,8 @@ module MemberTracker
           :callsign => mr[:callsign], :email => mr[:email], :mbr_type => mr[:mbr_type]}}
         end
       end
+      #need to check to see if any are of mbr_type 'family' in which case, only the paying member should be included here
+      mbrs2renw_mbrRnwl = MbrRenewal.findAndPurgeFamily(mbrs2renw_mbrRnwl)
       #merge the two (removing duplicates) mbrs2renw_pmt values are kept when keys(ids) same in both hashes
       mbrs2renw_all = mbrs2renw_mbrRnwl.merge(mbrs2renw_pmt)
       #extract the keys
@@ -865,7 +866,8 @@ module MemberTracker
     get '/m/member/create' do
       #need to avoid dups when creating a new member
       @existing_mbrs = []
-      @mbr = {:lname => '', :modes => '', :mbrship_renewal_date => DateTime.now}
+      #removed , :mbrship_renewal_date => DateTime.now
+      @member = {:lname => '', :modes => ''}
       @modes = Member.modes
       erb :m_edit, :layout => :layout_w_logout
     end

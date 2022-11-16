@@ -45,4 +45,31 @@ namespace :db do
       end
     end
   end
+  desc "Testing fill members"
+  task :repopulate_db do
+    require "sequel"
+    require "./app/api.rb"
+    members = DB[:members]
+    particulars = [{fname: 'test_i', lname: 'tester', email: 'test_i@test.com'},
+    {fname: 'test_ii', lname: 'tester', email: 'test_ii@test.com'},
+    {fname: 'test_iii', lname: 'tester', email: 'test_iii@test.com'},
+    {fname: 'test_iv', lname: 'tester', email: 'test_iv@test.com'},
+    {fname: 'test_v', lname: 'tester', email: 'test_v@test.com'}]
+    particulars.each do |m|
+      members.insert(m)
+    end
+  end
+  desc "Testing remove members"
+  task :teardown_db do
+    #assumes that member id 205 is ME and auth user 22 is member 205, keep password and mbr 205 intact to login
+    require "sequel"
+    require "./app/api.rb"
+    #need to clear tables in this order
+    tables = [:audit_logs, :payments, :logs, :members_events, :events, :members_units, :units]
+    tables.each do |t|
+      DB[t].delete
+    end
+    DB[:members].where(lname: 'tester').delete
+    DB[:mbr_renewals].exclude(id: 1).sql.delete
+  end
 end
