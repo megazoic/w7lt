@@ -39,10 +39,10 @@ module MemberTracker
           renewal_date = DateTime.parse(new_mrd.to_s)
         else
           #changing mbrship_renewal_date since either too early or too late
-          renewal_date = Time.now
+          renewal_date = DateTime.now
         end
       else #no prior renewal date
-        renewal_date = Time.now
+        renewal_date = DateTime.now
       end
       renewal_date
     end
