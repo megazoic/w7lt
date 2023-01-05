@@ -1651,7 +1651,7 @@ module MemberTracker
       #associate Payment::id with AuditLog::pay_id at end of transaction
       al_save = false
       #check to see if 'dues' is selected as :payment_type if so, store ids of affected members
-      fam_mbr_ids = [params[:mbr_id]]
+      fam_mbr_ids = []
       #use this to track a member who is splitting off a family unit with a recent payment of not-family
       mbr_split_frm_fam_unit = false
       pay_amt = nil
@@ -1681,6 +1681,10 @@ module MemberTracker
               #get old value from members table
               ach[mf] = [Member[params[:mbr_id]][mf.to_sym], nil]
             end
+          end
+          #expect a Time object for mbrship_renewal_date so check for that here
+          if !ach["mbrship_renewal_date"][0].is_a?(DateTime)
+            ach["mbrship_renewal_date"][0] = DateTime.parse(ach["mbrship_renewal_date"][0].to_s)
           end
           #since renewing membership, reset these for new values
           ach["mbrship_renewal_halt"][1] = false
@@ -1712,7 +1716,9 @@ module MemberTracker
           #load members in this family, first test for existance of this unit
           Unit[mbr_family_unit_id].members.each do |f_member|
             #load ids for all besides the current member
-            fam_mbr_ids << f_member.id if f_member.id != params[:mbr_id].to_i
+            if f_member.id.to_s != params[:mbr_id]
+              fam_mbr_ids << f_member.id
+            end
           end
         elsif params[:mbr_type_old] == 'family'
           #member was previously in a family unit but no longer is paying as one
@@ -1800,6 +1806,7 @@ module MemberTracker
         m.update({mbr_type: ach["mbr_type"][1], mbrship_renewal_date: ach["mbrship_renewal_date"][1],
           mbrship_renewal_halt: ach["mbrship_renewal_halt"][1], mbrship_renewal_contacts: ach["mbrship_renewal_contacts"][1],
           mbrship_renewal_active: ach["mbrship_renewal_active"][1]})
+        #how much was paid?
         #dues payment can be from other_pmt or pay_amt depending on which entry chosen
         if params.has_key?(:other_pmt)
           pay_amt = params[:other_pmt].to_i
@@ -1835,10 +1842,15 @@ module MemberTracker
               fam_mbr_ids.each do |mbr_id|
                 fm = Member[mbr_id]
                 #test to see if any family member's paid up status is > than this one
-                if !fm.mbrship_renewal_date.nil? && (fm.mbrship_renewal_date > ach["mbrship_renewal_date"][1])
-                  #bail with error
-                  session[:msg] = "UNSUCCESSFUL; family mbr #{fm.fname} #{fm.lname}: mbrship renewal date, #{fm.mbrship_renewal_date} conflicts with #{m.fname} #{m.lname}: mbrship renewal date #{m.mbrship_renewal_date}"
-                  redirect '/m/unit/list/family'
+                #need to check that there is a renewal date assoc w/ this family member convert Time obj to DateTime
+                rd = fm.mbrship_renewal_date
+                if !rd.nil?
+                  mrd = DateTime.parse(rd.to_s)
+                  if !fm.mbrship_renewal_date.nil? && (mrd > ach["mbrship_renewal_date"][1])
+                    #bail with error
+                    session[:msg] = "UNSUCCESSFUL; family mbr #{fm.fname} #{fm.lname}: mbrship renewal date, #{fm.mbrship_renewal_date} conflicts with #{m.fname} #{m.lname}: mbrship renewal date #{m.mbrship_renewal_date}"
+                    redirect '/m/unit/list/family'
+                  end
                 end
                 fam_names << "\nmbr_id#:#{fm.id}, #{fm.fname}, #{fm.lname}"
                 #add all cols in AuditLog::COLS_TO_TRACK
