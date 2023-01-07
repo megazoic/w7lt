@@ -2356,11 +2356,14 @@ module MemberTracker
       #see if there are any changes to be made to the members table
       member = DB[:members].select(:mbrship_renewal_date, :mbrship_renewal_halt,
         :mbrship_renewal_active, :mbrship_renewal_contacts).where(id: params[:mbr_id]).first
+      #clean up params
       mbr_id = params.delete(:mbr_id)
+      event_type = params.delete(:event_type)
+      notes = params.delete(:notes)
       #remove from hash if no change to be made
       member.delete_if {|k,v| params[k] == v}
       #if mbr_renewal_event_type is bogus_email need to update email_bogus one members table
-      if params[:event_type] == RenewalEventType::getID("bogus email").to_s
+      if event_type == RenewalEventType::getID("bogus email").to_s
         member[:email_bogus] = true
       end
       #create a new membership renewal data point
@@ -2369,11 +2372,15 @@ module MemberTracker
         DB.transaction do
           #write members table data
           if !member.empty?
-            DB[:members].where(id: mbr_id).update(member)
+            if params[:mbrship_renewal_halt] = "true"
+              #since we won't be bringing this member up in any more date-related searches
+              params[:mbrship_renewal_date] = nil
+            end
+            DB[:members].where(id: mbr_id).update(params)
           end
           #write renewals table data
-          DB[:mbr_renewals].insert(a_user_id: session[:auth_user_id], mbr_id: mbr_id, renewal_event_type_id: params[:event_type],
-            notes: params[:notes], ts: DateTime.now)
+          DB[:mbr_renewals].insert(a_user_id: session[:auth_user_id], mbr_id: mbr_id, renewal_event_type_id: event_type,
+            notes: notes, ts: DateTime.now)
         end
         session[:msg] = 'Renewal was successfully recorded'
       rescue StandardError => e

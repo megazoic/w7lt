@@ -75,7 +75,9 @@ Volunteer:<br />VE <span class="highlight"><%=@member[:ve].to_i == 0 ? "N" : "Y"
     <%end%>
     </table>
   <%end%>
-<%else%><h3>This user is a guest</h3>Use log notes to track attempts to get this user to sign up as a member<%end%>
+<%elsif @member[:mbr_type] != "honorary"%>
+  <h3>This user is a guest</h3>Use log notes to track attempts to get this user to sign up as a member
+<%end%>
 <h4>Log notes:</h4>
 <a href="/m/log/create/<%=@member[:id]%>">Add a log note for this member</a>
 <br />
