@@ -14,7 +14,9 @@
 <td><%=et[:name]%></td>
 <td><%=et[:descr]%></td>
 <td><%=et.auth_users.member.callsign%></td>
-<td><a href=<%=URI.escape("/m/event/list/#{et[:id]}")%>>List</a></td>
+<!--need to parse the string-->
+<%p = URI::Parser.new%>
+<td><a href=<%=p.escape("/m/event/list/#{et[:id]}")%>>List</a></td>
 </tr>
 <%end%>
 </tbody>
