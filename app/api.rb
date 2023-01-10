@@ -871,6 +871,7 @@ module MemberTracker
       erb :m_edit, :layout => :layout_w_logout
     end
     post '/m/member/create' do
+      #{"fname"=>"DAVE", "lname"=>"BURLEIGH", "callsign"=>"kn6tdv", "email"=>"", "email_bogus"=>"false", "ok_to_email"=>"true", "street"=>"", "city"=>"", "state"=>"", "zip"=>"", "phh"=>"", "phh_pub"=>"0", "phw"=>"", "phw_pub"=>"0", "phm"=>"", "phm_pub"=>"0", "license_class"=>"tech", "mbr_since"=>"2022-03", "notes"=>"", "refer_type_id"=>"none", "mbrship_renewal_date"=>"", "arrl"=>"0", "ares"=>"0", "net"=>"0", "ve"=>"0", "elmer"=>"0", "id"=>"827", "mode_phone"=>"0", "mode_cw"=>"0", "mode_rtty"=>"0", "mode_msk:ft8/jt65"=>"0", "mode_digital:other"=>"0", "mode_packet"=>"0", "mode_psk31/63"=>"0", "mode_video:sstv"=>"0", "mode_mesh"=>"0"}
       #this route used to update an existing member or save a new member
       #these will be used to avoid dups when creating a new member
       @existing_mbrs = []
@@ -968,8 +969,12 @@ module MemberTracker
         params["fname"] = params["fname"].upcase
         params["lname"] = params["lname"].upcase
         params["email"] = params["email"].upcase
-        #fix renewal date
-        params["mbrship_renewal_date"] = Date.strptime(params["mbrship_renewal_date"],'%D')
+        #fix renewal date if there is one
+        if params["mbrship_renewal_date"] != ""
+          params["mbrship_renewal_date"] = Date.strptime(params["mbrship_renewal_date"],'%D')
+        else #remove this key
+          params.delete("mbrship_renewal_date")
+        end
         params["callsign"].empty? ? nil : params["callsign"] = params["callsign"].upcase
         #log a change in callsign
         if !mbr_record["callsign"].nil?
