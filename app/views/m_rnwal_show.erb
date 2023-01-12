@@ -15,7 +15,7 @@
         <td><%="#{am[:fname]} #{am[:lname]}"%></td>
         <td><%= am[:callsign]%></td>
         <td><%= am[:mbrship_renewal_contacts]%></td>
-        <td><%= am[:mbrship_renewal_date].strftime("%Y, %b, %d")%></td>
+        <td><%= !am[:mbrship_renewal_date].nil? ? am[:mbrship_renewal_date].strftime("%Y, %b, %d") : "no date"%></td>
         <td><a href=<%="/r/member/show/#{am[:id]}"%>>view</a></td>
       </tr>
     <% end %>

@@ -2237,7 +2237,9 @@ module MemberTracker
       end
       #need to change the renewal date to add 1 yr
       @active_members.each do |am|
-        am[:mbrship_renewal_date] = am[:mbrship_renewal_date].to_date.next_year
+        if !am[:mbrship_renewal_date].nil?
+          am[:mbrship_renewal_date] = am[:mbrship_renewal_date].to_date.next_year
+        end
       end
       #get data from table mbr_renewals and display
       mrs = DB[:mbr_renewals].reverse_order(:ts).all
