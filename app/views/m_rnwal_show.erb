@@ -1,4 +1,29 @@
 </br>
+<h4>Members with active renewals</h4>
+<% if @active_members.size >0 %>
+<div>
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Callsign</th>
+      <th>Contacts</th>
+      <th>Renewal Date</th>
+      <th></th>
+    </tr>
+		<% @active_members.each do |am| %>
+      <tr>
+        <td><%="#{am[:fname]} #{am[:lname]}"%></td>
+        <td><%= am[:callsign]%></td>
+        <td><%= am[:mbrship_renewal_contacts]%></td>
+        <td><%= am[:mbrship_renewal_date].strftime("%Y, %b, %d")%></td>
+        <td><a href=<%="/r/member/show/#{am[:id]}"%>>view</a></td>
+      </tr>
+    <% end %>
+  </table>
+</div>
+<% else %>
+  <h3>There are no members with active renewals at this time</h3>
+<% end %>
 <h4>Member renewal events</h4>
 <div>
 	<table>

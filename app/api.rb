@@ -2230,6 +2230,15 @@ module MemberTracker
     get '/m/mbr_renewals/show' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
+      #get members with active renewals
+      @active_members = []
+      DB[:members].select(:id, :fname, :lname, :callsign, :mbrship_renewal_contacts, :mbrship_renewal_date).where(mbrship_renewal_active: true).each do |am|
+        @active_members << am
+      end
+      #need to change the renewal date to add 1 yr
+      @active_members.each do |am|
+        am[:mbrship_renewal_date] = am[:mbrship_renewal_date].to_date.next_year
+      end
       #get data from table mbr_renewals and display
       mrs = DB[:mbr_renewals].reverse_order(:ts).all
       @renewals = []
