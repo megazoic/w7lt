@@ -2344,6 +2344,7 @@ module MemberTracker
     post '/m/mbr_renewals/new' do
       #params are: {"mbr_id"=>"330", "mbrship_renewal_date"=>"02/01/22", "mbrship_renewal_halt"=>"false", "mbrship_renewal_active"=>"false", "mbrship_renewal_contacts"=>"1", "event_type"=>"3", "notes"=>"Enter notes here"}
       #----------------------check date------------------------------------------
+      puts "first params\n#{params}"
       begin
          Date.strptime(params[:mbrship_renewal_date],'%D')
       rescue StandardError => e
@@ -2355,7 +2356,7 @@ module MemberTracker
         session[:msg] = "The existing renewal could not be updated: Incorrect renewal year"
         redirect '/m/mbr_renewals/show'
       end
-      #fix params date string to datetime object
+      #fix params date string to date object
       params[:mbrship_renewal_date] = Date.strptime(params["mbrship_renewal_date"],'%D')
       #----------------------end check date--------------------------------------
       #see if there are any changes to be made to the members table
@@ -2365,8 +2366,18 @@ module MemberTracker
       mbr_id = params.delete(:mbr_id)
       event_type = params.delete(:event_type)
       notes = params.delete(:notes)
+      #need to convert the member record datetime to a date
+      member[:mbrship_renewal_date] = member[:mbrship_renewal_date].to_date
       #remove from hash if no change to be made
       member.delete_if {|k,v| params[k] == v}
+      puts "member date: #{member[:mbrship_renewal_date]}"
+      puts "params date: #{params[:mbrship_renewal_date]}"
+      #update the remaining member hash with values from param
+      member.each do |k,v|
+        member[k] = params[k]
+      end
+      puts "member hash\n#{member}"
+      puts "param hash\n#{params}"
       #if mbr_renewal_event_type is bogus_email need to update email_bogus one members table
       if event_type == RenewalEventType::getID("bogus email").to_s
         member[:email_bogus] = true
@@ -2377,11 +2388,13 @@ module MemberTracker
         DB.transaction do
           #write members table data
           if !member.empty?
-            if params[:mbrship_renewal_halt] = "true"
+            puts "testing params halt\n#{params[:mbrship_renewal_halt]}"
+            if params[:mbrship_renewal_halt] == "true"
               #since we won't be bringing this member up in any more date-related searches
-              params[:mbrship_renewal_date] = nil
+              member[:mbrship_renewal_date] = nil
             end
-            DB[:members].where(id: mbr_id).update(params)
+            puts member
+            DB[:members].where(id: mbr_id).update(member)
           end
           #write renewals table data
           DB[:mbr_renewals].insert(a_user_id: session[:auth_user_id], mbr_id: mbr_id, renewal_event_type_id: event_type,
