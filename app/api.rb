@@ -2410,11 +2410,6 @@ module MemberTracker
         DB.transaction do
           #write members table data
           if !member.empty?
-            if params[:mbrship_renewal_halt] == "true"
-              #since we won't be bringing this member up in any more date-related searches
-              member[:mbrship_renewal_date] = nil
-            end
-            puts member
             DB[:members].where(id: mbr_id).update(member)
           end
           #write renewals table data
