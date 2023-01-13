@@ -1,11 +1,21 @@
-<h2>Select current year to begin counting from</h2>
-  <h4>the db will be queried from a range [selected year -> plus one]</h4>
-<form action='/r/member/mbr_rpt' method='POST' name="rptYear">
-<select name='year'>
-<option><%=Date.today.year%></option>
-<option><%=Date.today.year-1%></option>
-<option><%=Date.today.year-2%></option>
-</select>
+<script>
+  window.onload = function() {
+    document.getElementById('newDate').style.display = 'none';
+  };
+</script>
+
+<h2>This form will use today's date unless you enter a different one</h2>
+<p>All active members will be individuals whose membership is current as of the date chosen</p>
+<form action='/r/member/mbr_rpt' method='POST' name="rptYear" onsubmit="return validateMbrCountForm()">
+<input type="radio" name="date" id="date_today" value="date_today" checked/>
+<label for="date_today">Today's date</label>
+<br />
+<input type="radio" name="date" id="date_other" value="date_other" onclick="mbrRptDateSet(this)"/>
+<label for="date_other">Choose another date</label>
+<div id="newDate">
+  <label for="date_field">Enter a different date MM/DD/YY</label>
+  <input type="text" name="newDate" id="date_field" onfocusout="validateMbrRnwlDate(this)"/>
+</div>
 <br />
 <input type="submit" value="Submit"> | <a href="/r/member/list">Cancel</a>
 </form>

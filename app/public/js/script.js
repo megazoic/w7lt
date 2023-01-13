@@ -19,7 +19,7 @@ function arrlSet(cb){
 	}
 }
 function duesSet(selectElement){
-	//set visibility of elements in m_renew.rb related to dues/non-dues payment
+	//set visibility of elements in m_pay.rb related to dues/non-dues payment
 	//get the payment_type inner text
 	var seText = selectElement.options[selectElement.selectedIndex].text;
 	if (seText == 'Dues'){
@@ -29,6 +29,14 @@ function duesSet(selectElement){
 		$("message").style.display = "none";
 		$("nonDues").style.display = "block";
 		$("nonDues_pmt_field").disabled = false;
+	}
+}
+function mbrRptDateSet(inputElement){
+	//set visibility of new date in textbox date_field in m_ARRL_query.erb
+	if (inputElement.checked){
+		$("newDate").style.display = "block";
+	}else{
+		$("newDate").style.display = "none";
 	}
 }
 function other_pmtSet(){
@@ -209,6 +217,15 @@ function validateAssignRoleForm(){
 		}
 		alert("At least one Role must be selected");
 		return false;
+	}
+}
+function validateMbrCountForm(){
+	var date_valid = $("date_field").getAttribute('isInValid');
+	if (date_valid == 'invalid'){
+		alert("Please correct date field");
+		return false;
+	}else{
+		return true;
 	}
 }
 function validateMbrPayForm(){

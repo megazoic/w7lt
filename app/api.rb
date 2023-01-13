@@ -264,20 +264,36 @@ module MemberTracker
     ################### END API ###########################
     ################### START MEMBER MGR ##################
     get '/r/member/mbr_rpt' do
+      
       #@current_yr = Date.year
       erb :m_ARRL_query, :layout => :layout_w_logout
     end
     post '/r/member/mbr_rpt' do
-      year_1 = params[:year].to_i + 1
-      m = DB.from(:members).where(paid_up: params[:year].to_i..year_1)
+      #params: {"date"=>"date_other", "newDate"=>"10/02/22"}
+      #{"date"=>"date_today", "newDate"=>""}
+      #validate date
+      chk_date = nil
+      if params[:date] == "date_other"
+        begin
+           chk_date = Date.strptime(params[:newDate],'%D').prev_year
+        rescue StandardError => e
+           session[:msg] = "The existing renewal could not be updated\n#{e}"
+           redirect '/m/mbr_renewals/show'
+        end
+      else
+        chk_date = Date.today.prev_year
+      end
+      #members with mbrship_renewal_date > chk_date will be current
+      m = DB[:members]
+      active_mbrs = m.where{mbrship_renewal_date > chk_date}
       @rpt = Hash.new
-      @rpt[:not_arrl] = m.where(arrl: 0).count
-      @rpt[:arrl] = m.where(arrl: 1).count
-      @rpt[:lic_none] = m.where(license_class: "none").count
-      @rpt[:lic_tech] = m.where(license_class: "tech").count
-      @rpt[:lic_gen] = m.where(license_class: "general").count
-      @rpt[:lic_extra] = m.where(license_class: "extra").count
-      @rpt[:total] = m.count
+      @rpt[:not_arrl] = active_mbrs.where(arrl: 0).count
+      @rpt[:arrl] = active_mbrs.where(arrl: 1).count
+      @rpt[:lic_none] = active_mbrs.where(license_class: "none").count
+      @rpt[:lic_tech] = active_mbrs.where(license_class: "tech").count
+      @rpt[:lic_gen] = active_mbrs.where(license_class: "general").count
+      @rpt[:lic_extra] = active_mbrs.where(license_class: "extra").count
+      @rpt[:total] = active_mbrs.count
       erb :m_ARRL_rpt, :layout => :layout_w_logout
     end
     get '/r/dump/:table' do
@@ -2355,7 +2371,6 @@ module MemberTracker
     post '/m/mbr_renewals/new' do
       #params are: {"mbr_id"=>"330", "mbrship_renewal_date"=>"02/01/22", "mbrship_renewal_halt"=>"false", "mbrship_renewal_active"=>"false", "mbrship_renewal_contacts"=>"1", "event_type"=>"3", "notes"=>"Enter notes here"}
       #----------------------check date------------------------------------------
-      puts "first params\n#{params}"
       begin
          Date.strptime(params[:mbrship_renewal_date],'%D')
       rescue StandardError => e
@@ -2381,14 +2396,10 @@ module MemberTracker
       member[:mbrship_renewal_date] = member[:mbrship_renewal_date].to_date
       #remove from hash if no change to be made
       member.delete_if {|k,v| params[k] == v}
-      puts "member date: #{member[:mbrship_renewal_date]}"
-      puts "params date: #{params[:mbrship_renewal_date]}"
       #update the remaining member hash with values from param
       member.each do |k,v|
         member[k] = params[k]
       end
-      puts "member hash\n#{member}"
-      puts "param hash\n#{params}"
       #if mbr_renewal_event_type is bogus_email need to update email_bogus one members table
       if event_type == RenewalEventType::getID("bogus email").to_s
         member[:email_bogus] = true
@@ -2399,7 +2410,6 @@ module MemberTracker
         DB.transaction do
           #write members table data
           if !member.empty?
-            puts "testing params halt\n#{params[:mbrship_renewal_halt]}"
             if params[:mbrship_renewal_halt] == "true"
               #since we won't be bringing this member up in any more date-related searches
               member[:mbrship_renewal_date] = nil
