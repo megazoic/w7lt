@@ -11,10 +11,27 @@ module MemberTracker
     class << self
       attr_reader :mbr_types, :modes
     end
+    def MbrRenewal.get2ndNotice
+      #looking for mbrs with a reminder sent within the last 3 weeks and no 2nd reminder sent both from mbr_renewals
+      r_sent_ret_id = RenewalEventType.getID("1st reminder sent")
+      r_2nd_notice_ret_id = RenewalEventType.getID("2nd reminder sent")
+      m_rmdr_snt = DB[:mbr_renewals].where(renewal_event_type_id: r_sent_ret_id).where(ts: (Date.today - 21)...( Date.today -14)).all
+      mbrs_rmdrs = []
+      #test for empty set
+      if m_rmdr_snt.empty?
+        mbrs_rmdrs = ["empty"]
+      else
+        m_rmdr_snt.each do |mr|
+          mbrs_rmdrs << DB[:members].select(:id, :fname, :lname, :callsign, :email, :mbrship_renewal_active).first(id: mr[:mbr_id])
+        end
+        mbrs_rmdrs.delete_if {|entry| entry[:mbrship_renewal_active] == false}
+      end
+      mbrs_rmdrs
+    end
     def MbrRenewal.getRenewRangeStart
       #return the date of latest entry that corresponds to either a reminder was sent or
       #a missing email discovered * RENEWAL_WINDOW (weeks)
-      rs_id = RenewalEventType.getID("reminder sent")
+      rs_id = RenewalEventType.getID("1st reminder sent")
       no_eml = RenewalEventType.getID("missing email")
       latest_hash = DB.from(:mbr_renewals).where(renewal_event_type_id: [rs_id, no_eml]).reverse_order(:ts).first
       date = Date.parse(latest_hash[:ts].to_s)

@@ -261,6 +261,15 @@ module MemberTracker
         JSON.generate(send_reminders_out)
       end
     end
+    get '/api/mbr_renewal/2nd_notice/:secret', :provides => 'json' do
+      #just looking for those with mbr_renewals 'reminder sent' in window 3 - 2 wks ago and mbrship_renewal_active
+      if params[:secret] != ENV['MBRRENEW_SECRET']
+        return JSON.generate("sorry")
+      end
+      mbrs_to_2nd_reminder = []
+      mbrs_to_2nd_reminder = MbrRenewal.get2ndNotice
+      JSON.generate(mbrs_to_2nd_reminder)
+    end
     ################### END API ###########################
     ################### START MEMBER MGR ##################
     get '/r/member/mbr_rpt' do
