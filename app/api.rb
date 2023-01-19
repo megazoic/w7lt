@@ -380,12 +380,13 @@ module MemberTracker
       if pu.active == true
         #there is a request for paid up status
         if pu.condition == true
-          #asking for members who are paid up through the current year
-          @members = Member.where(@qset){paid_up >= Time.now.strftime("%Y").to_i}
+          #asking for members who are paid up through the current year (ie. mbrship_renewal_date > (Today - 1year))
+          #@members = Member.where(@qset){mbrship_renewal_date >= (Time.now.to_date - 365)}
+          @members = Member.where{mbrship_renewal_date >= (Time.now.to_date - 365)}
           @qset[:paid_up] = "true"
         else
           #asking for members who are NOT paid up through the current year
-          @members = Member.where(@qset){paid_up < Time.now.strftime("%Y").to_i}
+          @members = Member.where{mbrship_renewal_date < (Time.now.to_date - 365)}.exclude(mbr_type: ['none', 'honorary'])
           @qset[:paid_up] = "false"
         end
       else
