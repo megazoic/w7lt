@@ -8,6 +8,7 @@
 	<th>Event Contact</th>
 	<th>Date</th>
   <th>Duration</th>
+  <th>Name</th>
   <th>Description</th>
   <th>Members Attended</th>
 </tr>
@@ -20,6 +21,7 @@
 		<td><%="#{MemberTracker::Member[event.mbr_id].lname}, #{MemberTracker::Member[event.mbr_id].callsign}"%></td>
 		<td><%=event.ts.strftime("%m-%d-%y")%></td>
     <td><%="#{event.duration} hrs"%></td>
+    <td><%=event.name%></td>
     <td><%=event.descr%></td>
     <td><a href="/m/event/attendees/show/<%=event.id%>">show attendees</a> | <a href="/m/event/edit/<%=event.id%>">edit</a></td>
 		</tr>
