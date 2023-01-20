@@ -2261,10 +2261,18 @@ module MemberTracker
       DB[:members].select(:id, :fname, :lname, :callsign, :mbrship_renewal_contacts, :mbrship_renewal_date).where(mbrship_renewal_active: true).each do |am|
         @active_members << am
       end
-      #need to change the renewal date to add 1 yr
+      #need to change the renewal date to add 1 yr and add k,v for renewals active > 4 weeks
       @active_members.each do |am|
         if !am[:mbrship_renewal_date].nil?
           am[:mbrship_renewal_date] = am[:mbrship_renewal_date].to_date.next_year
+          if am[:mbrship_renewal_date] < Date.today << 1
+            am[:is_past_due] = true
+          else
+            am[:is_past_due] = false
+          end
+        else
+          #substitue the missing date
+          am[:mbrship_renewal_date] = "no date"
         end
       end
       #get data from table mbr_renewals and display

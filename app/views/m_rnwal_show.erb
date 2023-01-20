@@ -1,5 +1,6 @@
 </br>
 <h4>Members with active renewals: <%=@active_members.size%></h4>
+<p>those with renewal dates <font color="red">displayed in red</font> have been active > 4 weeks</p>
 <% if @active_members.size >0 %>
 <div>
   <table>
@@ -15,7 +16,10 @@
         <td><%="#{am[:fname]} #{am[:lname]}"%></td>
         <td><%= am[:callsign]%></td>
         <td><%= am[:mbrship_renewal_contacts]%></td>
-        <td><%= !am[:mbrship_renewal_date].nil? ? am[:mbrship_renewal_date].strftime("%Y, %b, %d") : "no date"%></td>
+        <td <%if am[:is_past_due] %>
+          class="renew"
+        <%end%>
+        ><%= am[:mbrship_renewal_date].is_a?(String) ? am[:mbrship_renewal_date] : am[:mbrship_renewal_date].strftime("%Y, %b, %d")%></td>
         <td><a href=<%="/r/member/show/#{am[:id]}"%>>view</a></td>
       </tr>
     <% end %>
