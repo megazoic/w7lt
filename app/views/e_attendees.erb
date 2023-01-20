@@ -1,24 +1,29 @@
 <h3>List of attendees for Event <%=@event.name%> on <%=@event.ts.strftime("%B %d, %Y")%></h3>
 <br />
-Contact for event: <%="#{@e_contact[:fname]} #{@e_contact[:lname]}, #{@e_contact[:callsign]}"%>
-<br />Attendees already in our database<br />
+<p>Contact for event: <%="#{@e_contact[:fname]} #{@e_contact[:lname]}, #{@e_contact[:callsign]}"%></p>
+<p>Attendees already in our database: <font color=red>Mbrship current in red</font> means these are in active renewal</p>
 <table>
 <tr>
 	<th>First Name</th>
 	<th>Last Name</th>
 	<th>call</th>
-	<th>Paid up?</th>
+	<th>Mbrship current?</th>
   <th>Attendance this event type</th>
   <th>Attendance all other event types</th>
+  <th></th>
 </tr>
 <%@attendees.each do |mbr|%>
   <tr>
   <td><%=mbr[:fname]%></td>
   <td><%=mbr[:lname]%></td>
   <td><%=mbr[:callsign]%></td>
-  <td><%=mbr[:paid_up] == Time.now.year ? "yes" : "no"%></td>
+  <td<%if mbr[:mbrship_renewal_active] %>
+          class="renew"
+        <%end%>
+  ><%=mbr[:mbrship_renewal_date] > Date.today ? "yes" : "no"%></td>
   <td><%=mbr[:attendance][:same]%></td>
   <td><%=mbr[:attendance][:other]%></td>
+  <td><a href=<%="/r/member/show/#{mbr[:mbr_id]}"%>>view</a></td>
   </tr>
 <%end%>
 </table>
