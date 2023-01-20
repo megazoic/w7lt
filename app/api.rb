@@ -696,7 +696,7 @@ module MemberTracker
         et_hash = {:same => 0, :other => 0}
         etypes.each{|et| et_hash[et] = 0}
         mbr_tmp_hash = {:mbr_id => mbr.id, :fname => mbr.fname, :lname => mbr.lname,
-          :callsign => mbr.callsign, :mbrship_renewal_date => mbr.mbrship_renewal_date.to_date.next_year,
+          :callsign => mbr.callsign, :mbrship_renewal_date => mbr.mbrship_renewal_date,
           :mbrship_renewal_active => mbr.mbrship_renewal_active, :mbr_type => mbr.mbr_type, :attendance => et_hash}
         mbr.events.each do |event|
           #only events within the last year
@@ -709,9 +709,11 @@ module MemberTracker
             end
           end
         end
-        #look for honorary members and give them a current mbrship_renewal_date
+        #look for honorary members and give them a current mbrship_renewal_date and move renewal date up one year
         if mbr_tmp_hash[:mbr_type] == 'honorary'
           mbr_tmp_hash[:mbrship_renewal_date] = Date.today >> 1
+        else !mbr_tmp_hash[:mbrship_renewal_date].nil?
+          mbr_tmp_hash[:mbrship_renewal_date] = mbr_tmp_hash[:mbrship_renewal_date].to_date.next_year
         end
         @attendees << mbr_tmp_hash
         if !mbr.email.nil?
