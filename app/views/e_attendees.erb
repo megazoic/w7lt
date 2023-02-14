@@ -19,8 +19,13 @@
   <td><%=mbr[:callsign]%></td>
   <td<%if mbr[:mbrship_renewal_active] %>
           class="renew"
+        <%end%>>
+        <%if mbr[:mbrship_renewal_date] == 'none'%>
+          has not joined
+        <%else%>
+          <%=mbr[:mbrship_renewal_date] > Date.today ? "yes" : "no"%>
         <%end%>
-  ><%=mbr[:mbrship_renewal_date] > Date.today ? "yes" : "no"%></td>
+  </td>
   <td><%=mbr[:attendance][:same]%></td>
   <td><%=mbr[:attendance][:other]%></td>
   <td><a href=<%="/r/member/show/#{mbr[:mbr_id]}"%>>view</a></td>

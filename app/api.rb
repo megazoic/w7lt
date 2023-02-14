@@ -712,8 +712,10 @@ module MemberTracker
         #look for honorary members and give them a current mbrship_renewal_date and move renewal date up one year
         if mbr_tmp_hash[:mbr_type] == 'honorary'
           mbr_tmp_hash[:mbrship_renewal_date] = Date.today >> 1
-        else !mbr_tmp_hash[:mbrship_renewal_date].nil?
+        elsif !mbr_tmp_hash[:mbrship_renewal_date].nil?
           mbr_tmp_hash[:mbrship_renewal_date] = mbr_tmp_hash[:mbrship_renewal_date].to_date.next_year
+        else
+          mbr_tmp_hash[:mbrship_renewal_date] = 'none'
         end
         @attendees << mbr_tmp_hash
         if !mbr.email.nil?
