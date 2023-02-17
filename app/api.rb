@@ -275,7 +275,7 @@ module MemberTracker
     get '/r/member/mbr_rpt' do
       
       #@current_yr = Date.year
-      erb :m_ARRL_query, :layout => :layout_w_logout
+      erb :m_rpt_date_query, :layout => :layout_w_logout
     end
     post '/r/member/mbr_rpt' do
       #params: {"date"=>"date_other", "newDate"=>"10/02/22"}
@@ -295,6 +295,23 @@ module MemberTracker
       #members with mbrship_renewal_date > chk_date will be current
       m = DB[:members]
       active_mbrs = m.where{mbrship_renewal_date > chk_date}
+      @voting_email = []
+      @voting_other = []
+      #get contact info for voting purposes
+      active_mbrs.each do |am|
+        if am[:email].empty?
+          contact_phone = "#{am[:fname]} #{am[:lname]}"
+          [:phw, :phh, :phm].each do |phone|
+            if !am[phone].to_s.empty?
+              contact_phone << ", #{am[phone]}"
+              break
+            end
+          end
+          @voting_other << contact_phone
+        else
+          @voting_email << am[:email].strip
+        end
+      end
       @rpt = Hash.new
       @rpt[:not_arrl] = active_mbrs.where(arrl: 0).count
       @rpt[:arrl] = active_mbrs.where(arrl: 1).count
@@ -302,8 +319,12 @@ module MemberTracker
       @rpt[:lic_tech] = active_mbrs.where(license_class: "tech").count
       @rpt[:lic_gen] = active_mbrs.where(license_class: "general").count
       @rpt[:lic_extra] = active_mbrs.where(license_class: "extra").count
+      @rpt[:type_honorary] = active_mbrs.where(mbr_type: "honorary").count
+      @rpt[:type_family] = active_mbrs.where(mbr_type: "family").count
+      @rpt[:type_full] = active_mbrs.where(mbr_type: "full").count
+      @rpt[:type_student] = active_mbrs.where(mbr_type: "student").count
       @rpt[:total] = active_mbrs.count
-      erb :m_ARRL_rpt, :layout => :layout_w_logout
+      erb :m_rpt, :layout => :layout_w_logout
     end
     get '/r/dump/:table' do
       if params[:table] == 'mbr'

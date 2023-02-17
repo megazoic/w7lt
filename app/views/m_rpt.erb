@@ -12,3 +12,14 @@
 <tr><td>General</td><td><%=@rpt[:lic_gen]%></td></tr>
 <tr><td>Extra</td><td><%=@rpt[:lic_extra]%></td></tr>
 </table>
+<h2>Breakdown by member type</h2>
+<table>
+<tr><td>Honorary</td><td><%=@rpt[:type_honorary]%></td></tr>
+<tr><td>Full</td><td><%=@rpt[:type_full]%></td></tr>
+<tr><td>General</td><td><%=@rpt[:type_family]%></td></tr>
+<tr><td>Extra</td><td><%=@rpt[:type_student]%></td></tr>
+</table>
+<h2>Voting members with emails</h2>
+<%=@voting_email%>
+<h2>Voting members with NO email</h2>
+<%=@voting_other%>
