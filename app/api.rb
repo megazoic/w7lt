@@ -299,7 +299,11 @@ module MemberTracker
       @voting_other = []
       #get contact info for voting purposes
       active_mbrs.each do |am|
-        if am[:email].empty?
+        if am[:mbr_type] == 'honorary'
+          next
+        end
+        puts am[:mbr_type]
+        if am[:email].to_s.empty?
           contact_phone = "#{am[:fname]} #{am[:lname]}"
           [:phw, :phh, :phm].each do |phone|
             if !am[phone].to_s.empty?
