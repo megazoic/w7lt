@@ -14,7 +14,7 @@
   <table>
   <tr><td><a href="/r/dump/mbr">Members Table</a></td><td><a href="/r/member/list">List members</a></td><td><a href="/r/member/mbr_rpt">Members & ARRL</a></td></tr>
   <%if session[:auth_user_roles].include?('mbr_mgr')%>
-  <tr><td><a href="/m/query">Query the member data</a></td><td><a href="/m/member/create">Add a new member</a></td><td><a href="/m/mbr_renewals/show">List Renewals</a></td></tr>
+  <tr><td></td><td><a href="/m/member/create">Add a new member</a></td><td><a href="/m/mbr_renewals/show">List Renewals</a></td></tr>
   <tr><td><a href="/m/member/refer/type/list/all">List all Member referrals</a></td><td><a href="/m/member/refer/type/create">Create/Edit Referral Types</a></td><td><a href=<%="/api/mbr_renewal/find/#{ENV['MBRRENEW_SECRET']}"%>>1st Renewal Notice</a></td></tr>
   <tr><td><a href='/m/unit/list/all'>View/Edit all units</a></td><td><a href='/m/unit/create'>Build a new Unit</a></td><td><a href=<%="/api/mbr_renewal/2nd_notice/#{ENV['MBRRENEW_SECRET']}"%>>2nd Renewal Notice</a></td></tr>
   <tr><td><a href="/r/member/list">Record payment</a></td><td><a href="/m/payments/show">View payments</a></td><td><a href='/m/unit/display/fam_unit/status'>Fam Mbrship Renewal</a></td></tr>
