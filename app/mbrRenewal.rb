@@ -43,8 +43,11 @@ module MemberTracker
       end
       date - (365 - RENEWAL_WINDOW)
     end
-    def MbrRenewal.getNewMbrshipRenewalDate(mbr_id)
+    def MbrRenewal.getNewMbrshipRenewalDate(mbr_id, mbr_type)
       renewal_date = nil
+      if ['lifetime', 'honorary'].include?(mbr_type)
+        return DateTime.new(2100,01,01)
+      end
       #calculate the new date based on renewal event today
       if !Member[mbr_id].mbrship_renewal_date.nil?
         begin_date_window = Date.parse(Member[mbr_id].mbrship_renewal_date.to_s) + 334
