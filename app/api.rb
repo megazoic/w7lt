@@ -364,12 +364,14 @@ module MemberTracker
     post '/m/query' do
       #param keys can be... "paid_up_q", :paid_up_q,
       #  "mbr_full", :mbr_full, "mbr_student", :mbr_student, :mbr_family,
-      #  ":mbr_honorary, "arrl", :arrl, "ares", :ares, "pdxnet", :pdxnet,
+      #  ":mbr_honoqsetrary, "arrl", :arrl, "ares", :ares, "pdxnet", :pdxnet,
       #  "ve", :ve, "elmer", :elmer
+      members_temp = nil
+      @members = nil
       query_keys = [:paid_up_q, :mbr_full, :mbr_student, :mbr_family,
-        :mbr_honorary, :mbr_none, :arrl, :ares, :pdxnet, :ve, :elmer, :sota]
-      @qset = Hash.new
-      @qset[:mbr_type] = []
+        :mbr_honorary, :mbr_lifetime, :mbr_none, :arrl, :ares, :pdxnet, :ve, :elmer, :sota]
+      qset = Hash.new
+      qset[:mbr_type] = []
       pu = Paid_up.new(false, false)
       query_keys.each do |k|
         if ["", nil].include?(params[k])
@@ -390,42 +392,48 @@ module MemberTracker
               #keep default pu values (false,false)
             end
           when  :arrl
-            @qset[:arrl] = 1
+            qset[:arrl] = 1
           when  :ares
-            @qset[:ares] = 1
-          when  :mbr_full, :mbr_student, :mbr_family, :mbr_honorary, :mbr_none
-            @qset[:mbr_type] << params[k]
+            qset[:ares] = 1
+          when  :mbr_full, :mbr_student, :mbr_family, :mbr_honorary, :mbr_none, :mbr_lifetime
+            qset[:mbr_type] << params[k]
           when  :pdxnet
-            @qset[:net] = 1
+            qset[:net] = 1
           when  :elmer
-            @qset[:elmer] = 1
+            qset[:elmer] = 1
           when  :ve
-            @qset[:ve] = 1
+            qset[:ve] = 1
           when  :sota
-            @qset[:sota] = 1
+            qset[:sota] = 1
           else
             puts "error"
           end
         end
       end
-      if @qset[:mbr_type].empty?
-        @qset.delete(:mbr_type)
+      if qset[:mbr_type].empty?
+        qset.delete(:mbr_type)
       end
+      #were any keys added to the qset hash?
+      if !qset.empty?
+        members_temp = Member.select(:id, :fname, :lname, :callsign, :mbrship_renewal_date, :mbr_type).where(qset)
+      else
+        members_temp = Member.select(:id, :fname, :lname, :callsign, :mbrship_renewal_date, :mbr_type)
+      end
+      #.as_hash(:id, [:fname, :lname, :callsign, :mbrship_renewal_date, :mbr_type])
       if pu.active == true
         #there is a request for paid up status
         if pu.condition == true
           #asking for members who are paid up through the current year (ie. mbrship_renewal_date > (Today - 1year))
-          #@members = Member.where(@qset){mbrship_renewal_date >= (Time.now.to_date - 365)}
-          @members = Member.where{mbrship_renewal_date >= (Time.now.to_date - 365)}
-          @qset[:paid_up] = "true"
+          #@members = Member.where(qset){mbrship_renewal_date >= (Time.now.to_date - 365)}
+          paid_up_mbrs = Member.select(:id, :fname, :lname, :callsign, :mbrship_renewal_date, :mbr_type).where{mbrship_renewal_date >= (Time.now.to_date - 365)}
         else
           #asking for members who are NOT paid up through the current year
-          @members = Member.where{mbrship_renewal_date < (Time.now.to_date - 365)}.exclude(mbr_type: ['none', 'honorary'])
-          @qset[:paid_up] = "false"
+          paid_up_mbrs = Member.select(:id, :fname, :lname, :callsign, :mbrship_renewal_date, :mbr_type).where{mbrship_renewal_date < (Time.now.to_date - 365)}.exclude(mbr_type: 'none')
         end
+        #find intersection of the two
+        @members = members_temp.intersect(paid_up_mbrs)
       else
-        #asking for all recorded members
-        @members = Member.where(@qset)
+        @members = members_temp
       end
       erb :m_list, :layout => :layout_w_logout
     end
@@ -1938,7 +1946,6 @@ module MemberTracker
                         end
                       end
                       is_fam = true
-                      puts "in unit type family and is_fam: #{is_fam}"
                     end
                   end
                 end
