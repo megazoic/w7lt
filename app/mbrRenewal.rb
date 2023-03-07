@@ -12,21 +12,29 @@ module MemberTracker
       attr_reader :mbr_types, :modes
     end
     def MbrRenewal.get2ndNotice
-      #looking for mbrs with a reminder sent within the last 3 weeks and no 2nd reminder sent both from mbr_renewals
+      #looking for mbrs with active renewals who have had a first reminder sent (but no second reminder) > 1 week ago
+      mbrs_to_send_2nd_notice = []
       r_sent_ret_id = RenewalEventType.getID("1st reminder sent")
       r_2nd_notice_ret_id = RenewalEventType.getID("2nd reminder sent")
-      m_rmdr_snt = DB[:mbr_renewals].where(renewal_event_type_id: r_sent_ret_id).where(ts: (Date.today - 21)...( Date.today -14)).all
-      mbrs_rmdrs = []
-      #test for empty set
-      if m_rmdr_snt.empty?
-        mbrs_rmdrs = ["empty"]
+      mbrs_active_renewal = DB[:members].select(:id, :fname, :lname, :callsign, :email).where(mbrship_renewal_active: true)
+      m_rmdr1_snt = DB[:mbr_renewals].select(:mbr_id).where(renewal_event_type_id: r_sent_ret_id).where(ts: (Date.today - 28)...( Date.today -7)).all.map{|n| n[:mbr_id]}
+      m_rmdr2_snt = DB[:mbr_renewals].select(:mbr_id).where(renewal_event_type_id: r_2nd_notice_ret_id).all.map{|n| n[:mbr_id]}
+      mbrs_w_only_1rnwl = []
+      #test for empty set, then remove those who already have a second renewal
+      if m_rmdr1_snt.empty?
+        mbrs_to_send_2nd_notice = ["empty"]
       else
-        m_rmdr_snt.each do |mr|
-          mbrs_rmdrs << DB[:members].select(:id, :fname, :lname, :callsign, :email, :mbrship_renewal_active).first(id: mr[:mbr_id])
+        mbrs_w_only_1rnwl = m_rmdr1_snt.delete_if {|entry| m_rmdr2_snt.include?(entry)}
+        mbrs_active_renewal.each do |mar|
+          if mbrs_w_only_1rnwl.include?(mar[:id])
+            mbrs_to_send_2nd_notice << mar
+          end
         end
-        mbrs_rmdrs.delete_if {|entry| entry[:mbrship_renewal_active] == false}
+        if mbrs_to_send_2nd_notice.empty?
+          mbrs_to_send_2nd_notice = ["empty"]
+        end
       end
-      mbrs_rmdrs
+      mbrs_to_send_2nd_notice
     end
     def MbrRenewal.getRenewRangeStart
       #return the date of latest entry that corresponds to either a reminder was sent or
