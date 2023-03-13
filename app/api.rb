@@ -2628,6 +2628,8 @@ module MemberTracker
         #reset password
         new_pwd = SecureRandom.hex[0,6]
         au.password = BCrypt::Password.create(new_pwd)
+        #need to update time_pwd_set
+        au.time_pwd_set = Time.now
       end
       l.notes << "role changed from #{old_au_role} to #{new_au_role}"
       begin
