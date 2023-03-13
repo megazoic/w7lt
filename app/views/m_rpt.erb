@@ -21,6 +21,10 @@
 <tr><td>Honorary</td><td><%=@rpt[:type_honorary]%></td></tr>
 </table>
 <h2>Voting members with emails</h2>
-<%=@voting_email%>
+<%@voting_email.each do |ve|%>
+  <%= "#{ve}<br>" %>
+<%end%>
 <h2>Voting members with NO email</h2>
-<%=@voting_other%>
+<%@voting_other.each do |vo|%>
+  <%= "#{vo}<br>" %>
+<%end%>

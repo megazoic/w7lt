@@ -303,7 +303,7 @@ module MemberTracker
           next
         end
         if am[:email].to_s.empty?
-          contact_phone = "#{am[:fname]} #{am[:lname]}"
+          contact_phone = "#{am[:fname]},#{am[:lname]}"
           [:phw, :phh, :phm].each do |phone|
             if !am[phone].to_s.empty?
               contact_phone << ", #{am[phone]}"
@@ -312,7 +312,8 @@ module MemberTracker
           end
           @voting_other << contact_phone
         else
-          @voting_email << am[:email].strip
+          contact_email =  "#{am[:fname]},#{am[:lname]},#{am[:email].strip}"
+          @voting_email << contact_email
         end
       end
       @rpt = Hash.new
