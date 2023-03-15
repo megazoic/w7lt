@@ -1950,6 +1950,8 @@ module MemberTracker
                     end
                   end
                 end
+              else
+                is_fam = true
               end
               if is_fam == true #otherwise don't have other family members to update
                 #update other family members
