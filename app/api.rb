@@ -35,7 +35,8 @@ module MemberTracker
     end
     enable :sessions
     before do # need to comment this for RSpec
-      next if request.path_info == '/login'
+      puts request.path_info
+      next if ['/login', '/check/mbrship/status'].include?(request.path_info)
       if session[:auth_user_id].nil?
         redirect '/login'
         #elsif session[:auth_user_id] == 'reset'
@@ -79,6 +80,15 @@ module MemberTracker
     end
     get '/' , :provides => 'json' do
       puts 'in get and json'
+    end
+    get '/check/mbrship/status' do
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
+      erb :mbrship_status, :layout => :layout
+    end
+    post '/check/mbrship/status' do
+      puts params
+      "good"
     end
     get '/login' do
       @tmp_msg = session[:msg]

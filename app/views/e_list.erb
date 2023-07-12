@@ -1,17 +1,35 @@
 <h3>Events List: <%=@event_type%></h3>
-<table>
+<div class="eventTable">
+<table width="100%">
+<colgroup>
+  <%if @event_type == 'all'%>
+    <col style="width:10%">
+    <col style="width:5%">
+    <col style="width:10%">
+    <col style="width:5%">
+    <col style="width:5%">
+    <col style="width:27.5%">
+    <col style="width:27.5%">
+    <col style="width:10%">
+  <%else%>
+    <col>
+  <%end%>
+</colgroup>
+<thead>
 <tr>
   <%if @event_type == 'all'%>
-    <th>Event Type</th>
+    <th scope="col">Event Type</th>
   <%end%>
-	<th>Event Creator</th>
-	<th>Event Contact</th>
-	<th>Date</th>
-  <th>Duration</th>
-  <th>Name</th>
-  <th>Description</th>
-  <th>Members Attended</th>
+	<th scope="col">Event Creator</th>
+	<th scope="col">Event Contact</th>
+	<th scope="col">Date</th>
+  <th scope="col">Duration</th>
+  <th scope="col">Name</th>
+  <th scope="col">Description</th>
+  <th scope="col">Members Attended</th>
 </tr>
+</thead>
+<tbody>
 <%@events.each do |event|%>
 		<tr>
     <%if @event_type == 'all'%>
@@ -21,9 +39,11 @@
 		<td><%="#{MemberTracker::Member[event.mbr_id].lname}, #{MemberTracker::Member[event.mbr_id].callsign}"%></td>
 		<td><%=event.ts.strftime("%m-%d-%y")%></td>
     <td><%="#{event.duration} hrs"%></td>
-    <td><%=event.name%></td>
-    <td><%=event.descr%></td>
-    <td><a href="/m/event/attendees/show/<%=event.id%>">show attendees</a> | <a href="/m/event/edit/<%=event.id%>">edit</a></td>
+    <td><%=event.name[0,50]%></td>
+    <td><%=event.descr[0,50]%></td>
+    <td><a href="/m/event/attendees/show/<%=event.id%>">details</a> | <a href="/m/event/edit/<%=event.id%>">edit</a></td>
 		</tr>
 <%end%>
+</tbody>
 </table>
+</div>

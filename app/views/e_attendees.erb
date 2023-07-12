@@ -1,4 +1,5 @@
 <h3>List of attendees for Event <%=@event.name%> on <%=@event.ts.strftime("%B %d, %Y")%></h3>
+Event description: <%=@event.descr%>
 <br />
 <p>Contact for event: <%="#{@e_contact[:fname]} #{@e_contact[:lname]}, #{@e_contact[:callsign]}"%></p>
 <p>Attendees already in our database: <font color=red>Mbrship current in red</font> means these are in active renewal</p>

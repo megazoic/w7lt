@@ -62,6 +62,16 @@ function authUserStatusSet(inputElement){
 	}
 }
 //**************VALIDATORS*****************************
+function validateFirstName(textbox){
+	var tb = textbox.value;
+	if (tb == ''){
+		textbox.style.borderColor = 'red';
+		textbox.setAttribute('isInValid','invalid');
+	} else {
+		textbox.style.borderColor = 'black';
+		textbox.setAttribute('isInValid','');
+	}
+}
 function validateMbrRnwlDate(textbox){
 	//need to match MM/DD/YY
 	var tb = textbox.value.trim();
@@ -85,14 +95,20 @@ function validatePayAmt(textbox){
 		textbox.setAttribute('isInValid','');
 	}
 }
-function validateFirstName(textbox){
+function validateMbrStatusIdentifier(textbox){
 	var tb = textbox.value;
-	if (tb == ''){
-		textbox.style.borderColor = 'red';
-		textbox.setAttribute('isInValid','invalid');
-	} else {
+	var cs_passed = false;
+	var name_passed = false;
+	var cs_ptrn = /[a-zA-Z]{1,2}\d[a-zA-Z]{1,3}/;
+	var name_ptrn =/^([a-z,.'-]+) ([a-z,.'-]+$)/;
+	cs_passed = cs_ptrn.test(tb);
+	name_passed = name_ptrn.test(tb);
+	if (cs_passed || name_passed){
 		textbox.style.borderColor = 'black';
 		textbox.setAttribute('isInValid','');
+	} else {
+		textbox.style.borderColor = 'red';
+		textbox.setAttribute('isInValid','invalid');
 	}
 }
 function validateLastName(textbox){
@@ -341,6 +357,14 @@ function validateNewRnwlForm(){
     	}
 	if (btn_checked == false){
 		alert("an event type needs to be checked");
+		return false;
+	}
+}
+function validateMbrStatusForm(){
+	var inputField = $("mbrIdentifier").getAttribute('isInValid');
+	if (inputField == 'invalid'){
+		alert("Please enter a first and last name OR a callsign");
+		//$("email_bogus").setAttribute('isInValid', '')
 		return false;
 	}
 }
