@@ -72,4 +72,103 @@ namespace :db do
     DB[:mbr_renewals].exclude(id: 1).sql.delete
     DB[:members].where(lname: 'tester').delete
   end
+  desc "Reading jotform data"
+  task :get_jf_data do
+    require "sequel"
+    require "./app/api.rb"
+    payments = DB[:payments]
+    logs = DB[:logs]
+    log_ids = []
+    payments.where(payment_type_id: 5).each do |pmt|
+      if DateTime.new(2023,02,01).to_time < pmt[:ts]
+        log_ids << [pmt[:mbr_id], pmt[:log_id]]
+      end
+    end
+    mbr_codes = {}
+    log_ids.each do |logid|
+      note_to_test = logs.first(id: logid[1])[:notes]
+      lines_from_log_notes = nil
+      topics, freq, modes = nil
+      question_h = {topic: [], freq: [], mode: []}
+      active_q = nil
+      if /^.*jotform/.match(note_to_test)
+        lines_from_log_notes = note_to_test.split("\n")
+        capture = false
+        lines_from_log_notes.each do |line|
+          if (/^.*jotform/.match(line) && capture == false)
+            capture = true
+          elsif capture == true
+            #have 3 questions topics, freq, mode with variable number of lines following each answer
+            if /topics/.match(line)
+              active_q = :topic
+              m = /.*\?(.*)/.match(line)
+              question_h[active_q] << m[1].strip
+            elsif /freq/.match(line)
+              active_q = :freq
+              m = /.*\?(.*)/.match(line)
+              question_h[active_q] << m[1].strip
+            elsif /mode/.match(line)
+              active_q = :mode
+              m = /.*\?(.*)/.match(line)
+              question_h[active_q] << m[1].strip
+            else
+              if !/^\*\*/.match(line)
+                question_h[active_q] << line.strip
+              end
+            end
+          end
+        end
+        if !question_h[active_q].empty?
+          codes = []
+          question_h[:topic].each do |topic|
+            codes << categorize(topic, :topic)
+          end
+          question_h[:freq].each do |freq|
+            codes << categorize(freq, :freq)
+          end
+          question_h[:mode].each do |mode|
+            codes << categorize(mode, :mode)
+          end
+          mbr_codes[logid[0]] = codes
+        else
+          puts "nothing found"
+        end
+      end
+    end
+    mbr_codes.each do |k,v|
+      puts "id: #{k}, codes: #{v}"
+    end
+  end
+end
+#methods available to tasks
+def categorize(answer_str, question_symbol)
+  #returns a category(type:string) for the answer string
+  return_code = nil
+  case question_symbol
+  when :topic
+    h = {T1: /^Port/, T2: /^Con/, T3: /^Beg/, T4: /^Tec/, T5: /^Prod/, T6: /^Rad/, T7: /^Dis/, T8: /^Dig/,
+    T9: /^Prop/, T10: /^Eme/, T11: /^Oth/}
+    h.each do |k,v|
+      if v.match(answer_str)
+        return_code = k.to_s
+      end
+    end
+  when :freq
+    h = {F1: /^Hig/, F2: /^VHF/, F3: /^Mic/, F4: /^Low/, F5: /^Non/}
+    h.each do |k,v|
+      if v.match(answer_str)
+        return_code = k.to_s
+      end
+    end
+  when :mode
+    h = {M1: /^Voi/, M2: /^CW/, M3: /^Dig/, M4: /^Non/, M5: /^Oth/}
+    h.each do |k,v|
+      if v.match(answer_str)
+        return_code = k.to_s
+      end
+    end
+  else
+    puts "oops"
+  end
+  return_code
 end
