@@ -344,7 +344,7 @@ module MemberTracker
         h[:fname] = mbr[0]
         h[:lname] = mbr[1]
         h[:callsign] = mbr[2]
-        h[:ren_date] = mbr[3]
+        h[:ren_date] = mbr[3].strftime("%Y-%m")
         h[:email] = mbr[4].strip
         h[:mbr_since] = mbr[5]
         @mbrs_in_survey << h
