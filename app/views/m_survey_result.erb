@@ -20,7 +20,7 @@
       <td><%= mbr[:ren_date] %></td>
       <td><%= mbr[:email] %></td>
       <td><%= mbr[:mbr_since] %></td>
-      <td><a href="/r/member/show/#{<% mbr[:id] %>}">View</a></td>
+      <td><a href=<%="/r/member/show/#{mbr[:mbr_id]}"%>>View</a></td>
     </tr>
   <% end %>
 </table>
