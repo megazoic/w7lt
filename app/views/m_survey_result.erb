@@ -1,0 +1,27 @@
+<h3>Survey questions chosen</h3>
+<table>
+  <% @responses_selected_display.each do |rs| %>
+    <tr>
+      <% rs.each do |r| %>
+        <td><%= r %></td>
+      <% end %>
+    </tr>
+  <% end %>
+</table>
+<hr />
+<h3>Results</h3>
+<table>
+  <% @mbrs_in_survey.each do |mbr| %>
+    <tr>
+      <td><%= mbr[:fname] %></td>
+      <td><%= mbr[:lname] %></td>
+      <td><%= mbr[:callsign] %></td>
+      <td><%= mbr[:ren_date] %></td>
+      <td><%= mbr[:email] %></td>
+      <td><%= mbr[:mbr_since] %></td>
+      <td><a href="/r/member/show/#{<% mbr[:id] %>}">View</a></td>
+    </tr>
+  <% end %>
+</table>
+<textarea id="text-box" ><%="#{@emails[0...-2]}"%></textarea>
+<button onclick="selectText()">Select emails</button>

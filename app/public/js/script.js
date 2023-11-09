@@ -580,6 +580,13 @@ function validateCreateEventForm(){
 	}
 	return true;
 }
+/**** MISC *********************************************/
+function selectText() {
+  const input = document.getElementById("text-box");
+  input.focus();
+  input.select();
+}
+
 
 window.onload = function (){
 	//load only if using password reset page

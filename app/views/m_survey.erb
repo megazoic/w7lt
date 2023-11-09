@@ -1,0 +1,23 @@
+<form action="/r/member/mbr_survey" method='POST'>
+  <div>
+    <% title = ["Topics", "Frequencies", "Modes"] %>
+    <% @codes.each do |codegroup| %>
+      <h3><%="#{title.shift}"%></h3>
+      <br />
+      <% codegroup.each do |k,v| %>
+        
+        <label for=<%= k.to_s %>><%= v %>
+        <input
+          id="<%=k.to_s%>"
+          type="checkbox"
+          name=<%="#{k.to_s}"%>
+          value=1 />
+        </label>
+        <br />
+      <% end %>
+      <br />
+      <hr />
+    <% end %>
+  </div>
+  <input type="submit" value="Submit"> | <a href="/r/member/list">Cancel</a>
+</form>

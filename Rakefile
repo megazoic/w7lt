@@ -79,18 +79,20 @@ namespace :db do
     payments = DB[:payments]
     logs = DB[:logs]
     log_ids = []
+    start_date = DateTime.now
     payments.where(payment_type_id: 5).each do |pmt|
-      if DateTime.new(2023,02,01).to_time < pmt[:ts]
+      if (start_date - 365) < pmt[:ts].to_datetime
         log_ids << [pmt[:mbr_id], pmt[:log_id]]
       end
     end
-    mbr_codes = {}
+    mbr_codes = []
     log_ids.each do |logid|
       note_to_test = logs.first(id: logid[1])[:notes]
       lines_from_log_notes = nil
       topics, freq, modes = nil
       question_h = {topic: [], freq: [], mode: []}
       active_q = nil
+      cont_from_q = false #needed bc may incorrectly copy survey from email
       if /^.*jotform/.match(note_to_test)
         lines_from_log_notes = note_to_test.split("\n")
         capture = false
@@ -98,6 +100,9 @@ namespace :db do
           if (/^.*jotform/.match(line) && capture == false)
             capture = true
           elsif capture == true
+            if /^What/.match(line)
+              cont_from_q = true
+            end
             #have 3 questions topics, freq, mode with variable number of lines following each answer
             if /topics/.match(line)
               active_q = :topic
@@ -112,8 +117,12 @@ namespace :db do
               m = /.*\?(.*)/.match(line)
               question_h[active_q] << m[1].strip
             else
-              if !/^\*\*/.match(line)
-                question_h[active_q] << line.strip
+              if cont_from_q == true
+                if !/^\*\*/.match(line)
+                  question_h[active_q] << line.strip
+                else
+                  break
+                end
               end
             end
           end
@@ -129,14 +138,14 @@ namespace :db do
           question_h[:mode].each do |mode|
             codes << categorize(mode, :mode)
           end
-          mbr_codes[logid[0]] = codes
+          mbr_codes << [logid[1],logid[0],codes]
         else
           puts "nothing found"
         end
       end
     end
-    mbr_codes.each do |k,v|
-      puts "id: #{k}, codes: #{v}"
+    mbr_codes.each do |q_array|
+      puts "logId: #{q_array[0]}, mbrid: #{q_array[1]}, codes: #{q_array[2]}"
     end
   end
 end
@@ -146,12 +155,16 @@ def categorize(answer_str, question_symbol)
   return_code = nil
   case question_symbol
   when :topic
-    h = {T1: /^Port/, T2: /^Con/, T3: /^Beg/, T4: /^Tec/, T5: /^Prod/, T6: /^Rad/, T7: /^Dis/, T8: /^Dig/,
-    T9: /^Prop/, T10: /^Eme/, T11: /^Oth/}
+    h = {T1: /^Portable Oper/, T2: /^Contest/, T3: /^Beginner op/, T4: /^Technical/, T5: /^Product De/,
+    T6: /^Radio Hi/, T7: /^Distance Com/, T8: /^Digital Mode/, T9: /^Propagation/, T10: /^Emergency prep/}
     h.each do |k,v|
       if v.match(answer_str)
         return_code = k.to_s
       end
+    end
+    if return_code.nil?
+      #this is 'other'
+      return_code = "T11"
     end
   when :freq
     h = {F1: /^Hig/, F2: /^VHF/, F3: /^Mic/, F4: /^Low/, F5: /^Non/}
@@ -161,11 +174,15 @@ def categorize(answer_str, question_symbol)
       end
     end
   when :mode
-    h = {M1: /^Voi/, M2: /^CW/, M3: /^Dig/, M4: /^Non/, M5: /^Oth/}
+    h = {M1: /^Voice/, M2: /^CW/, M3: /^Digital/, M4: /^None/}
     h.each do |k,v|
       if v.match(answer_str)
         return_code = k.to_s
       end
+    end
+    if return_code.nil?
+      #this is 'other'
+      return_code = "F5"
     end
   else
     puts "oops"

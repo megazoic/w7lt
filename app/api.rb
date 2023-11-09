@@ -35,7 +35,7 @@ module MemberTracker
     end
     enable :sessions
     before do # need to comment this for RSpec
-      puts request.path_info
+      #puts request.path_info
       next if ['/login', '/check/mbrship/status'].include?(request.path_info)
       if session[:auth_user_id].nil?
         redirect '/login'
@@ -282,6 +282,79 @@ module MemberTracker
     end
     ################### END API ###########################
     ################### START MEMBER MGR ##################
+    get '/r/member/mbr_survey' do
+      #used to select members by their answers to jotform survey
+      @codes = [{T1: "Portable Operating, SOTA POTA", T2: "Contesting", T3: "Beginner operating tutorials",
+      T4: "Technical theory & construction", T5: "Product Demos", T6: "Radio History", T7: "Distance Comms, DX, DXpeditions",
+      T8: "Digital Modes: FT8 etc", T9: "Propagation and antennas", T10: "Emergency Preparedness, ARES, RACES",
+      T11: "Other"}, {F1: "HF", F2: "VHF/UHF", F3: "Microwave", F4: "Low Frequency (LF)"}, {M1: "Voice Phone (SSB, FM, etc)",
+      M2: "CW", M3: "Digital (FT8, RTTY, etc)", M4: "None, new at this", M5: "Other"}]
+      erb :m_survey, :layout => :layout_w_logout
+    end
+    post '/r/member/mbr_survey' do
+      codes = {T1: "Portable Operating, SOTA POTA", T2: "Contesting", T3: "Beginner operating tutorials",
+      T4: "Technical theory & construction", T5: "Product Demos", T6: "Radio History", T7: "Distance Comms, DX, DXpeditions",
+      T8: "Digital Modes: FT8 etc", T9: "Propagation and antennas", T10: "Emergency Preparedness, ARES, RACES",
+      T11: "Topics other", F1: "HF", F2: "VHF/UHF", F3: "Microwave", F4: "Low Frequency (LF)", M1: "Voice Phone (SSB, FM, etc)",
+      M2: "CW", M3: "Digital (FT8, RTTY, etc)", M4: "None, new at this", M5: "Modes other"}
+      #load query questions passed in params
+      @responses_selected_display = []
+      responses_selected = []
+      col_count = 0
+      row_array = []
+      params.each do |k,v|
+        if col_count > 0
+          col_count = 0
+          row_array[1] = codes[k.to_sym]
+          @responses_selected_display << row_array
+        else
+          col_count = 1
+          row_array = [codes[k.to_sym]]
+        end
+      end
+      if col_count == 1
+        @responses_selected_display << row_array
+      end
+      #now extract members who responded accordingly
+      #get symbols for parsing mbrs survey results
+      params.each do |k, v|
+        responses_selected << k
+      end
+      mbrs_with_survey_results = @member.get_jf_data
+      #pull out those with responses that match query
+      mbrs_selected_ids = []
+      mbrs_with_survey_results.each do |mbr|
+        mbr[1].each do |resp_code|
+          if responses_selected.include?(resp_code)
+            mbrs_selected_ids << mbr[0]
+            break
+          end
+        end
+      end
+      #get details on the members
+      @mbrs_in_survey = []
+      emails = []
+      @members = DB[:members].as_hash(:id, [:lname, :fname, :callsign, :mbrship_renewal_date,
+        :email, :mbr_since])
+      mbrs_selected_ids.each do |id|
+        h = {}
+        mbr = @members[id]
+        emails << mbr[4]
+        h[:mbr_id] = id
+        h[:fname] = mbr[0]
+        h[:lname] = mbr[1]
+        h[:callsign] = mbr[2]
+        h[:ren_date] = mbr[3]
+        h[:email] = mbr[4].strip
+        h[:mbr_since] = mbr[5]
+        @mbrs_in_survey << h
+      end
+      @emails = ""
+      emails.each do |em|
+        @emails << "#{em.strip}, "
+      end
+      erb :m_survey_result, :layout => :layout_w_logout
+    end
     get '/r/member/mbr_rpt' do
       
       #@current_yr = Date.year
