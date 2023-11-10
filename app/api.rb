@@ -325,8 +325,10 @@ module MemberTracker
       mbrs_selected_ids = []
       mbrs_with_survey_results.each do |mbr|
         mbr[1].each do |resp_code|
+          #at this point if _any one_ code matches an answer given on jotform, the mbr is added
+          #this approach would need to change if wanted to implement AND logic
           if responses_selected.include?(resp_code)
-            mbrs_selected_ids << mbr[0]
+            mbrs_selected_ids << [mbr[0], mbr[2]]
             break
           end
         end
@@ -336,17 +338,18 @@ module MemberTracker
       emails = []
       @members = DB[:members].as_hash(:id, [:lname, :fname, :callsign, :mbrship_renewal_date,
         :email, :mbr_since])
-      mbrs_selected_ids.each do |id|
+      mbrs_selected_ids.each do |ids|
         h = {}
-        mbr = @members[id]
+        mbr = @members[ids[0]]
         emails << mbr[4]
-        h[:mbr_id] = id
+        h[:mbr_id] = ids[0]
         h[:fname] = mbr[0]
         h[:lname] = mbr[1]
         h[:callsign] = mbr[2]
         h[:ren_date] = mbr[3].strftime("%Y-%m")
         h[:email] = mbr[4].strip
         h[:mbr_since] = mbr[5]
+        h[:log_id] = ids[1]
         @mbrs_in_survey << h
       end
       @emails = ""
@@ -354,6 +357,11 @@ module MemberTracker
         @emails << "#{em.strip}, "
       end
       erb :m_survey_result, :layout => :layout_w_logout
+    end
+    get '/r/log/logNote/show/:id' do
+      logs = DB[:logs]
+      @note = logs.where(id: params[:id]).get(:notes)
+      erb :l_note_show, :layout => :layout_w_logout
     end
     get '/r/member/mbr_rpt' do
       

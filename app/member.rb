@@ -118,7 +118,7 @@ module MemberTracker
               question_h[:mode].each do |mode|
                 codes << categorize_survey(mode, :mode)
               end
-              mbr_codes << [logid[0],codes]
+              mbr_codes << [logid[0],codes,logid[1]]
             else
               puts "nothing found"
             end
