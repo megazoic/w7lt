@@ -53,13 +53,15 @@ module MemberTracker
       return 0
     end
     def get_jf_data
-      #returns members and their answers on jotform renewal in form {id: int, codes: ["T1", "F1"]}
+      #returns members and their answers on jotform renewal in form {mbr_id: int, codes: ["T1", "F1"],
+      # log_id: int}
       #where T, F and M correspond to sections in jotform survey Topics, Frequencies, Modes
       #only members who have submitted new and renewing memberships within the last year are included
         payments = DB[:payments]
         logs = DB[:logs]
         log_ids = []
         start_date = DateTime.now
+        other = {:topics=>[], :modes=>[]}
         payments.where(payment_type_id: 5).each do |pmt|
           if  (start_date - 365) < pmt[:ts].to_datetime
             log_ids << [pmt[:mbr_id], pmt[:log_id]]
@@ -110,25 +112,48 @@ module MemberTracker
             if !question_h[active_q].empty?
               codes = []
               question_h[:topic].each do |topic|
-                codes << categorize_survey(topic, :topic)
+                #there is 'other' choice with textbox response. Grab this
+                topic_response = categorize_survey(topic, :topic)
+                if /^T11\|/.match(topic_response)
+                  codes << "T11"
+                  other[:topics] << topic_response.split('|')[1]
+                else
+                  codes << topic_response
+                end
+                #codes << categorize_survey(topic, :topic)
               end
               question_h[:freq].each do |freq|
                 codes << categorize_survey(freq, :freq)
               end
               question_h[:mode].each do |mode|
-                codes << categorize_survey(mode, :mode)
+                mode_response = categorize_survey(mode, :mode)
+                if /^F5\|/.match(mode_response)
+                  #there is 'other' choice with textbox response. Grab this
+                  codes << "F5"
+                  other[:modes] << mode_response.split('|')[1]
+                else
+                  codes << mode_response
+                end
               end
-              mbr_codes << [logid[0],codes,logid[1]]
+              #(0)mbr_id, (1)all checkboxes checked, (2)log_id, (3)other input
+              codes_pkg = [logid[0],codes,logid[1],""]
+              other.each do |k,v|
+                if !v.empty?
+                  codes_pkg[3] += "#{k}:#{v}"
+                  other[k]=[]
+                end
+              end
+              mbr_codes << codes_pkg
             else
               puts "nothing found"
             end
-          end
-        end
+          end #if jotform regexp
+        end #log_ids.each
         #mbr_codes.each do |k,v|
         #  puts "id: #{k}, codes: #{v}"
         #end
         mbr_codes
-      end
+    end
     def categorize_survey(answer_str, question_symbol)
       #returns a category(type:string) for the answer string
       return_code = nil
@@ -143,7 +168,7 @@ module MemberTracker
         end
         if return_code.nil?
           #this is 'other'
-          return_code = "T11"
+          return_code = "T11|#{answer_str}"
         end
       when :freq
         h = {F1: /^Hig/, F2: /^VHF/, F3: /^Mic/, F4: /^Low/, F5: /^Non/}
@@ -157,6 +182,10 @@ module MemberTracker
         h.each do |k,v|
           if v.match(answer_str)
             return_code = k.to_s
+          end
+          if return_code.nil?
+            #this is 'other'
+            return_code = "F5|#{answer_str}"
           end
         end
         if return_code.nil?

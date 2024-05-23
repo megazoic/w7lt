@@ -3,21 +3,25 @@
     <% title = ["Topics", "Frequencies", "Modes"] %>
     <% @codes.each do |codegroup| %>
       <h3><%="#{title.shift}"%></h3>
-      <br />
+      <table>
       <% codegroup.each do |k,v| %>
-        
-        <label for=<%= k.to_s %>><%= v %>
+        <tr>
+        <td>
+        <label for=<%= k.to_s %>><%= "#{v}(#{@response_tally[k]})" %></label>
+        </td>
+        <td>
         <input
           id="<%=k.to_s%>"
           type="checkbox"
-          name=<%="#{k.to_s}"%>
+          name=<%=k.to_s%>
           value=1 />
-        </label>
-        <br />
+        </td>
+        </tr>
       <% end %>
-      <br />
-      <hr />
+      </table>
     <% end %>
+    <h3>Other choices</h3>
+    <p><%=@other_choices%></p>
+    <input type="submit" value="Submit"> | <a href="/r/member/list">Cancel</a>
   </div>
-  <input type="submit" value="Submit"> | <a href="/r/member/list">Cancel</a>
 </form>

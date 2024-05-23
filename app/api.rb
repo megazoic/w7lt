@@ -284,11 +284,26 @@ module MemberTracker
     ################### START MEMBER MGR ##################
     get '/r/member/mbr_survey' do
       #used to select members by their answers to jotform survey
-      @codes = [{T1: "Portable Operating, SOTA POTA", T2: "Contesting", T3: "Beginner operating tutorials",
+      @codes = [{T1: "Portable Operating, SOTA POTA", T2:"Contesting", T3: "Beginner operating tutorials",
       T4: "Technical theory & construction", T5: "Product Demos", T6: "Radio History", T7: "Distance Comms, DX, DXpeditions",
       T8: "Digital Modes: FT8 etc", T9: "Propagation and antennas", T10: "Emergency Preparedness, ARES, RACES",
-      T11: "Other"}, {F1: "HF", F2: "VHF/UHF", F3: "Microwave", F4: "Low Frequency (LF)"}, {M1: "Voice Phone (SSB, FM, etc)",
-      M2: "CW", M3: "Digital (FT8, RTTY, etc)", M4: "None, new at this", M5: "Other"}]
+      T11: "Other"}, {F1: "HF", F2: "VHF/UHF", F3: "Microwave", F4: "Low Frequency (LF)",
+      F5: "None of these"}, {M1: "Voice Phone (SSB, FM, etc)", M2: "CW", M3: "Digital (FT8, RTTY, etc)",
+      M4: "None, new at this", M5: "Other"}]
+      #get a summary of the responses
+      survey_responses = @member.get_jf_data
+      @response_tally = {T1: 0, T2: 0, T3: 0, T4: 0, T5: 0, T6: 0, T7: 0, T8: 0, T9: 0, T10: 0, T11: 0,
+        F1: 0, F2: 0, F3: 0, F4: 0, F5: 0, M1: 0, M2: 0, M3: 0, M4: 0, M5: 0}
+      #tally up the responses by adding to the @codes
+      @other_choices = ""
+      survey_responses.each do |r|
+        r[1].each do |code|
+          @response_tally[code.to_sym] += 1
+        end
+        if !r[3].empty?
+          @other_choices << "#{r[3]}\r"
+        end
+      end
       erb :m_survey, :layout => :layout_w_logout
     end
     post '/r/member/mbr_survey' do
