@@ -379,7 +379,7 @@ module MemberTracker
       erb :l_note_show, :layout => :layout_w_logout
     end
     get '/r/member/mbr_rpt' do
-      
+
       #@current_yr = Date.year
       erb :m_rpt_date_query, :layout => :layout_w_logout
     end
@@ -429,6 +429,7 @@ module MemberTracker
       @rpt[:lic_tech] = active_mbrs.where(license_class: "tech").count
       @rpt[:lic_gen] = active_mbrs.where(license_class: "general").count
       @rpt[:lic_extra] = active_mbrs.where(license_class: "extra").count
+      @rpt[:lic_GMRS] = active_mbrs.where(license_class: "GMRS").count
       @rpt[:type_honorary] = active_mbrs.where(mbr_type: "honorary").count
       @rpt[:type_lifetime] = active_mbrs.where(mbr_type: "lifetime").count
       @rpt[:type_family] = active_mbrs.where(mbr_type: "family").count
@@ -906,7 +907,7 @@ module MemberTracker
     end
     post '/m/log/create' do
       l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, notes: params[:notes])
-      
+
       if params[:mbr_id].nil?
         #a general log (for now)
         l.action_id = Action.get_action_id("general_log")
@@ -1104,7 +1105,7 @@ module MemberTracker
         #check callsign and license class TODO also, this should be an associate member if paying
         if params[:license_class] == 'none'
           if params[:callsign] == ''
-            #need to put a standardized non-callsign if empty 
+            #need to put a standardized non-callsign if empty
             params[:callsign] = 'NO CALL'
           else
             #TODO reject this as there has to be a license class with a callsign
@@ -1516,7 +1517,7 @@ module MemberTracker
             #[[1999-01-08 04:05:06 -0800, ["al_id", "a_user_id", "column",  "old_value", "new_value"]]
             while a = array_of_sorted_auditlogs.pop
               if a[0] >= unit.ts
-                case a[1][2] 
+                case a[1][2]
                 when "paid_up"
                   m.paid_up = a[1][3]
                   augmented_notes << "\nsetting paid_up for #{m.callsign} to #{m.paid_up}"
@@ -2180,7 +2181,7 @@ module MemberTracker
                 v.save
               end
             end
-          end          
+          end
         end
         session[:msg] = 'Payment was successfully recorded'
       rescue StandardError => e
@@ -2506,7 +2507,7 @@ module MemberTracker
         session[:msg] = "The existing renewal could not be updated: Incorrect renewal year"
         redirect '/m/mbr_renewals/show'
       end
-      mbr_renewal_record = 
+      mbr_renewal_record =
        DB[:mbr_renewals].select(:a_user_id, :renewal_event_type_id, :notes, :ts, :mbr_id).where(id: params[:rnwal_id]).first
       member_record = DB[:members].select(:mbrship_renewal_date, :mbrship_renewal_halt,
        :mbrship_renewal_active, :mbrship_renewal_contacts, :email_bogus).where(id: mbr_renewal_record[:mbr_id]).first

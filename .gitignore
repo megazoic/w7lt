@@ -19,6 +19,8 @@ routes.txt
 design/*
 *.csv*
 *.xlsx
+#config file
+.bundle
 
 #ignore folder
 ignore/*
