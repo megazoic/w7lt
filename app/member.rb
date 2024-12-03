@@ -16,7 +16,7 @@ module MemberTracker
     class << self
       attr_reader :mbr_types, :modes
     end
-    
+
     def record(member_data)
       unless member_data.key?('lname')
         message = 'Invalid member: \'lname\' is required'
@@ -48,7 +48,7 @@ module MemberTracker
       end
       dupe_member = Member.where(guest_to_test).first
       if !dupe_member.nil?
-        return 1
+        return dupe_member.id
       end
       return 0
     end

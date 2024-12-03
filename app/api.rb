@@ -722,8 +722,8 @@ module MemberTracker
                 guest.msng_values = "This guest has too few fields entered #{ng}; enter as new member and add to event attendee list"
                 next
               end
-              #test for duplicates. expecting 0 not a dupe, 1 is a dupe
-              if @member.validate_dupes(ng) == 1
+              #test for duplicates. expecting 0 not a dupe, any mbr_id is a dupe
+              if @member.validate_dupes(ng) > 0
                 #Houston, we have a problem
                 guest.duplicate << ng
                 guest.msng_values = "A guest with same credentials as a member was found. #{ng}"
@@ -1090,8 +1090,10 @@ module MemberTracker
         if !params.has_key?("override")
           #need to validate that this member is not already in the db
           #@existing_mbrs = Member.where(fname: params[:fname], lname: params[:lname]).all
-          if @member.validate_dupes({fname: params[:fname], lname: params[:lname]}) == 1
+          dupe_test_result = @member.validate_dupes({fname: params[:fname], lname: params[:lname]})
+          if dupe_test_result > 0
             #we have a possible existing member here
+            @member = Member[dupe_test_result]
             @mbr = params
             @modes = Member.modes
             #Send this back for validation
