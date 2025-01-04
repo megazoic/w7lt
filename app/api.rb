@@ -984,9 +984,10 @@ module MemberTracker
           session[:msg] = "there are no logs to view"
           redirect '/home'
         end
-     else
+      else
         #shouldn't be here
       end
+      @logs.reverse!
       erb :l_list, :layout => :layout_w_logout
     end
     get '/r/member/list/?:event?' do
