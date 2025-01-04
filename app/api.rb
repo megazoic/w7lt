@@ -968,6 +968,7 @@ module MemberTracker
               h[:action] = l.action.type
               h[:au_name] = "#{l.auth_user.member.fname} #{l.auth_user.member.lname}"
               @logs << h
+              @logs.reverse!
             end
           end
         end
@@ -987,7 +988,6 @@ module MemberTracker
       else
         #shouldn't be here
       end
-      @logs.reverse!
       erb :l_list, :layout => :layout_w_logout
     end
     get '/r/member/list/?:event?' do
