@@ -825,6 +825,7 @@ module MemberTracker
       @event = Event[params[:id]]
       @attendees =[]
       @attendee_emails = ''
+      @attendee_list = ''
       #create hash with 2 keys, :same, :other  and a count of number times attended that event type
       etypes = []
       MemberTracker::EventType.select(:id).each do |et|
@@ -859,11 +860,14 @@ module MemberTracker
           mbr_tmp_hash[:mbrship_renewal_date] = 'none'
         end
         @attendees << mbr_tmp_hash
+        @attendee_list << "#{mbr_tmp_hash[:fname]} #{mbr_tmp_hash[:lname]}, "
         if !mbr.email.nil?
           @attendee_emails << "#{mbr.email},"
         end
         mbr_tmp_hash = {}
       end
+      #clean up attendee list
+      @attendee_list.chomp!(', ')
       #clean up email list
       @attendee_emails.chomp!(',')
       #look for guest attendees in the log notes
