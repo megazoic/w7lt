@@ -153,11 +153,11 @@ namespace :db do
     #script to apply latest dues payment date to members#mbrship_renewal_date
     require "sequel"
     require "./app/api.rb"
-    mbrs = DB[:members].all
+    mbrs = DB[:members]
     mbrs.each do |mbr|
       if /^\s/.match(mbr[:email])
         tmp_email = mbr[:email].lstrip!
-        mbr.update(email: tmp_email)
+        mbrs.where(id: mbr[:id]).update(email: tmp_email)
         #DB[:members].first(id: mbr[:id]).update(email: tmp_email)
         puts "got it: #{tmp_email}"
       end
