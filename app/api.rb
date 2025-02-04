@@ -78,8 +78,16 @@ module MemberTracker
     get '/' , :provides => 'html' do
       puts 'in get and html'
     end
-    get '/' , :provides => 'json' do
+    get '/api/mbr_sync/SP2ejIsG/:secret' , :provides => 'json' do
+      if params[:secret] != ENV['MBRSYNC_SECRET']
+        return JSON.generate("sorry")
+      end
       puts 'in get and json'
+      #members with mbrship_renewal_date > renewal date - 1 year will be current
+      m = DB[:members]
+      active_mbrs = m.where{mbrship_renewal_date >= Date.today.prev_year}.as_hash(:id, [:fname, :lname, :email])
+      #build out payload
+      JSON.generate(active_mbrs)
     end
     get '/check/mbrship/status' do
       @tmp_msg = session[:msg]
