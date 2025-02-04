@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-ruby '3.1.6'
+ruby '3.2.3'
 
 
 gem 'rackup', '2.2.0'
