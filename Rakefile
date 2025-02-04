@@ -148,6 +148,21 @@ namespace :db do
       puts "logId: #{q_array[0]}, mbrid: #{q_array[1]}, codes: #{q_array[2]}"
     end
   end
+  desc "Removing whitespace from emails"
+  task :mbrship_email_clean do
+    #script to apply latest dues payment date to members#mbrship_renewal_date
+    require "sequel"
+    require "./app/api.rb"
+    mbrs = DB[:members].all
+    mbrs.each do |mbr|
+      if /^\s/.match(mbr[:email])
+        tmp_email = mbr[:email].lstrip!
+        mbr.update(email: tmp_email)
+        #DB[:members].first(id: mbr[:id]).update(email: tmp_email)
+        puts "got it: #{tmp_email}"
+      end
+    end
+  end
 end
 #methods available to tasks
 def categorize(answer_str, question_symbol)
