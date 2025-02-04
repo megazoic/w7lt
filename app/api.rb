@@ -587,12 +587,11 @@ module MemberTracker
       erb :e_create, :layout => :layout_w_logout
     end
     post '/m/event/create' do
-=begin
-      params {"general_notes"=>"a newer one", "event_type_id"=>"1", "name"=>"andSo", "descr"=>"a desc",
-      "duration"=>"3" OR "none", "duration_units"=>"hrs", "guest_notes"=>"last,name;last2,name2",
-      "g0:fname"=>"Myron", "g0:lname"=>"Dembo", "g0:callsign"=>"A7MYR", "g0:email"=>"*guest email",
-      "g0:notes"=>"some notes for guest0",..., "mbr_id"=>"478", "id:481"=>"1", "id:479"=>"1"}
-=end
+     #params {"general_notes"=>"a newer one", "event_type_id"=>"1", "name"=>"andSo", "descr"=>"a desc",
+      #"duration"=>"3" OR "none", "duration_units"=>"hrs", "guest_notes"=>"last,name;last2,name2",
+      #"g0:fname"=>"Myron", "g0:lname"=>"Dembo", "g0:callsign"=>"A7MYR", "g0:email"=>"*guest email",
+      #"g0:notes"=>"some notes for guest0",..., "mbr_id"=>"478", "id:481"=>"1", "id:479"=>"1"}
+
       ######validate presence of contact member, event type, date, if duration also units ###########
       valid_form = true
       if params[:mbr_id].nil?
