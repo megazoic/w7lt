@@ -1098,7 +1098,7 @@ module MemberTracker
         #set the character case to upper for name and email
         params[:fname] = params[:fname].upcase
         params[:lname] = params[:lname].upcase
-        params[:email] = params[:email].upcase
+        params[:email] = params[:email].upcase.lstrip
         #if coming back with override = 1, let this go through, else...
         if !params.has_key?("override")
           #need to validate that this member is not already in the db
@@ -1159,7 +1159,7 @@ module MemberTracker
         #set the character case to upper for name, email and callsign
         params["fname"] = params["fname"].upcase
         params["lname"] = params["lname"].upcase
-        params["email"] = params["email"].upcase
+        params["email"] = params["email"].upcase.lstrip
         #fix renewal date if there is one
         if params["mbrship_renewal_date"] != ""
           params["mbrship_renewal_date"] = Date.strptime(params["mbrship_renewal_date"],'%D')
