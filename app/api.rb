@@ -37,7 +37,7 @@ module MemberTracker
     if ENV["RACK_ENV"] == 'production'
       before do # need to comment this for RSpec
         #puts request.path_info
-        next if ['/login', '/api/mbr_sync/SP2ejIsG/:secret'].include?(request.path_info)
+        next if ['/login', "/api/mbr_sync/SP2ejIsG/#{ENV['MBRSYNC_SECRET']}"].include?(request.path_info)
         if session[:auth_user_id].nil?
           redirect '/login'
           #elsif session[:auth_user_id] == 'reset'
