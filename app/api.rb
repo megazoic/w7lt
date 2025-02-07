@@ -34,13 +34,15 @@ module MemberTracker
       super()
     end
     enable :sessions
-    before do # need to comment this for RSpec
-      #puts request.path_info
-      next if ['/login', '/check/mbrship/status'].include?(request.path_info)
-      if session[:auth_user_id].nil?
-        redirect '/login'
-        #elsif session[:auth_user_id] == 'reset'
-        #redirect "/reset_password/#{XXX}"
+    if ENV["RACK_ENV"] == 'production'
+      before do # need to comment this for RSpec
+        #puts request.path_info
+        next if ['/login', '/api/mbr_sync/SP2ejIsG/:secret'].include?(request.path_info)
+        if session[:auth_user_id].nil?
+          redirect '/login'
+          #elsif session[:auth_user_id] == 'reset'
+          #redirect "/reset_password/#{XXX}"
+        end
       end
     end
     before '/a/*' do
@@ -90,6 +92,7 @@ module MemberTracker
       JSON.generate(active_mbrs)
     end
     get '/check/mbrship/status' do
+      puts ENV["RACK_ENV"]
       @tmp_msg = session[:msg]
       session[:msg] = nil
       erb :mbrship_status, :layout => :layout
