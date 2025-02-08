@@ -44,6 +44,12 @@ module MemberTracker
           #redirect "/reset_password/#{XXX}"
         end
       end
+    else
+      before do
+        #give dev user credentials NOTE there must be an auth_user in the auth_users table with id == 22
+        session[:auth_user_id] = 22
+        session[:auth_user_roles] =['auth_u', 'mbr_mgr']
+      end
     end
     before '/a/*' do
       authorize!("auth_u")
