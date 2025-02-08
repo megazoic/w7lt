@@ -36,19 +36,23 @@ module MemberTracker
       end
       mbrs_to_send_2nd_notice
     end
-    def MbrRenewal.getRenewRangeStart
-      #return the date of latest entry that corresponds to either a reminder was sent or
-      #a missing email discovered * RENEWAL_WINDOW (weeks)
-      rs_id = RenewalEventType.getID("1st reminder sent")
-      no_eml = RenewalEventType.getID("missing email")
-      latest_hash = DB.from(:mbr_renewals).where(renewal_event_type_id: [rs_id, no_eml]).reverse_order(:ts).first
-      date = Date.parse(latest_hash[:ts].to_s)
+    def MbrRenewal.getRenewRangeStart(auth_user_id)
+      #return the date of latest entry that corresponds to latest log with action id = 'mbr_renew_check'
+      #OLD-->either a reminder was sent or a missing email discovered * RENEWAL_WINDOW (weeks)<--OLD
+      #look up last mbr_renew_check in log
+      latest_renew_check = DB.from(:logs).where(action_id: Action.get_action_id("mbr_renew_check")).reverse_order(:ts).first
+      date = Date.parse(latest_renew_check[:ts].to_s)
+      #rs_id = RenewalEventType.getID("1st reminder sent")
+      #no_eml = RenewalEventType.getID("missing email")
+      #latest_hash = DB.from(:mbr_renewals).where(renewal_event_type_id: [rs_id, no_eml]).reverse_order(:ts).first
+      #date = Date.parse(latest_hash[:ts].to_s)
       #catch entry that is same as today (i.e. already checked today)
-      if date > Date.today 
+      if date > Date.today
         return "error"
       elsif date == Date.today
         return "wait"
       end
+
       date - (365 - RENEWAL_WINDOW)
     end
     def MbrRenewal.getNewMbrshipRenewalDate(mbr_id, mbr_type)

@@ -86,17 +86,6 @@ module MemberTracker
     get '/' , :provides => 'html' do
       puts 'in get and html'
     end
-    get '/api/mbr_sync/SP2ejIsG/:secret' , :provides => 'json' do
-      if params[:secret] != ENV['MBRSYNC_SECRET']
-        return JSON.generate("sorry")
-      end
-      puts 'in get and json'
-      #members with mbrship_renewal_date > renewal date - 1 year will be current
-      m = DB[:members]
-      active_mbrs = m.where{mbrship_renewal_date >= Date.today.prev_year}.as_hash(:id, [:fname, :lname, :email])
-      #build out payload
-      JSON.generate(active_mbrs)
-    end
     get '/check/mbrship/status' do
       puts ENV["RACK_ENV"]
       @tmp_msg = session[:msg]
@@ -168,7 +157,7 @@ module MemberTracker
         return JSON.generate("sorry")
       end
       #find most recent date email reminders were sent out or date only individuals without emails were retreived
-      start_date = MbrRenewal.getRenewRangeStart
+      start_date = MbrRenewal.getRenewRangeStart(session[:auth_user_id])
       if start_date == "error"
         return JSON.generate("bad date range")
       elsif start_date == "wait"
@@ -282,6 +271,10 @@ module MemberTracker
           notes: 'automated entry', ts: DateTime.now)
         end
       end
+      #log this event to estabilish beginning of next renewal window
+      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: Action.get_action_id("mbr_renew_check"))
+      l.save
+
       if send_reminders_out[1].nil?
         JSON.generate("empty search")
       else
@@ -296,6 +289,17 @@ module MemberTracker
       mbrs_to_2nd_reminder = []
       mbrs_to_2nd_reminder = MbrRenewal.get2ndNotice
       JSON.generate(mbrs_to_2nd_reminder)
+    end
+    get '/api/mbr_sync/SP2ejIsG/:secret' , :provides => 'json' do
+      if params[:secret] != ENV['MBRSYNC_SECRET']
+        return JSON.generate("sorry")
+      end
+      puts 'in get and json'
+      #members with mbrship_renewal_date > renewal date - 1 year will be current
+      m = DB[:members]
+      active_mbrs = m.where{mbrship_renewal_date >= Date.today.prev_year}.as_hash(:id, [:fname, :lname, :email])
+      #build out payload
+      JSON.generate(active_mbrs)
     end
     ################### END API ###########################
     ################### START MEMBER MGR ##################
