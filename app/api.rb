@@ -48,7 +48,7 @@ module MemberTracker
       before do
         #give dev user credentials NOTE there must be an auth_user in the auth_users table with id == 22
         session[:auth_user_id] = 22
-        session[:auth_user_roles] =['auth_u', 'mbr_mgr']
+        session[:auth_user_roles] =['auth_u', 'mbr_mgr', 'read_only']
       end
     end
     before '/a/*' do
@@ -149,6 +149,11 @@ module MemberTracker
       @member_lnames = Member.select(:id, :lname).order(:lname).all
       @tmp_msg = session[:msg]
       session[:msg] = nil
+      #display last time system checked members up for renewal
+      if @tmp_msg.nil?
+        latest_renew_check = DB.from(:logs).where(action_id: Action.get_action_id("mbr_renew_check")).reverse_order(:ts).first
+        @tmp_msg = latest_renew_check[:ts].strftime("Renewals last checked on %m/%d/%Y")
+      end
       erb :home, :layout => :layout_w_logout
     end
     ################### START API #########################
