@@ -2522,14 +2522,28 @@ module MemberTracker
         end
       end
       #get data from table mbr_renewals and display
-      mrs = DB[:mbr_renewals].reverse_order(:ts).all
+      mrs = DB[:mbr_renewals].where(ts: (Date.today - 365)..(Date.today)).order(:ts).all
       @renewals = []
       mrs.each do |mr|
         @renewals << {id: mr[:id], fname: Member[mr[:mbr_id]].fname, lname: Member[mr[:mbr_id]].lname,
-          mbr_callsign: Member[mr[:mbr_id]].callsign, recorded_by: Auth_user[mr[:a_user_id]].member.callsign,
+          callsign: Member[mr[:mbr_id]].callsign, recorded_by: Auth_user[mr[:a_user_id]].member.callsign,
           event_type: RenewalEventType[mr[:renewal_event_type_id]].name,
           notes: mr[:notes], ts: mr[:ts]}
       end
+      mbr_dues_payments = DB[:payments].select(:id, :ts, :a_user_id, :mbr_id).where(payment_type_id: 5, ts: (Date.today - 365)..(Date.today)).order(:ts).all
+      #replace authorized user id, and add event type = renewal
+      if !mbr_dues_payments.empty?
+        mbr_dues_payments.each do |md|
+          md.store(:recorded_by, Auth_user[md[:a_user_id]].member.callsign)
+          md.store(:event_type, "dues payment")
+          md.store(:fname, Member[md[:mbr_id]].fname)
+          md.store(:lname, Member[md[:mbr_id]].lname)
+          md.store(:callsign, Member[md[:mbr_id]].callsign)
+        end
+      end
+      @renewals.concat(mbr_dues_payments)
+      @renewals.sort_by!{|r| r[:ts]}
+      @renewals.reverse!
       erb :m_rnwal_show, :layout => :layout_w_logout
     end
     get '/m/mbr_renewals/edit/:id' do
