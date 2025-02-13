@@ -33,7 +33,7 @@ Volunteer:<br />VE <span class="highlight"><%=@member[:ve].to_i == 0 ? "N" : "Y"
 <br /><%end%>
 <%if !@member[:mbrship_renewal_date].nil?%>
   <p><a href="/m/mbr_renewals/new/<%= @member[:id]%>">Add Renewal Data</a>
-  <p>Existing Renewal Data
+  <h4>Existing Renewal Data</h4>
   <table>
     <tr>
     <td>Renewal is Active</td>
@@ -66,11 +66,13 @@ Volunteer:<br />VE <span class="highlight"><%=@member[:ve].to_i == 0 ? "N" : "Y"
       </thead>
     <%@mbr_renewals.each do |mr|%>
       <tr>
-        <td><%=mr[:event_type_id]%></td>
+        <td><%=mr[:renewal_type]%></td>
         <td><%=mr[:a_user_id]%></td>
-        <td><%=mr[:notes][0,20]%></td>
-        <td><%=mr[:ts]%></td>
-        <td><a href=<%="/m/mbr_renewals/edit/#{mr[:id]}"%>>edit</a></td>
+        <td><%=mr[:notes]%></td>
+        <td><%=mr[:ts].strftime("%D")%></td>
+        <td><%if mr[:renewal_type] == "dues payment" %><a href=<%="/m/payments/edit/#{mr[:id]}"%>
+          <% else %><a href=<%="/m/mbr_renewals/edit/#{mr[:id]}"%>
+          <%end %>>edit</a></td>
       </tr>
     <%end%>
     </table>
@@ -78,6 +80,25 @@ Volunteer:<br />VE <span class="highlight"><%=@member[:ve].to_i == 0 ? "N" : "Y"
 <%elsif @member[:mbr_type] != "honorary"%>
   <h3>This user is a guest</h3>Use log notes to track attempts to get this user to sign up as a member
 <%end%>
+<h4>Donations</h4>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Date</th>
+      <th>Amount</th>
+    </tr>
+  </thead>
+  <body>
+    <%@mbr_donations.each do |md_key, md_val|%>
+    <tr>
+      <td><%=md_val[:payment_type]%></td>
+      <td><%=md_val[:date]%></td>
+      <td><%=md_val[:amount]%></td>
+    </tr>
+    <%end%>
+  </body>
+</table>
 <h4>Log notes:</h4>
 <a href="/m/log/create/<%=@member[:id]%>">Add a log note for this member</a>
 <br />

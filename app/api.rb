@@ -1035,14 +1035,32 @@ module MemberTracker
       session[:msg] = nil
       @member = Member[params[:id]]
       @mbr_renewals = DB[:mbr_renewals].select(:id, :a_user_id, :renewal_event_type_id,
-        :notes, :ts).where(mbr_id: params[:id]).reverse_order(:ts).all
-      #replace timestamp, authorized user id, event type id
+        :notes, :ts).where(mbr_id: params[:id]).all
+      #replace authorized user id, event type id
       if !@mbr_renewals.empty?
         @mbr_renewals.each do |mr|
-          mr.store(:ts, mr[:ts].strftime("%D"))
           mr.store(:a_user_id, Auth_user[mr[:a_user_id]].member.callsign)
-          mr.store(:event_type_id, RenewalEventType[mr[:renewal_event_type_id]].name)
+          mr.store(:renewal_type, RenewalEventType[mr[:renewal_event_type_id]].name)
         end
+      end
+      mbr_dues_payments = DB[:payments].select(:id, :ts, :a_user_id).where(payment_type_id: 5, mbr_id: params[:id]).all
+      #replace authorized user id, and add event type = renewal
+      if !mbr_dues_payments.empty?
+        mbr_dues_payments.each do |md|
+          md.store(:a_user_id, Auth_user[md[:a_user_id]].member.callsign)
+          md.store(:renewal_type, "dues payment")
+        end
+      end
+      @mbr_renewals.concat(mbr_dues_payments)
+      @mbr_renewals.sort_by!{|r| r[:ts]}
+
+      #build mbr donations hash
+      @mbr_donations = {}
+      tmp_mbr_donations = DB[:payments].select(:id, :payment_type_id, :ts, :payment_amount)
+        .where(payment_type_id: [1,2,3,4], mbr_id: params[:id]).reverse_order(:ts).all
+      tmp_mbr_donations.each do |d|
+        p_type_str = DB[:payment_types].where(id: d[:payment_type_id]).first
+        @mbr_donations[d[:id]] = {payment_type: p_type_str[:type], date: d[:ts].strftime("%m/%d/%Y"), amount: d[:payment_amount]}
       end
       #convert mbrship_renewal_date
       if !@member[:mbrship_renewal_date].nil?
