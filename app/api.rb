@@ -2732,6 +2732,29 @@ module MemberTracker
       end
       redirect '/m/mbr_renewals/show'
     end
+    get '/m/mbr_actions/show' do
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
+      @mbr_actions = []
+      # for now, only one type of action
+      # 1 = call member action
+      mbr_actions = DB[:member_actions].where(member_action_type_id: 1).select(:id, :member_target, :tasked_to_mbr_id,
+        :a_user_id, :completed, :notes, :ts).order(:ts).all
+      mbrs = DB[:members].select(:id, :fname, :lname)
+      mbr_actions.each do |ma|
+        if ma[:tasked_to_mbr_id].nil?
+          ma[:tasked_to] = "none"
+        else
+          ma[:tasked_to] = "#{mbrs.where(id: ma[:tasked_to_mbr_id]).first[:fname]} #{mbrs.where(id: ma[:tasked_to_mbr_id]).first[:lname]}"
+        end
+        #remove tasked_to_mbr_id from the hash
+        ma.delete(:tasked_to_mbr_id)
+        @mbr_actions << {id: ma[:id], mbr_name: "#{mbrs.where(id: ma[:member_target]).first[:fname]} #{mbrs.where(id: ma[:member_target]).first[:lname]}",
+          a_user_name: "#{Auth_user[ma[:a_user_id]].member.fname} #{Auth_user[ma[:a_user_id]].member.lname}",
+          tasked_to: ma[:tasked_to], completed: ma[:completed], notes: ma[:notes], ts: ma[:ts]}
+      end
+      erb :m_action_show, :layout => :layout_w_logout
+    end
     ################### START ADMIN #######################
     get '/a/auth_user/list' do
       @au_list = []

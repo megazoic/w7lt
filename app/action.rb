@@ -1,6 +1,7 @@
 require_relative '../config/sequel'
 
 module MemberTracker
+  # This class is used to track the actions that are associated with a log entry.
   class Action < Sequel::Model
     #expect this table to hold mbr_edit, mbr_renew, login, volunteer_hrs, auth_u, unit, donation, event, general_log
     one_to_many :logs, :class=>"MemberTracker::Log", key: :action_id
