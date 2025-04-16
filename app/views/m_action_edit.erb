@@ -1,0 +1,36 @@
+<h1>Edit Member Action</h1>
+<form action="/m/mbr_actions/update/<%= @mbr_action[:id] %>" method="post">
+
+  <label for="tasked_to">Assign to Member:</label>
+  <input type="text" name="tasked_to_mbr_id" id="tasked_to" list="members" value="<%= @mbr_action[:tasked_to_mbr_id] %>" />
+  <datalist id="members">
+    <% @mbrs.each do |mbr| %>
+      <option value="<%= mbr[:id] %>"><%= "#{mbr[:name]} #{mbr[:callsign]}" %></option>
+    <% end %>
+  </datalist>
+  <br/>
+
+  <label for="completed">Mark as Completed:</label>
+  <input type="checkbox" name="completed" id="completed" value="1" <%= "checked" if @mbr_action[:completed] %> />
+  <br/>
+
+  <label for="notes">Notes:</label>
+  <textarea name="notes" id="notes" rows="4" cols="50"><%= @mbr_action[:notes] %></textarea>
+  <br/>
+
+  <button type="submit">Update Action</button>
+</form>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const taskedToInput = document.getElementById('tasked_to');
+    const members = <%= @mbrs.to_json.gsub('</', '<\/') %>;
+
+    taskedToInput.addEventListener('blur', () => {
+      const member = members.find(m => String(m.id) == String(taskedToInput.value));
+      if (member) {
+        taskedToInput.value = `${member.id} ${member.name} ${member.callsign}`;
+      }
+    });
+  });
+</script>

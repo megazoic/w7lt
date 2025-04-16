@@ -2738,6 +2738,7 @@ module MemberTracker
       @mbr_actions = []
       # for now, only one type of action
       # 1 = call member action
+      @action_type = DB[:member_action_types].select(:descr).where(id: 1).first
       mbr_actions = DB[:member_actions].where(member_action_type_id: 1).select(:id, :member_target, :tasked_to_mbr_id,
         :a_user_id, :completed, :notes, :ts).order(:ts).all
       mbrs = DB[:members].select(:id, :fname, :lname)
@@ -2754,6 +2755,43 @@ module MemberTracker
           tasked_to: ma[:tasked_to], completed: ma[:completed], notes: ma[:notes], ts: ma[:ts]}
       end
       erb :m_action_show, :layout => :layout_w_logout
+    end
+    get '/m/mbr_actions/edit/:id' do
+      @mbr_action = DB[:member_actions].where(id: params[:id]).first
+      @mbr_action[:tasked_to_mbr_id] = @mbr_action[:tasked_to_mbr_id].nil? ? "NONE" : @mbr_action[:tasked_to_mbr_id]
+      #get list of members to assign to this action
+      mbrs = DB[:members].select(:id, :fname, :lname, :callsign).all
+      @mbrs = []
+      mbrs.each do |m|
+        @mbrs << {id: m[:id], name: "#{m[:fname]} #{m[:lname]}", callsign: m[:callsign]}
+      end
+      erb :m_action_edit, :layout => :layout_w_logout
+    end
+    post '/m/mbr_actions/update/:id' do
+      #params are {"mbr_action_id"=>"1", "tasked_to_mbr_id"=>"NNN SOME NAME", "completed"=>"false", "notes"=>"some notes"}
+      #extract the member id from the tasked_to_mbr_id
+      params[:tasked_to_mbr_id] = params[:tasked_to_mbr_id].split(" ")[0].to_i
+
+      #check to see if there are any changes to be made to the members table
+      mbr_action = DB[:member_actions].where(id: params[:id]).first
+      #update the remaining member hash with values from param
+      mbr_action.each do |k,v|
+        if params.has_key?(k)
+          mbr_action[k] = params[k]
+        end
+      end
+      begin
+        DB.transaction do
+          #write members table data
+          if !mbr_action.empty?
+            DB[:member_actions].where(id: params[:id]).update(mbr_action)
+          end
+        end
+        session[:msg] = 'Action was successfully updated'
+      rescue StandardError => e
+        session[:msg] = "The action was not updated\n#{e}"
+      end
+      redirect '/m/mbr_actions/show'
     end
     ################### START ADMIN #######################
     get '/a/auth_user/list' do

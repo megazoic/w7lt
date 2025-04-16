@@ -1,27 +1,27 @@
 <br/>
-<h1>Member Actions</h1>
+<h1>Member Actions: <%= @action_type[:descr] %></h1>
 <table>
   <thead>
     <tr>
-      <th>ID</th>
       <th>Member Name</th>
       <th>Authorized User</th>
       <th>Tasked To</th>
       <th>Completed</th>
       <th>Notes</th>
       <th>Timestamp</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
     <% @mbr_actions.each do |ma| %>
       <tr>
-        <td><%= ma[:id] %></td>
         <td><%= ma[:mbr_name] %></td>
         <td><%= ma[:a_user_name] %></td>
         <td><%= ma[:tasked_to] %></td>
         <td><%= ma[:completed] ? 'Yes' : 'No' %></td>
         <td><%= ma[:notes] %></td>
-        <td><%= ma[:ts] %></td>
+        <td><%= ma[:ts].strftime("%m/%d/%Y") %></td>
+        <td><a href="/m/mbr_actions/edit/<%=ma[:id]%>">edit</a></td>
       </tr>
     <% end %>
   </tbody>
