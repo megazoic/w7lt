@@ -18,6 +18,8 @@ require_relative 'eventType'
 require_relative 'referType'
 require_relative 'mbrRenewal'
 require_relative 'renewalEventType'
+require_relative 'memberAction'
+require_relative 'memberActionType'
 
 module MemberTracker
   #using modular (cf classical) approach (see https://www.toptal.com/ruby/api-with-sinatra-and-sequel-ruby-tutorial)
@@ -1084,6 +1086,39 @@ module MemberTracker
       if @member[:modes] == '' || @member[:modes].nil?
         @member[:modes] = 'none'
       end
+      #look for requests to call from this member and if there is one, check that it is the only one uncompleted
+      call_requests = []
+      member_call_action_type_id = MemberActionType.where(name: "call_member").first[:id]
+      @member.member_actions.each do |ma|
+        if ma.member_action_type_id == member_call_action_type_id
+          call_requests << ma
+        end
+      end
+      #if there are any call requests, check that they are all completed
+      call_request_count = 0
+      if call_requests.length > 0
+        #check that only one is uncompleted
+        call_requests.each do |cr|
+          if cr.completed == false
+            call_request_count += 1
+            if call_request_count > 1
+              #we have more than one uncompleted call request
+              @member[:call_request] = "There are multiple uncompleted call requests for this member"
+              break
+            else
+              #we have only one uncompleted call request
+              if cr.notes != ''
+                @member[:call_request] = cr.notes
+              else
+                @member[:call_request] = 'none'
+              end
+            end
+          end
+        end
+      else
+        @member[:call_request] = nil
+      end
+      @member[:call_request_length] = call_request_count
       erb :m_edit, :layout => :layout_w_logout
     end
     get '/m/member/create' do
@@ -1095,54 +1130,60 @@ module MemberTracker
       erb :m_edit, :layout => :layout_w_logout
     end
     post '/m/member/create' do
-      #{"fname"=>"DAVE", "lname"=>"BURLEIGH", "callsign"=>"kn6tdv", "email"=>"", "email_bogus"=>"false", "ok_to_email"=>"true", "street"=>"", "city"=>"", "state"=>"", "zip"=>"", "phh"=>"", "phh_pub"=>"0", "phw"=>"", "phw_pub"=>"0", "phm"=>"", "phm_pub"=>"0", "license_class"=>"tech", "mbr_since"=>"2022-03", "notes"=>"", "refer_type_id"=>"none", "mbrship_renewal_date"=>"", "arrl"=>"0", "ares"=>"0", "net"=>"0", "ve"=>"0", "elmer"=>"0", "id"=>"827", "mode_phone"=>"0", "mode_cw"=>"0", "mode_rtty"=>"0", "mode_msk:ft8/jt65"=>"0", "mode_digital:other"=>"0", "mode_packet"=>"0", "mode_psk31/63"=>"0", "mode_video:sstv"=>"0", "mode_mesh"=>"0"}
+      params_hash = params.to_hash
+      #{"fname"=>"DAVE", "lname"=>"BURLEIGH", "callsign"=>"kn6tdv", "email"=>"", "callme"=>"on", "callwhy"=>"", "email_bogus"=>"false", "ok_to_email"=>"true", "street"=>"", "city"=>"", "state"=>"", "zip"=>"", "phh"=>"", "phh_pub"=>"0", "phw"=>"", "phw_pub"=>"0", "phm"=>"", "phm_pub"=>"0", "license_class"=>"tech", "mbr_since"=>"2022-03", "notes"=>"", "refer_type_id"=>"none", "mbrship_renewal_date"=>"", "arrl"=>"0", "ares"=>"0", "net"=>"0", "ve"=>"0", "elmer"=>"0", "id"=>"827", "mode_phone"=>"0", "mode_cw"=>"0", "mode_rtty"=>"0", "mode_msk:ft8/jt65"=>"0", "mode_digital:other"=>"0", "mode_packet"=>"0", "mode_psk31/63"=>"0", "mode_video:sstv"=>"0", "mode_mesh"=>"0"}
       #this route used to update an existing member or save a new member
+      #have to deal with request for a call from this member
+      call_request = params_hash["callme"]
+      params_hash.reject!{|k,v| k == "callme"}
+      call_why = params_hash["callwhy"]
+      params_hash.reject!{|k,v| k == "callwhy"}
       #these will be used to avoid dups when creating a new member
       @existing_mbrs = []
       @mbr = {}
       #this action is also logged
-      mbr_id = params[:id]
+      mbr_id = params_hash[:id]
       #save notes for log
-      notes = params[:notes]
-      params.reject!{|k,v| k == 'notes'}
-      logPayment = params[:payment]
-      params.reject!{|k,v| k == 'payment'}
+      notes = params_hash[:notes]
+      params_hash.reject!{|k,v| k == 'notes'}
+      logPayment = params_hash[:payment]
+      params_hash.reject!{|k,v| k == 'payment'}
       #the js form validator that uses regex inserts a captures key
       #in the returning params. need to pull this out too
-      params.reject!{|k,v| k == "captures"}
-      if params[:refer_type_id] == 'none'
-        params.reject!{|k,v| k == 'refer_type_id'}
+      params_hash.reject!{|k,v| k == "captures"}
+      if params_hash[:refer_type_id] == 'none'
+        params_hash.reject!{|k,v| k == 'refer_type_id'}
       end
       #need to pack all of the modes
       modes = ""
-      params.each do |k,v|
+      params_hash.each do |k,v|
         mode_key = /mode_(.*)$/.match(k)
         if  mode_key.respond_to?("[]") && v == "1"
           modes << "#{Member.modes.key(mode_key[1])},"
         end
       end
       #remove these k,v pairs and add packed modes back
-      params.reject! {|k,v| /mode_/.match(k)}
-      params["modes"] = modes[0...-1]
+      params_hash.reject! {|k,v| /mode_/.match(k)}
+      params_hash["modes"] = modes[0...-1]
       #this could be a new member or existing member
       if mbr_id == ''
         #new member
-        params.reject!{|k,v| k == "id"}
+        params_hash.reject!{|k,v| k == "id"}
         #the start date has been set in the erb file
-        params[:mbr_since] = Date.strptime(params[:mbr_since], '%Y-%m')
+        params_hash[:mbr_since] = Date.strptime(params_hash[:mbr_since], '%Y-%m')
         #set the character case to upper for name and email
-        params[:fname] = params[:fname].upcase
-        params[:lname] = params[:lname].upcase
-        params[:email] = params[:email].upcase.lstrip
+        params_hash[:fname] = params_hash[:fname].upcase
+        params_hash[:lname] = params_hash[:lname].upcase
+        params_hash[:email] = params_hash[:email].upcase.lstrip
         #if coming back with override = 1, let this go through, else...
-        if !params.has_key?("override")
+        if !params_hash.has_key?("override")
           #need to validate that this member is not already in the db
           #@existing_mbrs = Member.where(fname: params[:fname], lname: params[:lname]).all
-          dupe_test_result = @member.validate_dupes({fname: params[:fname], lname: params[:lname]})
+          dupe_test_result = @member.validate_dupes({fname: params_hash[:fname], lname: params_hash[:lname]})
           if dupe_test_result > 0
             #we have a possible existing member here
             @member = Member[dupe_test_result]
-            @mbr = params
+            @mbr = params_hash
             @modes = Member.modes
             #Send this back for validation
             @tmp_msg = "looks like this member has already been entered into our db, need to update?"
@@ -1151,27 +1192,27 @@ module MemberTracker
         end
         #set the default mbr_type until a payment is made (this is also done on mbrs table)
         #note, none is also used to describe a 'guest'
-        params[:mbr_type] = 'none'
+        params_hash[:mbr_type] = 'none'
         #check callsign and license class TODO also, this should be an associate member if paying
-        if params[:license_class] == 'none'
-          if params[:callsign] == ''
+        if params_hash[:license_class] == 'none'
+          if params_hash[:callsign] == ''
             #need to put a standardized non-callsign if empty
-            params[:callsign] = 'NO CALL'
+            params_hash[:callsign] = 'NO CALL'
           else
             #TODO reject this as there has to be a license class with a callsign
-            #still need to pass existing params back to new/edit member form
+            #still need to pass existing params_hash back to new/edit member form
             #session[:msg] = "The new member could not be created\nneed a license class"
             #redirect "/r/member/show/#{mbr_id}"
           end
         else
-          if params[:callsign] == ''
+          if params_hash[:callsign] == ''
             #TODO reject this need a callsign if license class is other than none
             #still need to pass existing params back to new/edit member form
             #session[:msg] = "The new member could not be created\nneed a callsign"
             #redirect "/r/member/show/#{mbr_id}"
           end
         end
-        mbr_record = Member.new(params)
+        mbr_record = Member.new(params_hash)
         begin
           DB.transaction do
             #save the new member
@@ -1181,6 +1222,24 @@ module MemberTracker
             augmented_notes = "**** New Member entry\n#{notes}"
             l = Log.new(mbr_id: mbr_id, a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: Action.get_action_id("mbr_edit"))
             l.save
+            #if there is a call request, add it to the member_actions table
+            if call_request == 'on'
+              #create a new member action
+              ma = MemberAction.new(member_id: mbr.id, member_action_type_id: MemberActionType.where(name: "call_member").first.id,
+                notes: call_why, completed: false, a_user_id: session[:auth_user_id])
+              ma.save
+              log_call = Log.new(mbr_id: mbr.id, a_user_id: session[:auth_user_id], ts: Time.now,
+                notes: "call request:#{call_why}", action_id: Action.get_action_id("mbr_action"))
+              log_call.save
+            end
+            #if there is a referral type, add it to the member_actions table
+            if !params_hash[:refer_type_id].nil?
+              if params_hash[:refer_type_id] != 'none'
+                ma = MemberAction.new(member_id: mbr.id, member_action_type_id: MemberActionType.where(name: "referral").first.id,
+                  notes: params_hash[:refer_type_id], completed: false, a_user_id: session[:auth_user_id])
+                ma.save
+              end
+            end
           end
           session[:msg] = "The new member was successfully entered"
         rescue StandardError => e
@@ -1188,40 +1247,50 @@ module MemberTracker
         end
       else
         #existing member
-        mbr_record = Member[params[:id]]
-        params.reject!{|k,v| k == "id"}
-        params["mbr_since"] = Date.strptime(params["mbr_since"], '%Y-%m')
+        mbr_record = Member[params_hash[:id]]
+        params_hash.reject!{|k,v| k == "id"}
+        params_hash["mbr_since"] = Date.strptime(params_hash["mbr_since"], '%Y-%m')
         #set the character case to upper for name, email and callsign
-        params["fname"] = params["fname"].upcase
-        params["lname"] = params["lname"].upcase
-        params["email"] = params["email"].upcase.lstrip
+        params_hash["fname"] = params_hash["fname"].upcase
+        params_hash["lname"] = params_hash["lname"].upcase
+        params_hash["email"] = params_hash["email"].upcase.lstrip
         #fix renewal date if there is one
-        if params["mbrship_renewal_date"] != ""
-          params["mbrship_renewal_date"] = Date.strptime(params["mbrship_renewal_date"],'%D')
+        if params_hash["mbrship_renewal_date"] != ""
+          params_hash["mbrship_renewal_date"] = Date.strptime(params_hash["mbrship_renewal_date"],'%D')
         else #remove this key
-          params.delete("mbrship_renewal_date")
+          params_hash.delete("mbrship_renewal_date")
         end
-        params["callsign"].empty? ? nil : params["callsign"] = params["callsign"].upcase
+        params_hash["callsign"].empty? ? nil : params_hash["callsign"] = params_hash["callsign"].upcase
         #log a change in callsign
         if !mbr_record["callsign"].nil?
-          if params["callsign"] != mbr_record["callsign"].upcase
-            augmented_notes << "\nchange_call:#{mbr_record["callsign"]}:#{params["callsign"]}"
+          if params_hash["callsign"] != mbr_record["callsign"].upcase
+            augmented_notes << "\nchange_call:#{mbr_record["callsign"]}:#{params_hash["callsign"]}"
           end
         else
-          if !params["callsign"].empty?
+          if !params_hash["callsign"].empty?
             if notes.empty?
-              notes << "add_call:#{params["callsign"]}"
+              notes << "add_call:#{params_hash["callsign"]}"
             else
-              notes << "\nadd_call:#{params["callsign"]}"
+              notes << "\nadd_call:#{params_hash["callsign"]}"
             end
           end
         end
         begin
           DB.transaction do
-            mbr_record.update(params)
+            mbr_record.update(params_hash)
             augmented_notes = "**** Existing Member update\n#{notes}"
             l = Log.new(mbr_id: mbr_record.id, a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: Action.get_action_id("mbr_edit"))
             l.save
+            #if there is a call request, add it to the member_actions table
+            if call_request == 'on'
+              #create a new member action
+              ma = MemberAction.new(member_target: mbr_record.id, member_action_type_id: MemberActionType.where(name: "call_member").first.id,
+                notes: call_why, completed: false, a_user_id: session[:auth_user_id], ts: Time.now)
+              ma.save
+              log_call = Log.new(mbr_id: mbr_record.id, a_user_id: session[:auth_user_id], ts: Time.now,
+                notes: "call request:#{call_why}", action_id: Action.get_action_id("mbr_action"))
+              log_call.save
+            end
           end
           session[:msg] = "The existing member was successfully updated"
         rescue StandardError => e
@@ -2790,19 +2859,33 @@ module MemberTracker
     post '/m/mbr_actions/update/:id' do
       #params are {"mbr_action_id"=>"1", "tasked_to_mbr_id"=>"NNN SOME NAME", "completed"=>"false", "notes"=>"some notes"}
       #extract the member id from the tasked_to_mbr_id
-      params[:tasked_to_mbr_id] = params[:tasked_to_mbr_id].split(" ")[0].to_i
-
-      #check to see if there are any changes to be made to the members table
+      #check to see if there is a member id in the tasked_to_mbr_id if not set nil
+      tasked_to_mbr_id = nil
+      if params[:tasked_to_mbr_id] != 'NONE'
+        tasked_to_mbr_id = params[:tasked_to_mbr_id].split(" ")[0].to_i
+      end
+      #if params[:completed] is absent then set to false
+      if params[:completed].nil?
+        params[:completed] = false
+      else
+        params[:completed] = true
+      end
+      #check to see if there are any changes to be made to the member_actions table
       mbr_action = DB[:member_actions].where(id: params[:id]).first
       #remove id from mbr_action
       mbr_action.delete(:id)
       #update the remaining member hash with values from param
       log_notes = "making changes to mbr_action record id: #{params[:id]}\n"
       mbr_action.each do |k,v|
-        if params.has_key?(k)
-          if mbr_action[k] != params[k]
-            log_notes << "#{k}: old record #{mbr_action[k]}, new record #{params[k]}\n"
-            mbr_action[k] = params[k]
+        if k == :tasked_to_mbr_id
+          mbr_action[k] = tasked_to_mbr_id
+          log_notes << "tasked_to_mbr_id: old record #{v}, new record #{mbr_action[k]}\n"
+        else
+          if params.has_key?(k)
+            if mbr_action[k] != params[k]
+              log_notes << "#{k}: old record #{mbr_action[k]}, new record #{params[k]}\n"
+              mbr_action[k] = params[k]
+            end
           end
         end
       end

@@ -60,17 +60,17 @@
 	<input type="text" name="phh" value="<%=@member[:phh]%>" id="phh" onfocusout="validatePh(this)">
 	<label for="phh_pub">Ok to Publish? (check if Yes)</label>
 	<input type="hidden" name="phh_pub" value="0">
-	<input type="checkbox" name="phh_pub" id="phh_pub" value="1" <%=@member[:phh_pub]==1  ? "check='checked'" : nil%>><br />
+	<input type="checkbox" name="phh_pub" id="phh_pub" value="1" <%=@member[:phh_pub]==1  ? "checked" : nil%>><br />
 	<label for="phw">Work</label>
 	<input type="text" name="phw" value="<%=@member[:phw]%>" id="phw"  onfocusout="validatePh(this)">
 	<label for="phw_pub">Ok to Publish?</label>
 	<input type="hidden" name="phw_pub" value="0">
-	<input type="checkbox" name="phw_pub" id="phw_pub" value="1" <%=@member[:phw_pub]==1  ? "check='checked'" : nil%>><br />
+	<input type="checkbox" name="phw_pub" id="phw_pub" value="1" <%=@member[:phw_pub]==1  ? "checked" : nil%>><br />
 	<label for="phm">Mobile</label>
 	<input type="text" name="phm" value="<%=@member[:phm]%>" id="phm"  onfocusout="validatePh(this)">
 	<label for="phm_pub">Ok to Publish?</label>
 	<input type="hidden" name="phm_pub" value="0">
-	<input type="checkbox" name="phm_pub" id="phm_pub" value="1" <%=@member[:phm_pub]==1  ? "check='checked'" : nil%>><br />
+	<input type="checkbox" name="phm_pub" id="phm_pub" value="1" <%=@member[:phm_pub]==1  ? "checked" : nil%>><br />
 	License class <select id="license_class" name="license_class">
     <option value="none" <%=@member[:license_class] == 'none' ? "selected" : nil%>>None</option>
 		<option value="tech" <%=@member[:license_class] == 'tech' ? "selected" : nil%>>Tech</option>
@@ -85,7 +85,20 @@
   <br />
   <label for="notes_field">Leave notes for this member here</label>
   <textarea name="notes" id="notes_field" rows="3" cols="65"></textarea>
-  <br />How did this member hear about the club?
+  <br />
+  <% if @member[:call_request_length] > 1 %>
+	<h2>This member has more than one uncompleted call request. Please <a href="/m/mbr_actions/show">correct here</a></h2>
+  <% else %>
+  <div id="call_back">
+  	<label for="member_call">Does this member want a callback?</label>
+  	<input type="checkbox" name="callme" id="member_call" <%=@member.member_actions.empty? == true ? nil : "checked"%> />
+  	<br />
+  	<label for="notes_field">What is the reason for the call?</label>
+  	<textarea name="callwhy" id="why_call_field" rows="3" cols="65"><%=@member[:call_request]%></textarea>
+  	<br />
+  </div>
+  <% end %>
+  How did this member hear about the club?
   <select id="refer" name="refer_type_id">
     <option value='none'>Don&apos;t know</option>
     <%MemberTracker::ReferType.each do |rt|%>
