@@ -1887,6 +1887,21 @@ module MemberTracker
       mbr_split_frm_fam_unit = false
       pay_amt = nil
       mbr_family_unit_id = nil
+      puts "augmented_notes are #{augmented_notes}"
+      #look for jotform survey response in notes requesting a call from club members
+      log_action = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id],
+      ts: Time.now, action_id: Action.get_action_id("mbr_action"))
+      if /leader\?\s+Yes/.match(augmented_notes)
+        #need to add to member_actions table
+        DB[:member_actions].insert(member_action_type_id: 1, member_target: params[:mbr_id],
+          a_user_id: session[:auth_user_id], completed: false,
+          notes: "Jotform request for a call from club members", ts: DateTime.now)
+        #need to add to log table
+        #l = Log.new(mbr_id: mbr_id, a_user_id: session[:auth_user_id],
+        #  ts: Time.now, notes: "Jotform request for a call from club members", action_id: Action.get_action_id("mbr_action"))
+        #l.save
+        log_action.notes = "Jotform request for a call from club members"
+      end
       if PaymentType[params[:payment_type]].type == 'Dues'
         #this could be a new member, an existing member renewing or a previous member with a lapse in dues payments
         #need an auditlog for this transaction
@@ -2218,6 +2233,11 @@ module MemberTracker
           #associate the log entry with this payment
           pay[:log_id] = log_pay.values[:id]
           pay.save
+          #wrap up log for action if there needs to be one
+          if !log_action.notes.nil?
+            log_action.notes = "Jotform request for a call from club members"
+            log_action.save
+          end
           #associate this payment record with any changes to member mbrship_renewal_date and mbr_type fields
           #also consider impact that this payment makes to the active status of a unit
           if al_save == true
@@ -2740,7 +2760,7 @@ module MemberTracker
       # 1 = call member action
       @action_type = DB[:member_action_types].select(:descr).where(id: 1).first
       mbr_actions = DB[:member_actions].where(member_action_type_id: 1).select(:id, :member_target, :tasked_to_mbr_id,
-        :a_user_id, :completed, :notes, :ts).order(:ts).all
+        :a_user_id, :completed, :notes, :ts).reverse_order(:ts).order_append(:completed).all
       mbrs = DB[:members].select(:id, :fname, :lname)
       mbr_actions.each do |ma|
         if ma[:tasked_to_mbr_id].nil?
@@ -2774,17 +2794,27 @@ module MemberTracker
 
       #check to see if there are any changes to be made to the members table
       mbr_action = DB[:member_actions].where(id: params[:id]).first
+      #remove id from mbr_action
+      mbr_action.delete(:id)
       #update the remaining member hash with values from param
+      log_notes = "making changes to mbr_action record id: #{params[:id]}\n"
       mbr_action.each do |k,v|
         if params.has_key?(k)
-          mbr_action[k] = params[k]
+          if mbr_action[k] != params[k]
+            log_notes << "#{k}: old record #{mbr_action[k]}, new record #{params[k]}\n"
+            mbr_action[k] = params[k]
+          end
         end
       end
+      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, notes: log_notes,
+        action_id: Action.get_action_id("mbr_action"))
+
       begin
         DB.transaction do
           #write members table data
           if !mbr_action.empty?
             DB[:member_actions].where(id: params[:id]).update(mbr_action)
+            l.save
           end
         end
         session[:msg] = 'Action was successfully updated'
