@@ -7,6 +7,12 @@
 :SOTA
 %>
 <h1>Member: <%="#{@member[:fname]} #{@member[:lname]}, #{@member[:callsign]}"%></h1>
+<% if !@call_requests.empty? %>
+<div>
+  <h3>THIS MEMBER HAS UNCOMPLETED CALL REQUESTS</h3>
+  <p>check the <a href="/m/mbr_actions/show">call request list</a> for details</p>
+</div>
+<% end %>
 <p>Address: <%="#{@member[:street]}"%><br />
 	<%="#{@member[:city]} #{@member[:state]} #{@member[:zip]}"%><br /></p>
 	<p>Email: <%if @member[:email_bogus] == true %><span class="bogus_email">Is Bogus: <%=@member[:email]%> ****</span><%else%><%=@member[:email]%><%end%> | Okay to use for contact about club activities? <%=@member[:ok_to_email] == true ? "Yes" : "No"%>

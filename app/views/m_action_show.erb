@@ -6,7 +6,6 @@
       <th>Member Name</th>
       <th>Authorized User</th>
       <th>Tasked To</th>
-      <th>Completed</th>
       <th>Notes</th>
       <th>Timestamp</th>
       <th></th>
@@ -18,7 +17,6 @@
         <td><%= ma[:mbr_name] %></td>
         <td><%= ma[:a_user_name] %></td>
         <td><%= ma[:tasked_to] %></td>
-        <td><%= ma[:completed] ? 'Yes' : 'No' %></td>
         <td><%= ma[:notes] %></td>
         <td><%= ma[:ts].strftime("%m/%d/%Y") %></td>
         <td><a href="/m/mbr_actions/edit/<%=ma[:id]%>">edit</a></td>

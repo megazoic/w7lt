@@ -1036,6 +1036,9 @@ module MemberTracker
       @tmp_msg = session[:msg]
       session[:msg] = nil
       @member = Member[params[:id]]
+      #look for requests for a callby this member
+      @call_requests = MemberAction.where(member_target: params[:id], completed: false).all
+      puts "call_requests #{@call_requests}"
       @mbr_renewals = DB[:mbr_renewals].select(:id, :a_user_id, :renewal_event_type_id,
         :notes, :ts).where(mbr_id: params[:id]).all
       #replace authorized user id, event type id
@@ -2828,8 +2831,8 @@ module MemberTracker
       # for now, only one type of action
       # 1 = call member action
       @action_type = DB[:member_action_types].select(:descr).where(id: 1).first
-      mbr_actions = DB[:member_actions].where(member_action_type_id: 1).select(:id, :member_target, :tasked_to_mbr_id,
-        :a_user_id, :completed, :notes, :ts).reverse_order(:ts).order_append(:completed).all
+      mbr_actions = DB[:member_actions].where(member_action_type_id: 1, completed: false).select(:id, :member_target, :tasked_to_mbr_id,
+        :a_user_id, :notes, :ts).reverse_order(:ts).all
       mbrs = DB[:members].select(:id, :fname, :lname)
       mbr_actions.each do |ma|
         if ma[:tasked_to_mbr_id].nil?
