@@ -21,7 +21,7 @@
   <button type="submit">Update Action</button>
 </form>
 
-<script>
+<script type="text/javascript">
   document.addEventListener('DOMContentLoaded', () => {
     const taskedToInput = document.getElementById('tasked_to');
     const members = <%= @mbrs.to_json.gsub('</', '<\/') %>;
@@ -33,4 +33,9 @@
       }
     });
   });
+
+	const inputField = document.getElementById('tasked_to');
+	inputField.addEventListener('focus', function() {
+  		this.select();
+	});
 </script>
