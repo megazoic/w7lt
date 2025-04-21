@@ -14,7 +14,7 @@
   <tbody>
     <% @mbr_actions.each do |ma| %>
       <tr>
-        <td><%= ma[:mbr_name] %></td>
+        <td><a href="/r/member/show/<%=ma[:target_member_id]%>"><%= ma[:mbr_name] %></a></td>
         <td><%= ma[:a_user_name] %></td>
         <td><%= ma[:tasked_to] %></td>
         <td><%= ma[:notes] %></td>

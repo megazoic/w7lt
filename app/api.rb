@@ -2830,8 +2830,8 @@ module MemberTracker
       @mbr_actions = []
       # for now, only one type of action
       # 1 = call member action
-      @action_type = DB[:member_action_types].select(:descr).where(id: 1).first
-      mbr_actions = DB[:member_actions].where(member_action_type_id: 1, completed: false).select(:id, :member_target, :tasked_to_mbr_id,
+      @action_type = DB[:member_action_types].where(name: 'call_member').first
+      mbr_actions = DB[:member_actions].where(member_action_type_id: @action_type[:id], completed: false).select(:id, :member_target, :tasked_to_mbr_id,
         :a_user_id, :notes, :ts).reverse_order(:ts).all
       mbrs = DB[:members].select(:id, :fname, :lname)
       mbr_actions.each do |ma|
@@ -2844,13 +2844,16 @@ module MemberTracker
         ma.delete(:tasked_to_mbr_id)
         @mbr_actions << {id: ma[:id], mbr_name: "#{mbrs.where(id: ma[:member_target]).first[:fname]} #{mbrs.where(id: ma[:member_target]).first[:lname]}",
           a_user_name: "#{Auth_user[ma[:a_user_id]].member.fname} #{Auth_user[ma[:a_user_id]].member.lname}",
-          tasked_to: ma[:tasked_to], completed: ma[:completed], notes: ma[:notes], ts: ma[:ts]}
+          tasked_to: ma[:tasked_to], completed: ma[:completed], notes: ma[:notes], ts: ma[:ts], target_member_id: ma[:member_target]}
       end
       erb :m_action_show, :layout => :layout_w_logout
     end
     get '/m/mbr_actions/edit/:id' do
       @mbr_action = DB[:member_actions].where(id: params[:id]).first
       @mbr_action[:tasked_to_mbr_id] = @mbr_action[:tasked_to_mbr_id].nil? ? "NONE" : @mbr_action[:tasked_to_mbr_id]
+      @mbr_action[:target_member_name] = "#{Member[@mbr_action[:member_target]].fname} #{Member[@mbr_action[:member_target]].lname}"
+      @mbr_action[:target_member_id] = @mbr_action[:member_target]
+      @mbr_action[:action_type] = DB[:member_action_types].where(id: @mbr_action[:member_action_type_id]).first[:descr]
       #get list of members to assign to this action
       mbrs = DB[:members].select(:id, :fname, :lname, :callsign).all
       @mbrs = []
