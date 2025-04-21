@@ -7,6 +7,10 @@
 :SOTA
 %>
 <h1>Member: <%="#{@member[:fname]} #{@member[:lname]}, #{@member[:callsign]}"%></h1>
+<br>
+<% if session[:auth_user_roles].include?('mbr_mgr') %>
+<a href="/m/payment/new/<%=@member[:id]%>">Record a payment for this member</a>
+<% end %>
 <% if !@call_requests.empty? %>
 <div>
   <h3>THIS MEMBER HAS UNCOMPLETED CALL REQUESTS</h3>

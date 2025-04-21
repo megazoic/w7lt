@@ -1038,7 +1038,6 @@ module MemberTracker
       @member = Member[params[:id]]
       #look for requests for a callby this member
       @call_requests = MemberAction.where(member_target: params[:id], completed: false).all
-      puts "call_requests #{@call_requests}"
       @mbr_renewals = DB[:mbr_renewals].select(:id, :a_user_id, :renewal_event_type_id,
         :notes, :ts).where(mbr_id: params[:id]).all
       #replace authorized user id, event type id
