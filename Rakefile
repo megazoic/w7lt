@@ -163,6 +163,22 @@ namespace :db do
       end
     end
   end
+  desc "Find members who requested a call"
+  task :find_call_requests do
+    #script to find members who requested a call
+    require "sequel"
+    require "./app/api.rb"
+    payments = DB[:payments]
+    logs = DB[:logs]
+    log_ids = []
+    payments.where(payment_type_id: 5).each do |pmt|
+      #search for corresponding log entry
+      if logs[id: pmt[:log_id]][:notes] =~ /der\?\s+Yes/
+        log_ids << pmt[:log_id]
+      end
+    end
+    puts "logs from dues payments with mbrs requesting a call #{log_ids}"
+  end
 end
 #methods available to tasks
 def categorize(answer_str, question_symbol)
