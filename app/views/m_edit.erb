@@ -86,18 +86,23 @@
   <label for="notes_field">Leave notes for this member here</label>
   <textarea name="notes" id="notes_field" rows="3" cols="65"></textarea>
   <br />
+  <% #if we are editing an existing member, new member would only be a hash %>
+  <% if @member.is_a?(Hash) == false %>
   <% if @member[:call_request_length] > 1 %>
 	<h2>This member has more than one uncompleted call request. Please <a href="/m/mbr_actions/show">correct here</a></h2>
   <% else %>
   <div id="call_back">
   	<label for="member_call">Does this member want a callback?</label>
-  	<input type="checkbox" name="callme" id="member_call" <%=@member.member_actions.empty? == true ? nil : "checked"%> />
+  	<input type="checkbox" name="callme" id="member_call" 
+		<%=@member.member_actions.empty? == true ? nil : "checked"%> />
   	<br />
   	<label for="notes_field">What is the reason for the call?</label>
   	<textarea name="callwhy" id="why_call_field" rows="3" cols="65"><%=@member[:call_request]%></textarea>
   	<br />
   </div>
   <% end %>
+  <% end %>
+  <% #end editing an existing member %>
   How did this member hear about the club?
   <select id="refer" name="refer_type_id">
     <option value='none'>Don&apos;t know</option>
