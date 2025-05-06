@@ -43,7 +43,7 @@
 		<% @renewals.each do |r| %>
 			<tr>
 				<td><%=r[:fname]%></td>
-				<td><%=r[:lname]%></td>
+				<td><a href="/r/member/show/<%= r[:mbr_id]%>"><%=r[:lname]%></a></td>
 				<td><%=r[:callsign]%></td>
 				<td><%=r[:recorded_by]%></td>
 				<td><%=r[:event_type]%></td>

@@ -2618,7 +2618,7 @@ module MemberTracker
       mrs.each do |mr|
         @renewals << {id: mr[:id], fname: Member[mr[:mbr_id]].fname, lname: Member[mr[:mbr_id]].lname,
           callsign: Member[mr[:mbr_id]].callsign, recorded_by: Auth_user[mr[:a_user_id]].member.callsign,
-          event_type: RenewalEventType[mr[:renewal_event_type_id]].name,
+          event_type: RenewalEventType[mr[:renewal_event_type_id]].name, mbr_id: mr[:mbr_id],
           notes: mr[:notes], ts: mr[:ts]}
       end
       mbr_dues_payments = DB[:payments].select(:id, :ts, :a_user_id, :mbr_id).where(payment_type_id: 5, ts: (Date.today - 365)..(Date.today)).order(:ts).all
