@@ -15,7 +15,16 @@ table td {
 	width: 1500px;
 }
 table{
-	table-layout: fixed;
+	table-layout: auto;
+}
+/* constrain width of a column */
+.td-constrain{
+  width: 150px;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 250px;
+  min-width: 250px;
 }
 /* text style */
 .highlight {

@@ -1,0 +1,13 @@
+<!-- filepath: /Users/nickdev/dev/ruby/working_apps/w7lt/app/views/p_show_one -->
+<h2>Payment Details</h2>
+<ul>
+  <li><strong>Payment ID:</strong> <%= @pay[:id] %></li>
+  <li><strong>Member:</strong> <%= @mbr[:fname] %> <%= @mbr[:lname] %> (<%= @mbr[:callsign] %>)</li>
+  <li><strong>Member Type:</strong> <%= @mbr[:mbr_type] %></li>
+  <li><strong>Payment Type:</strong> <%= @pay[:payment_type] %></li>
+  <li><strong>Payment Method:</strong> <%= @pay[:payment_method] %></li>
+  <li><strong>Payment Amount:</strong> <%= @pay[:payment_amount] %></li>
+</ul>
+
+<h3>Log Notes</h3>
+<p><%= @log[:notes] %></p>

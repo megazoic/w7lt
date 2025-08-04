@@ -2379,6 +2379,19 @@ module MemberTracker
       end
       redirect "/m/payments/show"
     end
+    get '/m/payment/show/:id' do
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
+      @pay = Payment.select(:id, :mbr_id, :payment_type_id, :payment_method_id, :payment_amount, :log_id)[params[:id].to_i]
+      #replace paymenyt_type_id and payment_method_id with the text representation
+      #@pay[:payment_type] = PaymentType[@pay[:payment_type_id]].type
+      @pay[:payment_type] = PaymentType.select(:type)[@pay[:payment_type_id]].values[:type]
+      @pay[:payment_method] = PaymentMethod.select(:mode)[@pay[:payment_method_id]].values[:mode]
+      #load the member and log info
+      @mbr = Member.select(:id, :fname, :lname, :callsign, :mbr_type)[@pay[:mbr_id]]
+      @log = Log.select(:id, :notes)[@pay[:log_id]]
+      erb :p_show_one, :layout => :layout_w_logout
+    end
     get '/m/payments/show' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
