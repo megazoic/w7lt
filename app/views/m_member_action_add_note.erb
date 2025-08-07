@@ -1,0 +1,40 @@
+<!-- filepath: /Users/nickdev/dev/ruby/working_apps/w7lt/app/views/m_member_action_add_note.erb -->
+<h2>Add Note to Member Action</h2>
+
+<ul>
+  <li><strong>Member:</strong> <%= @mbr_action[:target_member_name] %></li>
+  <li><strong>Description:</strong> <%= @mbr_action[:notes] %></li>
+</ul>
+
+<h3>Previous Log Notes</h3>
+<% if @logs && @logs.any? %>
+  <ul>
+    <% @logs.each do |log| %>
+      <li>
+        <strong>Date:</strong> <%= log[:ts].strftime("%m/%d/%Y") if log[:ts] %><br>
+        <strong>Note:</strong> <%= log[:notes] %>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p>No previous log notes.</p>
+<% end %>
+
+<h3>Add Additional Log Note</h3>
+<form action="/m/member_action/add_note/<%= @mbr_action[:id] %>" method="post">
+    <input type="hidden" name="_method" value="post">
+  <textarea name="note" rows="4" cols="60" placeholder="Enter additional log note here"></textarea>
+  <br>
+  <button type="submit">Add Note</button>
+  <a href="/m/mbr_non_renewals/show">Cancel</a>
+</form>
+<script type="text/javascript">
+  document.addEventListener('DOMContentLoaded', () => {
+    const noteTextarea = document.querySelector('textarea[name="note"]');
+    if (noteTextarea) {
+      noteTextarea.addEventListener('focus', () => {
+        noteTextarea.select();
+      });
+    }
+  });
+</script>

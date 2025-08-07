@@ -5,7 +5,13 @@
   <input type='hidden' name='action' value='general_log'>  
 <%else%>
   Creating log for <%="#{@member.fname} #{@member.lname} #{@member.callsign}"%>
-  <input type='hidden' name='action' value='mbr_edit'>  
+  <br />
+  <select name='log_action' id='log_action'>
+    <option value=''>Select Log Type</option>
+    <% @log_action.each do |type, id| %>
+      <option value='<%=id%>'><%=type%></option>
+    <% end %>
+  </select>
   <input type='hidden' name='mbr_id' value=<%=@member.id%>>
 <%end%>
 </h4>
@@ -21,3 +27,18 @@
   <p><%=l.notes%></p>
 <%end%>
 <%end%>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.forms['create_log'];
+  if (!form) return;
+  form.addEventListener('submit', function(e) {
+    const logAction = form.elements['log_action'];
+    // Only validate if the select exists (i.e., not a general log)
+    if (logAction && logAction.value.trim() === '') {
+      alert('Please select a log type.');
+      logAction.focus();
+      e.preventDefault();
+    }
+  });
+});
+</script>

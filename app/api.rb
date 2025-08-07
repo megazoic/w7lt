@@ -931,7 +931,11 @@ module MemberTracker
         #creating a general log
         @type = 'general'
       else
-        @type = 'member'
+        #need to get action type and id in a hash--select only member_general_note and member_not_renew_followup
+        @log_action = Hash.new
+        Action.where(type: ['member_general_note', 'member_not_renew_followup']).each do |a|
+          @log_action[a.type.to_sym] = a.id
+        end
         @member = Member[params[:id]]
       end
       erb :l_create, :layout => :layout_w_logout
@@ -948,7 +952,7 @@ module MemberTracker
       else
         #adding a note to a member
         l.mbr_id = params[:mbr_id]
-        l.action_id = Action.get_action_id("mbr_edit")
+        l.action_id = Action[params[:log_action]].id
         l.save
         session[:message] = "Log successfully saved"
         redirect "/r/member/show/#{params[:mbr_id]}"
@@ -2782,7 +2786,7 @@ module MemberTracker
       member.each do |k,v|
         member[k] = params[k]
       end
-      #if mbr_renewal_event_type is bogus_email need to update email_bogus one members table
+      #if mbr_renewal_event_type is bogus_email need to update email_bogus in members table
       if event_type == RenewalEventType::getID("bogus email").to_s
         member[:email_bogus] = true
       end
@@ -2797,6 +2801,19 @@ module MemberTracker
           #write renewals table data
           DB[:mbr_renewals].insert(a_user_id: session[:auth_user_id], mbr_id: mbr_id, renewal_event_type_id: event_type,
             notes: notes, ts: DateTime.now)
+            #check if renewal_event_type_id is 'no response' and if so, add to members_actions table
+            #need to add a non_renew_followup action
+          if event_type == RenewalEventType::getID("no response").to_s
+            #need to add a member action for followup
+            mbr_action = DB[:member_actions]
+            mbr_action.insert(member_target: mbr_id, member_action_type_id: MemberActionType[name: 'non_renew_followup'].id,
+              tasked_to_mbr_id: nil, a_user_id: session[:auth_user_id], notes: "Follow up with member for non-renewal",
+              ts: DateTime.now, completed: false)
+            #add log entry for this action
+            l = Log.new(mbr_id: mbr_id, a_user_id: session[:auth_user_id], ts: Time.now,
+              notes: "Added member action for non-renewal followup", action_id: Action.get_action_id("mbr_renew"))
+            l.save
+          end
         end
         session[:msg] = 'Renewal was successfully recorded'
       rescue StandardError => e
@@ -2836,31 +2853,166 @@ module MemberTracker
       end
       redirect '/m/mbr_renewals/show'
     end
-    get '/m/mbr_actions/show' do
+    get '/m/mbr_non_renewals/edit/:id' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
-      @mbr_actions = []
-      # for now, only one type of action
-      # 1 = call member action
-      @action_type = DB[:member_action_types].where(name: 'call_member').first
-      mbr_actions = DB[:member_actions].where(member_action_type_id: @action_type[:id], completed: false).select(:id, :member_target, :tasked_to_mbr_id,
-        :a_user_id, :notes, :ts).reverse_order(:ts).all
-      mbrs = DB[:members].select(:id, :fname, :lname)
-      mbr_actions.each do |ma|
-        if ma[:tasked_to_mbr_id].nil?
-          ma[:tasked_to] = "none"
-        else
-          ma[:tasked_to] = "#{mbrs.where(id: ma[:tasked_to_mbr_id]).first[:fname]} #{mbrs.where(id: ma[:tasked_to_mbr_id]).first[:lname]}"
-        end
-        #remove tasked_to_mbr_id from the hash
-        ma.delete(:tasked_to_mbr_id)
-        @mbr_actions << {id: ma[:id], mbr_name: "#{mbrs.where(id: ma[:member_target]).first[:fname]} #{mbrs.where(id: ma[:member_target]).first[:lname]}",
-          a_user_name: "#{Auth_user[ma[:a_user_id]].member.fname} #{Auth_user[ma[:a_user_id]].member.lname}",
-          tasked_to: ma[:tasked_to], completed: ma[:completed], notes: ma[:notes], ts: ma[:ts], target_member_id: ma[:member_target]}
-      end
-      erb :m_action_show, :layout => :layout_w_logout
+      @mbr_action = DB[:member_actions].where(id: params[:id]).first
+      @mbr_action[:tasked_to_mbr_id] = @mbr_action[:tasked_to_mbr_id].nil? ? "NONE" : @mbr_action[:tasked_to_mbr_id]
+      @mbr_action[:target_member_name] = "#{Member[@mbr_action[:member_target]].fname} #{Member[@mbr_action[:member_target]].lname}"
+      @mbr_action[:target_member_id] = @mbr_action[:member_target]
+      @mbr_action[:action_type] = DB[:member_action_types].where(id: @mbr_action[:member_action_type_id]).first[:descr]
+      #get list of members that are authorized users to assign to this action
+      mbr_id_hash = DB[:auth_users].select(:mbr_id).exclude(role_id: Role[:name => "inactive"].id).all
+      mbr_ids = mbr_id_hash.map{|x| x[:mbr_id]}
+      @mbrs = DB[:members].select(:id, :fname, :lname, :callsign).where(id: mbr_ids).all
+      erb :m_non_renew_edit, :layout => :layout_w_logout
     end
-    get '/m/mbr_actions/edit/:id' do
+    post '/m/mbr_non_renewals/update/:id' do
+      #params are {"id"=>"AN ID IN MEMBER_ACTIONS TABLE", "tasked_to_mbr_id"=>"A MEMBER ID", "completed"=>"" (OR "on"), "notes"=>"some notes"}
+      #get existing member action
+      mbr_action = DB[:member_actions].where(id: params[:id]).first
+      updated_mbr_action = {}
+      updated_mbr_action[:a_user_id] = session[:auth_user_id]
+      updated_mbr_action[:notes] = params[:notes]
+      updated_mbr_action[:ts] = DateTime.now
+      updated_mbr_action[:completed] = params[:completed].nil? ? false : true
+      updated_mbr_action[:id] = params[:id]
+      updated_mbr_action[:tasked_to_mbr_id] = nil
+      if params[:tasked_to_mbr_id] != ''
+        updated_mbr_action[:tasked_to_mbr_id] = params[:tasked_to_mbr_id].to_i
+      end
+      #check to see if there are any changes to be made to the member_actions table
+      if mbr_action[:tasked_to_mbr_id] != updated_mbr_action[:tasked_to_mbr_id] ||
+         mbr_action[:notes] != updated_mbr_action[:notes] ||
+         mbr_action[:completed] != updated_mbr_action[:completed]
+        begin
+          DB.transaction do
+            DB[:member_actions].where(id: params[:id]).update(updated_mbr_action)
+            #add log entry for this action
+            l = Log.new(mbr_id: mbr_action[:member_target], a_user_id: session[:auth_user_id], ts: Time.now,
+              notes: "Updated member action for non-renewal followup", action_id: Action.get_action_id("member_not_renew_followup"))
+            l.save
+          end
+          session[:msg] = 'Member action was successfully updated'
+        rescue StandardError => e
+          session[:msg] = "The member action was not updated\n#{e}"
+        end
+      else
+        session[:msg] = 'No changes were made to the member action'
+      end
+      redirect '/m/followup/show'
+    end
+    get '/m/mbr_non_renewals/destroy/:id' do
+      #pull the member action record
+      @member_action = DB[:member_actions].where(id: params[:id]).first
+      @member_action[:target_member_name] = "#{Member[@member_action[:member_target]].fname} #{Member[@member_action[:member_target]].lname}"
+      @member_action[:member_action_type] = DB[:member_action_types].where(id: @member_action[:member_action_type_id]).first[:name]
+      erb :m_member_action_destroy, :layout => :layout_w_logout
+    end
+    post '/m/mbr_non_renewals/destroy/:id' do
+      #params are {"_method"=>"delete", "id"=>"100"}
+      if params[:_method] != 'delete'
+        #js not enabled, need to find another way to confirm this action
+        session[:msg] = "Member action was not deleted, please enable Javascript on your browser"
+        redirect '/m/mbr_actions/show'
+      end
+      #get the member action record
+      mbr_action = DB[:member_actions].where(id: params[:id]).first
+      #get the member action type
+      action_type = DB[:member_action_types].where(id: mbr_action[:member_action_type_id]).first
+      #get the member target
+      tm = Member[mbr_action[:member_target]]
+      target_member_name = "#{tm.fname} #{tm.lname}"
+      #get the authorized user
+      au = Auth_user[mbr_action[:a_user_id]]
+      auth_user_name = "#{au.member.fname} #{au.member.lname}"
+      #get the tasked to member
+      tasked_to_mbr_name = mbr_action[:tasked_to_mbr_id].nil? ? "none" : "#{Member[mbr_action[:tasked_to_mbr_id]].fname} #{Member[mbr_action[:tasked_to_mbr_id]].lname}"
+      #log this deletion event
+      log_notes = "deleting member action record id: #{params[:id]}\n"
+      log_notes << "target member_name: #{target_member_name}, tasked to: #{tasked_to_mbr_name}\n"
+      log_notes << "date: #{mbr_action[:ts].strftime("%m/%d/%Y")}\n"
+      log_notes << "completed: #{mbr_action[:completed] ? "yes" : "no"}\n"
+      log_notes << "authorized user: #{auth_user_name}\n"
+      log_notes << "action type: #{action_type}\n"
+      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, notes: log_notes,
+        action_id: Action.get_action_id("member_not_renew_followup"))
+      begin
+        DB.transaction do
+          #write log entry
+          l.save
+          #delete the log entries associated with this member action
+          DB[:logs].where(mbr_action_id: mbr_action[:id]).delete
+          #delete the member action record
+          DB[:member_actions].where(id: params[:id]).delete
+          session[:msg] = 'Member action was SUCCESSFULLY deleted'
+        end
+      rescue StandardError => e
+        session[:msg] = "The member action WAS NOT deleted\n#{e}"
+      end
+      redirect '/m/mbr_non_renewals/show'
+    end
+    get '/m/followup/show' do
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
+      # first, get call member actions and test if logs exist
+      @action_type = {}
+      @action_type[:callme] = DB[:member_action_types].where(name: 'call_member').first
+      ma_type_id = MemberActionType[name: 'call_member'].id
+      @mbr_call_me_actions = MemberAction.get_member_actions(ma_type_id)
+      # next, get non-renew followup actions and test if logs exist
+      @action_type[:nonrenewal] = DB[:member_action_types].where(name: 'non_renew_followup').first
+      ma_type_id = MemberActionType[name: 'non_renew_followup'].id
+      @mbr_non_renewal_actions = MemberAction.get_member_actions(ma_type_id)
+
+      erb :m_followup_show, :layout => :layout_w_logout
+    end
+    get '/m/member_action/add_note' do
+      #the params are {"mbr_action_id"=>"1", "type"=>"call_member" or "non_renew_followup"}
+      #check to see if the mbr_action_id is present
+      if params[:mbr_action_id].nil?
+        session[:msg] = "No member action id was provided"
+        redirect '/m/followup/show'
+      end
+      #check to see if the type is present
+      if params[:type].nil?
+        session[:msg] = "No member action type was provided"
+        redirect '/m/followup/show'
+      end
+      #check to see if the type is valid
+      if !['call_member', 'non_renew_followup'].include?(params[:type])
+        session[:msg] = "Invalid member action type provided"
+        redirect '/m/followup/show'
+      end
+      #get the member action record
+      @mbr_action = DB[:member_actions].where(id: params[:mbr_action_id]).first
+      if @mbr_action.nil?
+        session[:msg] = "No member action record found for id: #{params[:mbr_action_id]}"
+        redirect '/m/followup/show'
+      end
+      #get the member target
+      @mbr_action[:target_member_name] = "#{Member[@mbr_action[:member_target]].fname} #{Member[@mbr_action[:member_target]].lname}"
+      @mbr_action[:target_member_id] = @mbr_action[:member_target]
+      #get additional logs for this member action
+      if params[:type] == 'call_member'
+        action_id = Action[type: 'mbr_call_me'].id
+      else
+        #params[:type] == 'non_renew_followup'
+        action_id = Action[type: 'member_not_renew_followup'].id
+      end
+      @logs = DB[:logs].where(action_id: action_id, mbr_action_id: @mbr_action[:id]).all
+      if @logs.empty?
+        @logs = nil
+      else
+        @logs.each do |l|
+          l[:a_user_name] = "#{Auth_user[l[:a_user_id]].member.fname} #{Auth_user[l[:a_user_id]].member.lname}"
+          #l[:ts] = l[:ts].strftime("%m/%d/%Y")
+          l[:notes] = l[:notes].gsub(/\n/, '<br>')
+        end
+      end
+      erb :m_member_action_add_note, :layout => :layout_w_logout
+    end
+    get '/m/mbr_callme/edit/:id' do
       @mbr_action = DB[:member_actions].where(id: params[:id]).first
       @mbr_action[:tasked_to_mbr_id] = @mbr_action[:tasked_to_mbr_id].nil? ? "NONE" : @mbr_action[:tasked_to_mbr_id]
       @mbr_action[:target_member_name] = "#{Member[@mbr_action[:member_target]].fname} #{Member[@mbr_action[:member_target]].lname}"
@@ -2872,10 +3024,10 @@ module MemberTracker
       mbrs.each do |m|
         @mbrs << {id: m[:id], name: "#{m[:fname]} #{m[:lname]}", callsign: m[:callsign]}
       end
-      erb :m_action_edit, :layout => :layout_w_logout
+      erb :m_callme_edit, :layout => :layout_w_logout
     end
-    post '/m/mbr_actions/update/:id' do
-      #params are {"mbr_action_id"=>"1", "tasked_to_mbr_id"=>"NNN SOME NAME", "completed"=>"false", "notes"=>"some notes"}
+    post '/m/mbr_callme/update/:id' do
+      #params are {"id"=>"1", "tasked_to_mbr_id"=>"NNN SOME NAME", "completed"=>"false", "notes"=>"some notes"}
       #extract the member id from the tasked_to_mbr_id
       #check to see if there is a member id in the tasked_to_mbr_id if not set nil
       tasked_to_mbr_id = nil
@@ -2897,7 +3049,7 @@ module MemberTracker
       mbr_action.each do |k,v|
         if k == :tasked_to_mbr_id
           mbr_action[k] = tasked_to_mbr_id
-          log_notes << "tasked_to_mbr_id: old record #{v}, new record #{mbr_action[k]}\n"
+          log_notes << "tasked_to_mbr_id: old record: #{v}, new record: #{mbr_action[k]}\n"
         else
           if params.has_key?(k)
             if mbr_action[k] != params[k]
@@ -2908,8 +3060,7 @@ module MemberTracker
         end
       end
       l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, notes: log_notes,
-        action_id: Action.get_action_id("mbr_action"))
-
+        action_id: Action.get_action_id("mbr_call_me"), mbr_action_id: params[:id])
       begin
         DB.transaction do
           #write members table data
@@ -2922,7 +3073,7 @@ module MemberTracker
       rescue StandardError => e
         session[:msg] = "The action was not updated\n#{e}"
       end
-      redirect '/m/mbr_actions/show'
+      redirect '/m/followup/show'
     end
     ################### START ADMIN #######################
     get '/a/auth_user/list' do

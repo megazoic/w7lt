@@ -1,6 +1,6 @@
 <h1>Edit Member Action: <a href="/r/member/show/<%=@mbr_action[:target_member_id]%>"><%=@mbr_action[:target_member_name]%></a></h1>
 <p>Action Type: <%=@mbr_action[:action_type]%></p>
-<form action="/m/mbr_actions/update/<%= @mbr_action[:id] %>" method="post">
+<form action="/m/mbr_callme/update/<%= @mbr_action[:id] %>" method="post">
 
   <label for="tasked_to">Assign to Member:</label>
   <input type="text" name="tasked_to_mbr_id" id="tasked_to" list="members" value="<%= @mbr_action[:tasked_to_mbr_id] %>" />

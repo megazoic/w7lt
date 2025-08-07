@@ -1,0 +1,16 @@
+<!-- filepath: /Users/nickdev/dev/ruby/working_apps/w7lt/app/views/m_member_action_destroy.erb -->
+<h2>Confirm Delete Member Action</h2>
+<p>
+  Are you sure you want to delete the following member action?
+</p>
+<ul>
+  <li><strong>ID:</strong> <%= @member_action[:id] %></li>
+  <li><strong>Member:</strong> <%= @member_action[:target_member_name] %></li>
+  <li><strong>Action Type:</strong> <%= @member_action[:member_action_type] %></li>
+  <li><strong>Notes:</strong> <%= @member_action[:notes] %></li>
+</ul>
+<form action="/m/mbr_non_renewals/destroy/<%= @member_action[:id] %>" method="post">
+  <input type="hidden" name="_method" value="delete" />
+  <button type="submit">Yes, Delete</button>
+  <a href="/m/followup/show">Cancel</a>
+</form>

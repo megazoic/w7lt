@@ -1,0 +1,26 @@
+<!-- filepath: /Users/nickdev/dev/ruby/working_apps/w7lt/app/views/mbr_non_renew_edit.erb -->
+<h2>Edit Non-Renewal Action for <%= @mbr_action[:target_member_name] %></h2>
+
+<form action="/m/mbr_non_renewals/update/<%= @mbr_action[:id] %>" method="post">
+  <label for="tasked_to_mbr_id">Tasked To:</label>
+  <select name="tasked_to_mbr_id" id="tasked_to_mbr_id">
+    <option value=>-- Select Member --</option>
+    <% @mbrs.each do |mbr| %>
+      <option value="<%= mbr[:id] %>" <%= 'selected' if mbr[:id] == @mbr_action[:tasked_to_mbr_id] %>>
+        <%= "#{mbr[:fname]} #{mbr[:lname]} [#{mbr[:callsign]}]"%>
+      </option>
+    <% end %>
+  </select>
+  <br/>
+
+  <label for="notes">Notes:</label>
+    <textarea name="notes" id="notes" rows="4" cols="50"><%= @mbr_action[:notes] %></textarea>
+  <br/>
+  <label for="completed">Completed:</label>
+    <input type="checkbox" name="completed" id="completed" <%= @mbr_action[:completed] ? 'checked' : '' %> />
+  <br/>
+  
+
+  <button type="submit">Update Non-Renewal</button>
+  <a href="/m/mbr_non_renewals/show">Cancel</a>
+</form>

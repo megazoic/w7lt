@@ -1,0 +1,52 @@
+<br/>
+<h1>Action: <%= @action_type[:callme][:descr] %></h1>
+<table>
+  <thead>
+    <tr>
+      <th>Member Name</th>
+      <th>Authorized User</th>
+      <th>Tasked To</th>
+      <th>Notes</th>
+      <th>Timestamp</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @mbr_call_me_actions.each do |ma| %>
+      <tr>
+        <td><a href="/r/member/show/<%=ma[:target_member_id]%>"><%= ma[:target_member_name] %></a></td>
+        <td><%= ma[:a_user_name] %></td>
+        <td><%= ma[:tasked_to] %></td>
+        <td><%= ma[:notes] %><% if ma[:has_logs] == true %><em> More notes</em><% end %></td>
+        <td><%= ma[:ts] %></td>
+        <td><a href="/m/member_action/add_note?mbr_action_id=<%=ma[:id]%>&type=<%=@action_type[:callme][:name]%>">Add Note</a> | <a href="/m/mbr_callme/edit/<%=ma[:id]%>">edit</a></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<br/>
+<h1>Action: <%= @action_type[:nonrenewal][:descr] %></h1>
+<table>
+  <thead>
+    <tr>
+      <th>Member Name</th>
+      <th>Authorized User</th>
+      <th>Tasked To</th>
+      <th>Notes</th>
+      <th>Timestamp</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @mbr_non_renewal_actions.each do |ma| %>
+      <tr>
+        <td><a href="/r/member/show/<%=ma[:target_member_id]%>"><%= ma[:target_member_name] %></a></td>
+        <td><%= ma[:a_user_name] %></td>
+        <td><%= ma[:tasked_to] %></td>
+        <td><%= ma[:notes] %></td>
+        <td><%= ma[:ts] %><% if ma[:has_logs] == true %><em> More notes</em><% end %></td>
+        <td><a href="/m/member_action/add_note?mbr_action_id=<%=ma[:id]%>&type=<%=@action_type[:nonrenewal][:name]%>">Add Note</a> | <a href="/m/mbr_non_renewals/edit/<%=ma[:id]%>">edit</a></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
