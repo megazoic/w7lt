@@ -21,12 +21,13 @@
 <% end %>
 
 <h3>Add Additional Log Note</h3>
-<form action="/m/member_action/add_note/<%= @mbr_action[:id] %>" method="post">
-    <input type="hidden" name="_method" value="post">
+<form action="/m/member_action/add_note" method="post">
+  <input type="hidden" name="mbr_action_id" value="<%= @mbr_action[:id] %>">
+  <input type="hidden" name="_method" value="post">
   <textarea name="note" rows="4" cols="60" placeholder="Enter additional log note here"></textarea>
   <br>
   <button type="submit">Add Note</button>
-  <a href="/m/mbr_non_renewals/show">Cancel</a>
+  <a href="/m/followup/show">Cancel</a>
 </form>
 <script type="text/javascript">
   document.addEventListener('DOMContentLoaded', () => {

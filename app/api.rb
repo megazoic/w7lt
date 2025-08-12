@@ -1235,7 +1235,7 @@ module MemberTracker
                 notes: call_why, completed: false, a_user_id: session[:auth_user_id])
               ma.save
               log_call = Log.new(mbr_id: mbr.id, a_user_id: session[:auth_user_id], ts: Time.now,
-                notes: "call request:#{call_why}", action_id: Action.get_action_id("mbr_action"))
+                notes: "call request:#{call_why}", action_id: Action.get_action_id("mbr_call_me"))
               log_call.save
             end
             #if there is a referral type, add it to the member_actions table
@@ -1294,7 +1294,7 @@ module MemberTracker
                 notes: call_why, completed: false, a_user_id: session[:auth_user_id], ts: Time.now)
               ma.save
               log_call = Log.new(mbr_id: mbr_record.id, a_user_id: session[:auth_user_id], ts: Time.now,
-                notes: "call request:#{call_why}", action_id: Action.get_action_id("mbr_action"))
+                notes: "call request:#{call_why}", action_id: Action.get_action_id("mbr_call_me"))
               log_call.save
             end
           end
@@ -1965,7 +1965,7 @@ module MemberTracker
       puts "augmented_notes are #{augmented_notes}"
       #look for jotform survey response in notes requesting a call from club members
       log_action = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id],
-      ts: Time.now, action_id: Action.get_action_id("mbr_action"))
+      ts: Time.now, action_id: Action.get_action_id("mbr_call_me"))
       if /leader\?\s+Yes/.match(augmented_notes)
         #need to add to member_actions table
         DB[:member_actions].insert(member_action_type_id: 1, member_target: params[:mbr_id],
@@ -1973,7 +1973,7 @@ module MemberTracker
           notes: "Jotform request for a call from club members", ts: DateTime.now)
         #need to add to log table
         #l = Log.new(mbr_id: mbr_id, a_user_id: session[:auth_user_id],
-        #  ts: Time.now, notes: "Jotform request for a call from club members", action_id: Action.get_action_id("mbr_action"))
+        #  ts: Time.now, notes: "Jotform request for a call from club members", action_id: Action.get_action_id("mbr_call_me"))
         #l.save
         log_action.notes = "Jotform request for a call from club members"
       end
@@ -2868,6 +2868,7 @@ module MemberTracker
       erb :m_non_renew_edit, :layout => :layout_w_logout
     end
     post '/m/mbr_non_renewals/update/:id' do
+      #used to _update_ a member action record for non_renewals, _not_ to add a note
       #params are {"id"=>"AN ID IN MEMBER_ACTIONS TABLE", "tasked_to_mbr_id"=>"A MEMBER ID", "completed"=>"" (OR "on"), "notes"=>"some notes"}
       #get existing member action
       mbr_action = DB[:member_actions].where(id: params[:id]).first
@@ -2914,7 +2915,7 @@ module MemberTracker
       if params[:_method] != 'delete'
         #js not enabled, need to find another way to confirm this action
         session[:msg] = "Member action was not deleted, please enable Javascript on your browser"
-        redirect '/m/mbr_actions/show'
+        redirect '/m/followup/show'
       end
       #get the member action record
       mbr_action = DB[:member_actions].where(id: params[:id]).first
@@ -3012,6 +3013,53 @@ module MemberTracker
       end
       erb :m_member_action_add_note, :layout => :layout_w_logout
     end
+    post '/m/member_action/add_note' do
+      #params are {"mbr_action_id"=>"1", _method"=>"post", "notes"=>"some notes"}
+      #check to see if the mbr_action_id is present
+      if params[:mbr_action_id].nil?
+        session[:msg] = "No member action id was provided"
+        redirect '/m/followup/show'
+      end
+      #check to see if the notes are present
+      if params[:note].nil? || params[:note].empty?
+        session[:msg] = "No notes were provided"
+        redirect '/m/followup/show'
+      end
+      #get the member action record
+      mbr_action = DB[:member_actions].where(id: params[:mbr_action_id]).first
+      if mbr_action.nil?
+        session[:msg] = "No member action record found for id: #{params[:mbr_action_id]}"
+        redirect '/m/followup/show'
+      end
+      #get the member target
+      mbr_action[:target_member_name] = "#{Member[mbr_action[:member_target]].fname} #{Member[mbr_action[:member_target]].lname}"
+      mbr_action[:target_member_id] = mbr_action[:member_target]
+      #get the action type
+      mbr_action_type = DB[:member_action_types].where(id: mbr_action[:member_action_type_id]).first
+      log_action_id = nil
+      if mbr_action_type[:name] == 'call_member'
+        #get the action id for call_member
+        log_action_id = Action.get_action_id("mbr_call_me")
+      elsif mbr_action_type[:name] == 'non_renew_followup'
+        #get the action id for non_renew_followup
+        log_action_id = Action.get_action_id("member_not_renew_followup")
+      else
+        session[:msg] = "Invalid member action type provided"
+        redirect '/m/followup/show'
+      end
+      #create a new log entry for this member action
+      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, notes: params[:note],
+        mbr_action_id: params[:mbr_action_id], action_id: log_action_id, mbr_id: mbr_action[:member_target])
+      begin
+        DB.transaction do
+          l.save
+          session[:msg] = 'Note was successfully added to member action'
+        end
+      rescue StandardError => e
+        session[:msg] = "The note was not added to the member action\n#{e}"
+      end
+      redirect '/m/followup/show'
+    end
     get '/m/mbr_callme/edit/:id' do
       @mbr_action = DB[:member_actions].where(id: params[:id]).first
       @mbr_action[:tasked_to_mbr_id] = @mbr_action[:tasked_to_mbr_id].nil? ? "NONE" : @mbr_action[:tasked_to_mbr_id]
@@ -3027,6 +3075,7 @@ module MemberTracker
       erb :m_callme_edit, :layout => :layout_w_logout
     end
     post '/m/mbr_callme/update/:id' do
+      #used to _update_ a member action record for call_me, _not_ to add a note
       #params are {"id"=>"1", "tasked_to_mbr_id"=>"NNN SOME NAME", "completed"=>"false", "notes"=>"some notes"}
       #extract the member id from the tasked_to_mbr_id
       #check to see if there is a member id in the tasked_to_mbr_id if not set nil
