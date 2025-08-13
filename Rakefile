@@ -179,6 +179,44 @@ namespace :db do
     end
     puts "logs from dues payments with mbrs requesting a call #{log_ids}"
   end
+  desc "Find members who did not renew"
+  task :find_non_renewing_mbrs do
+    #script to find members who did not renew
+    require "sequel"
+    require "./app/api.rb"
+    #use mbr_renewals table
+    mbr_renewals = DB[:mbr_renewals].select(:mbr_id, :ts).where(renewal_event_type_id: 8)
+    mbr_renewals.each do |mbr|
+      #add to member_actions table if mbr_renewals[:ts > DateTime.now - 365]
+      count = 1
+      if mbr[:ts].to_date > DateTime.now.to_date - 365
+        #check if member action already exists member_action_type_id: 3 is non_renew_followup
+        mbr_action = DB[:member_actions].where(member_target: mbr[:mbr_id], member_action_type_id: 3).first
+        if mbr_action.nil?
+          #get user input to confirm
+          puts "Insert non-renewal action for member #{mbr[:mbr_id]}? (y/n/q)"
+          answer = $stdin.gets.strip.downcase
+          case answer
+          when 'y'
+          #insert new member action
+          DB[:member_actions].insert(a_user_id: 22, member_target: mbr[:mbr_id], member_action_type_id: 3,
+          notes: "Member did not renew, mass data entry: #{count}", completed: false, ts: DateTime.now)
+          puts "Inserted non-renewal action for member #{mbr[:mbr_id]}"
+          count += 1
+          when 'n'
+            puts "Skipping member #{mbr[:mbr_id]}"
+          when 'q'
+            puts "Exiting"
+            break
+          else
+            puts "Invalid input, please enter y/n/q"
+          end
+        else
+          puts "Member action already exists for member #{mbr[:mbr_id]}"
+        end
+      end
+    end
+  end
 end
 #methods available to tasks
 def categorize(answer_str, question_symbol)
