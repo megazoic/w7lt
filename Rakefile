@@ -200,7 +200,7 @@ namespace :db do
           when 'y'
           #insert new member action
           DB[:member_actions].insert(a_user_id: 22, member_target: mbr[:mbr_id], member_action_type_id: 3,
-          notes: "Member did not renew, mass data entry: #{count}", completed: false, ts: DateTime.now)
+          notes: "Member did not renew, mass data entry: #{count}", completed: false, ts: mbr[:ts])
           puts "Inserted non-renewal action for member #{mbr[:mbr_id]}"
           count += 1
           when 'n'
