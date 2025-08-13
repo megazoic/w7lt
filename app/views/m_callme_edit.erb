@@ -1,14 +1,16 @@
-<h1>Edit Member Action: <a href="/r/member/show/<%=@mbr_action[:target_member_id]%>"><%=@mbr_action[:target_member_name]%></a></h1>
+<h1>Edit Member Action type 'Call Me':</br>for <%=@mbr_action[:target_member_name]%></h1>
 <p>Action Type: <%=@mbr_action[:action_type]%></p>
 <form action="/m/mbr_callme/update/<%= @mbr_action[:id] %>" method="post">
 
-  <label for="tasked_to">Assign to Member:</label>
-  <input type="text" name="tasked_to_mbr_id" id="tasked_to" list="members" value="<%= @mbr_action[:tasked_to_mbr_id] %>" />
-  <datalist id="members">
+  <label for="tasked_to_mbr_id">Tasked To:</label>
+  <select name="tasked_to_mbr_id" id="tasked_to_mbr_id">
+    <option value=>-- Select Member --</option>
     <% @mbrs.each do |mbr| %>
-      <option value="<%= mbr[:id] %>"><%= "#{mbr[:name]} #{mbr[:callsign]}" %></option>
+      <option value="<%= mbr[:id] %>" <%= 'selected' if mbr[:id] == @mbr_action[:tasked_to_mbr_id] %>>
+        <%= "#{mbr[:fname]} #{mbr[:lname]} [#{mbr[:callsign]}]"%>
+      </option>
     <% end %>
-  </datalist>
+  </select>
   <br/>
 
   <label for="completed">Mark as Completed:</label>

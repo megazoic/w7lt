@@ -2309,8 +2309,7 @@ module MemberTracker
           pay[:log_id] = log_pay.values[:id]
           pay.save
           #wrap up log for action if there needs to be one
-          if !log_action.notes.nil?
-            log_action.notes = "Jotform request for a call from club members"
+          if (!log_action.notes.nil? || log_action.notes != "")
             log_action.save
           end
           #associate this payment record with any changes to member mbrship_renewal_date and mbr_type fields
@@ -2877,7 +2876,7 @@ module MemberTracker
       updated_mbr_action[:notes] = params[:notes]
       updated_mbr_action[:ts] = DateTime.now
       updated_mbr_action[:completed] = params[:completed].nil? ? false : true
-      updated_mbr_action[:id] = params[:id]
+      updated_mbr_action[:id] = params[:id].to_i
       updated_mbr_action[:tasked_to_mbr_id] = nil
       if params[:tasked_to_mbr_id] != ''
         updated_mbr_action[:tasked_to_mbr_id] = params[:tasked_to_mbr_id].to_i
@@ -2890,8 +2889,9 @@ module MemberTracker
           DB.transaction do
             DB[:member_actions].where(id: params[:id]).update(updated_mbr_action)
             #add log entry for this action
+            log_notes = MemberAction.build_log_notes(mbr_action, updated_mbr_action)
             l = Log.new(mbr_id: mbr_action[:member_target], a_user_id: session[:auth_user_id], ts: Time.now,
-              notes: "Updated member action for non-renewal followup", action_id: Action.get_action_id("member_not_renew_followup"))
+              notes: log_notes, action_id: Action.get_action_id("member_not_renew_followup"))
             l.save
           end
           session[:msg] = 'Member action was successfully updated'
@@ -2994,6 +2994,12 @@ module MemberTracker
       #get the member target
       @mbr_action[:target_member_name] = "#{Member[@mbr_action[:member_target]].fname} #{Member[@mbr_action[:member_target]].lname}"
       @mbr_action[:target_member_id] = @mbr_action[:member_target]
+      #get the name of the member tasked to this action
+      if @mbr_action[:tasked_to_mbr_id].nil?
+        @mbr_action[:tasked_to_mbr_name] = "NONE"
+      else
+        @mbr_action[:tasked_to_mbr_name] = "#{Member[@mbr_action[:tasked_to_mbr_id]].fname} #{Member[@mbr_action[:tasked_to_mbr_id]].lname}"
+      end
       #get additional logs for this member action
       if params[:type] == 'call_member'
         action_id = Action[type: 'mbr_call_me'].id
@@ -3066,12 +3072,10 @@ module MemberTracker
       @mbr_action[:target_member_name] = "#{Member[@mbr_action[:member_target]].fname} #{Member[@mbr_action[:member_target]].lname}"
       @mbr_action[:target_member_id] = @mbr_action[:member_target]
       @mbr_action[:action_type] = DB[:member_action_types].where(id: @mbr_action[:member_action_type_id]).first[:descr]
-      #get list of members to assign to this action
-      mbrs = DB[:members].select(:id, :fname, :lname, :callsign).all
-      @mbrs = []
-      mbrs.each do |m|
-        @mbrs << {id: m[:id], name: "#{m[:fname]} #{m[:lname]}", callsign: m[:callsign]}
-      end
+      #get list of members that are authorized users to assign to this action
+      mbr_id_hash = DB[:auth_users].select(:mbr_id).exclude(role_id: Role[:name => "inactive"].id).all
+      mbr_ids = mbr_id_hash.map{|x| x[:mbr_id]}
+      @mbrs = DB[:members].select(:id, :fname, :lname, :callsign).where(id: mbr_ids).all
       erb :m_callme_edit, :layout => :layout_w_logout
     end
     post '/m/mbr_callme/update/:id' do
@@ -3079,48 +3083,93 @@ module MemberTracker
       #params are {"id"=>"1", "tasked_to_mbr_id"=>"NNN SOME NAME", "completed"=>"false", "notes"=>"some notes"}
       #extract the member id from the tasked_to_mbr_id
       #check to see if there is a member id in the tasked_to_mbr_id if not set nil
-      tasked_to_mbr_id = nil
-      if params[:tasked_to_mbr_id] != 'NONE'
-        tasked_to_mbr_id = params[:tasked_to_mbr_id].split(" ")[0].to_i
-      end
-      #if params[:completed] is absent then set to false
-      if params[:completed].nil?
-        params[:completed] = false
-      else
-        params[:completed] = true
+      mbr_action = DB[:member_actions].where(id: params[:id]).first
+      updated_mbr_action = {}
+      updated_mbr_action[:a_user_id] = session[:auth_user_id]
+      updated_mbr_action[:notes] = params[:notes]
+      updated_mbr_action[:ts] = DateTime.now
+      updated_mbr_action[:completed] = params[:completed].nil? ? false : true
+      updated_mbr_action[:id] = params[:id].to_i
+      updated_mbr_action[:tasked_to_mbr_id] = nil
+      if params[:tasked_to_mbr_id] != ''
+        updated_mbr_action[:tasked_to_mbr_id] = params[:tasked_to_mbr_id].to_i
       end
       #check to see if there are any changes to be made to the member_actions table
-      mbr_action = DB[:member_actions].where(id: params[:id]).first
-      #remove id from mbr_action
-      mbr_action.delete(:id)
-      #update the remaining member hash with values from param
-      log_notes = "making changes to mbr_action record id: #{params[:id]}\n"
-      mbr_action.each do |k,v|
-        if k == :tasked_to_mbr_id
-          mbr_action[k] = tasked_to_mbr_id
-          log_notes << "tasked_to_mbr_id: old record: #{v}, new record: #{mbr_action[k]}\n"
-        else
-          if params.has_key?(k)
-            if mbr_action[k] != params[k]
-              log_notes << "#{k}: old record #{mbr_action[k]}, new record #{params[k]}\n"
-              mbr_action[k] = params[k]
-            end
-          end
-        end
-      end
-      l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, notes: log_notes,
-        action_id: Action.get_action_id("mbr_call_me"), mbr_action_id: params[:id])
-      begin
-        DB.transaction do
-          #write members table data
-          if !mbr_action.empty?
-            DB[:member_actions].where(id: params[:id]).update(mbr_action)
+      if (mbr_action[:tasked_to_mbr_id] != updated_mbr_action[:tasked_to_mbr_id] ||
+         mbr_action[:notes] != updated_mbr_action[:notes] ||
+         mbr_action[:completed] != updated_mbr_action[:completed])
+        log_notes = MemberAction.build_log_notes(mbr_action, updated_mbr_action)
+        begin
+          DB.transaction do
+            DB[:member_actions].where(id: params[:id]).update(updated_mbr_action)
+            #add log entry for this action
+            l = Log.new(mbr_id: mbr_action[:member_target], a_user_id: session[:auth_user_id], ts: Time.now,
+              notes: log_notes, action_id: Action.get_action_id("mbr_call_me"))
             l.save
           end
+          session[:msg] = 'Member action was successfully updated'
+        rescue StandardError => e
+          session[:msg] = "The member action was not updated\n#{e}"
         end
-        session[:msg] = 'Action was successfully updated'
+      end
+      redirect '/m/followup/show'
+    end
+    get '/m/mbr_callme/new/:id' do
+      #need to associate with a member (the :id in the url)
+      @target_mbr = DB[:members].select(:id, :fname, :lname, :callsign).where(id: params[:id]).first
+      if @target_mbr.nil?
+        session[:msg] = "No member found with id: #{params[:id]}"
+        redirect '/m/followup/show'
+      end
+      #get list of members that are authorized users to assign to this action
+      mbr_id_hash = DB[:auth_users].select(:mbr_id).exclude(role_id: Role[:name => "inactive"].id).all
+      mbr_ids = mbr_id_hash.map{|x| x[:mbr_id]}
+      @mbrs = DB[:members].select(:id, :fname, :lname, :callsign).where(id: mbr_ids).all
+      #get the member action type
+      @mbr_action_type = DB[:member_action_types].where(name: 'call_member').first
+      if @mbr_action_type.nil?
+        session[:msg] = "No member action type found for 'call_member'"
+        redirect '/m/followup/show'
+      end
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
+      erb :m_callme_new, :layout => :layout_w_logout
+    end
+    post '/m/mbr_callme/new' do
+      #Params: {"mbr_action_id"=>"1", "_method"=>"post", "target_mbr_id"=>"652", "mbr_tasked_to"=>"438", "note"=>"a note"}
+      #check to see if the member_target is present
+      if params[:target_mbr_id].nil? || params[:target_mbr_id].empty?
+        session[:msg] = "No member target was provided"
+        redirect '/m/followup/show'
+      end
+      #check to see if the notes are present
+      if params[:note].nil? || params[:note].empty?
+        session[:msg] = "No notes were provided"
+        redirect '/m/followup/show'
+      end
+      #extract the member id from the tasked_to_mbr_id
+      #check to see if there is a member id in the tasked_to_mbr_id if not set nil
+      tasked_to_mbr_id = nil
+      if params[:mbr_tasked_to] != 'NONE'
+        tasked_to_mbr_id = params[:mbr_tasked_to].to_i
+      end
+      #create a new member action record for call_member
+      mbr_action = DB[:member_actions]
+      begin
+        DB.transaction do
+          ma_id = nil
+          ma_id = mbr_action.insert(member_target: params[:target_mbr_id], tasked_to_mbr_id: tasked_to_mbr_id,
+            a_user_id: session[:auth_user_id], notes: params[:note], ts: DateTime.now,
+            completed: false, member_action_type_id: MemberActionType[name: 'call_member'].id)
+          #add log entry for this action
+          l = Log.new(mbr_id: params[:target_mbr_id], a_user_id: session[:auth_user_id], ts: Time.now,
+            notes: "Added member action for call_member _not_ via renewal", action_id: Action.get_action_id("mbr_call_me"),
+            mbr_action_id: ma_id)
+          l.save
+          session[:msg] = 'Member action was successfully recorded'
+        end
       rescue StandardError => e
-        session[:msg] = "The action was not updated\n#{e}"
+        session[:msg] = "The data was not entered successfully\n#{e}"
       end
       redirect '/m/followup/show'
     end

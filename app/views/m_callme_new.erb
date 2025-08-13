@@ -1,0 +1,30 @@
+<!-- filepath: /Users/nickdev/dev/ruby/working_apps/w7lt/app/views/m_callme_new.erb -->
+<h2>Add Note to Call Member Action for member <%= "#{@target_mbr[:fname]} #{@target_mbr[:lname]} (#{@target_mbr[:callsign]})" %></h2>
+<form action="/m/mbr_callme/new" method="post">
+  <input type="hidden" name="mbr_action_id" value="<%= @mbr_action_type[:id] %>">
+  <input type="hidden" name="_method" value="post">
+  <input type="hidden" name="target_mbr_id" value="<%= @target_mbr[:id] %>">
+  <select name="mbr_tasked_to">
+    <option value="NONE">Select Member to Task</option>
+    <% @mbrs.each do |mbr| %>
+      <option value="<%= mbr[:id] %>">
+        <%= "#{mbr[:fname]} #{mbr[:lname]} [#{mbr[:callsign]}]"%>
+      </option>
+    <% end %>
+
+  <label for="note">Note:</label><br>
+  <textarea name="note" id="note" rows="4" cols="60" placeholder="Enter your note here"></textarea>
+  <br>
+  <button type="submit">Add Note</button>
+  <a href="/m/followup/show">Cancel</a>
+</form>
+<script type="text/javascript">
+  document.addEventListener('DOMContentLoaded', () => {
+    const noteTextarea = document.querySelector('textarea[name="note"]');
+    if (noteTextarea) {
+      noteTextarea.addEventListener('focus', () => {
+        noteTextarea.select();
+      });
+    }
+  });
+</script>

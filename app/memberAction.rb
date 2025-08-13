@@ -49,5 +49,20 @@ module MemberTracker
       end
       return actions
     end
+    def self.build_log_notes(mbr_action, params)
+      #build log notes for the member action
+      log_notes = "making changes to mbr_action record id: #{mbr_action[:id]}\n"
+      mbr_action.each do |k,v|
+        if (k == :tasked_to_mbr_id && v != params[:tasked_to_mbr_id])
+          log_notes << "tasked_to_mbr_id: old record: #{v}, new record: #{params[:tasked_to_mbr_id]}\n"
+        else
+          #check if the value in params is different from the value in mbr_action
+          next if params[k].nil? || params[k] == v
+          #if it is different then add to log notes
+          log_notes << "#{k}: old record: #{v}, new record: #{params[k]}\n"
+        end
+      end
+      return log_notes
+    end
   end
 end
