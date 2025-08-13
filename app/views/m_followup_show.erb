@@ -4,6 +4,7 @@
   <thead>
     <tr>
       <th>Member Name</th>
+      <th>Attended Meeting*</th>
       <th>Authorized User</th>
       <th>Tasked To</th>
       <th>Notes</th>
@@ -15,6 +16,7 @@
     <% @mbr_call_me_actions.each do |ma| %>
       <tr>
         <td><a href="/r/member/show/<%=ma[:target_member_id]%>"><%= ma[:target_member_name] %></a></td>
+        <td><%= ma[:attended_meeting] ? 'Yes' : 'No' %></td>
         <td><%= ma[:a_user_name] %></td>
         <td><%= ma[:tasked_to] %></td>
         <td><%= ma[:notes] %><% if ma[:has_logs] == true %><em> More notes</em><% end %></td>
@@ -30,6 +32,7 @@
   <thead>
     <tr>
       <th>Member Name</th>
+      <th>Attended Meeting*</th>
       <th>Authorized User</th>
       <th>Tasked To</th>
       <th>Notes</th>
@@ -41,6 +44,7 @@
     <% @mbr_non_renewal_actions.each do |ma| %>
       <tr>
         <td><a href="/r/member/show/<%=ma[:target_member_id]%>"><%= ma[:target_member_name] %></a></td>
+        <td><%= ma[:attended_meeting] ? 'Yes' : 'No' %></td>
         <td><%= ma[:a_user_name] %></td>
         <td><%= ma[:tasked_to] %></td>
         <td><%= ma[:notes] %></td>
@@ -50,3 +54,4 @@
     <% end %>
   </tbody>
 </table>
+<p>* Attended Meeting: This indicates if the member attended a meeting within the last 90 days.</p>

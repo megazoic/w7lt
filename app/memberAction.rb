@@ -15,7 +15,7 @@ module MemberTracker
         :a_user_id, :notes, :ts).reverse_order(:ts).all
       member_actions.each do |ma|
         #get the member name from the member table
-        mbr = Member.where(id: ma.member_target).select(:fname, :lname, :callsign).first
+        mbr = Member.where(id: ma.member_target).first
         if mbr
           #build auth user name
           a_user_name = "#{Auth_user.where(id: ma.a_user_id).first.member.fname} #{Auth_user.where(id: ma.a_user_id).first.member.lname}"
@@ -41,6 +41,14 @@ module MemberTracker
           logs = DB[:logs].where(mbr_action_id: ma.id, mbr_id: ma.member_target).all
           if logs && logs.length > 0
             ma_hash[:has_logs] = true
+          end
+          #check if this member attended a meeting within the last 90 days
+          ma_hash[:attended_meeting] = false
+          mbr.events.each do |event|
+            if event[:ts].to_date > (Date.today - 90)
+              ma_hash[:attended_meeting] = true
+              break
+            end
           end
           actions << ma_hash
         else
