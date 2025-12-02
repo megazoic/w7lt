@@ -69,11 +69,14 @@ module MemberTracker
           end
         end
         mbr_codes = []
+        #expecting the notes field in logs table to contain the jotform responses but this may
+        #not be the case, since notes field is freeform text and the word 'jotform' may be there
+        #but not from the survey. Need to parse carefully
         log_ids.each do |logid|
           note_to_test = logs.first(id: logid[1])[:notes]
           lines_from_log_notes = nil
           topics, freq, modes = nil
-          question_h = {topic: [], freq: [], mode: []}
+          question_h = {topic: [], freq: [], mode: [], callback: []}
           active_q = nil
           cont_from_q = false #needed bc may incorrectly copy survey from email
           if /^.*jotform/.match(note_to_test)
@@ -99,6 +102,11 @@ module MemberTracker
                   active_q = :mode
                   m = /.*\?(.*)/.match(line)
                   question_h[active_q] << m[1].strip
+                elsif /Would/.match(line)
+                  #response to 'Would you like a callback?
+                  active_q = :callback
+                  m = /.*\?(.*)/.match(line)
+                  question_h[active_q] << m[1].strip
                 else
                   if cont_from_q == true
                     if !/^\*\*/.match(line)
@@ -110,7 +118,10 @@ module MemberTracker
                 end
               end
             end
-            if !question_h[active_q].empty?
+            #need to detect if any data was found or if the active_q is nil
+            if active_q.nil?
+              #skip this
+            elsif !question_h[active_q].empty?
               codes = []
               question_h[:topic].each do |topic|
                 #there is 'other' choice with textbox response. Grab this
@@ -134,6 +145,13 @@ module MemberTracker
                   other[:modes] << mode_response.split('|')[1]
                 else
                   codes << mode_response
+                end
+              end
+              question_h[:callback].each do |cb|
+                if /Yes/.match(cb)
+                  codes << "CB1"
+                elsif /No/.match(cb)
+                  codes << "CB2"
                 end
               end
               #(0)mbr_id, (1)all checkboxes checked, (2)log_id, (3)other input
