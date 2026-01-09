@@ -3,11 +3,13 @@
 <% if @attendance_data && !@attendance_data.empty? %>
   <table border="1">
     <tr>
-      <th>Event Date</th>
-      <th># Hybrid Meeting</th>
-      <th># In-Person Meeting</th>
-      <th># Online Meeting</th>
-      <th>Total Attendance</th>
+        <th>Event Date</th>
+        <th># Hybrid Meeting</th>
+        <th># In-Person Meeting</th>
+        <th># Online Meeting</th>
+        <th>Total Attendance</th>
+        <th>Event Name - Description</th>
+        <th>View Event Details</th>
     </tr>
     <% @attendance_data.each do |event_date, data| %>
       <tr>
@@ -16,6 +18,8 @@
         <td><%= data[:inperson] %></td>
         <td><%= data[:zoom] %></td>
         <td><%= data[:event_date_total] %></td>
+        <td><%= data[:name] %> - <%= data[:descr] %></td>
+        <td><a href="/m/event/attendees/show/<%= data[:event_id] %>">Details</a></td>
       </tr>
     <% end %>
   </table>

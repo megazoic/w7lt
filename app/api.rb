@@ -503,6 +503,8 @@ module MemberTracker
       erb :e_attendance_query, :layout => :layout_w_logout
     end
     post '/r/event/attendance' do
+      #temporary warning for unavailable data
+      @no_data = nil
       #for now only building attendance report for general meetings
       @attendance_data = nil
       event_type_options = EventType::EVENT_TYPE_OPTIONS
@@ -534,6 +536,7 @@ module MemberTracker
           end
           #now build out the combined hash
           #for now (monthly-inperson => 10, monthly-on_zoom => 11 and monthly meeting OLD => 2)
+          #obtaind from EventType::EVENT_TYPE_OPTIONS
           combined_counts = Hash.new
           event_dates.each do |ed|
             combined_counts[ed] = {old_format: 0, inperson: 0, zoom: 0}
@@ -551,6 +554,10 @@ module MemberTracker
                   puts "unknown meeting type #{mtng[:event_type_id]}\n"
                   #do nothing
                 end
+                #add :id, :name and :descr from mtng to @attendance_data
+                combined_counts[ed][:event_id] = mtng[:event_id]
+                combined_counts[ed][:name] = mtng[:event_name]
+                combined_counts[ed][:descr] = mtng[:description]
               end
               @attendance_data = combined_counts
             end
@@ -568,14 +575,16 @@ module MemberTracker
         end
       end
       if combined_counts.nil?
-        session[:msg] = "Data for this event type is currently unavailable"
-        redirect '/r/event/attendance'
+        puts "no data found"
       else
         #summarize by event date
         event_date_sum = 0
+        #select only member count keys
         @attendance_data.each do |k,v|
           v.each do |type, count|
-            event_date_sum += count
+            if [:old_format, :inperson, :zoom].include?(type)
+              event_date_sum += count
+            end
           end
           #add event date total to hash
           v[:event_date_total] = event_date_sum

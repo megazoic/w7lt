@@ -1,5 +1,10 @@
 <!-- Display attendance query form for an event type, use checkbox input type -->
 <h2>Attendance Query</h2>
+<div style="color:red;" id="wrong_choice" hidden>
+  <% if @no_data %>
+    <p><%= @no_data %></p>
+  <% end %>
+</div>
 <h3>Note: Only general meetings are supported. Other event types will return no results.</h3>
 <form action="/r/event/attendance" method="post">
   <label for="event_type_id">Event Type:</label><br>
@@ -9,3 +14,23 @@
     <% end %>
   <input type="submit" value="View Attendance">
 </form>
+<!-- Set up JS to select first radio button by default -->
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const firstRadio = document.querySelector('input[name="event_type_id"]');
+    if (firstRadio) {
+      firstRadio.checked = true;
+    }
+  });
+  //add event listener to form submission to check if a radio button other than general meeting is selected
+  const form = document.querySelector('form[action="/r/event/attendance"]');
+  form.addEventListener("submit", function(event) {
+    const selectedEventType = document.querySelector('input[name="event_type_id"]:checked').value;
+    if (selectedEventType !== "1") { //assuming "1" is the value for general meeting
+      event.preventDefault();
+      const warningDiv = document.getElementById("wrong_choice");
+      warningDiv.hidden = false;
+      warningDiv.innerHTML = "<p>Please select 'General Meeting' to view attendance data.</p>";
+    }
+  });
+</script>
