@@ -1,0 +1,11 @@
+<!-- Display attendance query form for an event type, use checkbox input type -->
+<h2>Attendance Query</h2>
+<h3>Note: Only general meetings are supported. Other event types will return no results.</h3>
+<form action="/r/event/attendance" method="post">
+  <label for="event_type_id">Event Type:</label><br>
+    <% @event_types.each do |key,value| %>
+        <input type="radio" id="et_<%= key %>" name="event_type_id" value="<%= key %>">
+        <label for="et_<%= key %>"><%= value %></label><br>
+    <% end %>
+  <input type="submit" value="View Attendance">
+</form>

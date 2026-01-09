@@ -33,6 +33,7 @@ module MemberTracker
       @role = Role.new
       @log = Log.new
       @action = Action.new
+      @event = Event.new
       super()
     end
     enable :sessions
@@ -495,6 +496,95 @@ module MemberTracker
       else
         redirect '/home'
       end
+    end
+    get '/r/event/attendance' do
+      #build event type selection list
+      @event_types = EventType::EVENT_TYPE_OPTIONS
+      erb :e_attendance_query, :layout => :layout_w_logout
+    end
+    post '/r/event/attendance' do
+      #for now only building attendance report for general meetings
+      @attendance_data = nil
+      event_type_options = EventType::EVENT_TYPE_OPTIONS
+      #which option was selected?
+      selected_type = nil
+      event_type_options.each do |key, value|
+        if params["event_type_id"] == key
+          selected_type = key
+          break
+        end
+      end
+      if selected_type.nil?
+        session[:msg] = "Invalid event type selection"
+        redirect '/r/event/attendance'
+      else
+        #set up switch for selected type
+        case selected_type
+        when '1' #general meeting
+          member_mtng_counts = @event.member_count()
+          #combine hashes by event_date keeping counts separate for each event type
+          #want data structure like:
+          # {event_date1: {old_format: x, inperson: y, zoom: z}, event_date2: {...}, ...}
+          # first get list of all event dates
+          event_dates = []
+          member_mtng_counts.each do |mtng|
+            if !event_dates.include?(mtng[:event_date])
+              event_dates << mtng[:event_date]
+            end
+          end
+          #now build out the combined hash
+          #for now (monthly-inperson => 10, monthly-on_zoom => 11 and monthly meeting OLD => 2)
+          combined_counts = Hash.new
+          event_dates.each do |ed|
+            combined_counts[ed] = {old_format: 0, inperson: 0, zoom: 0}
+            member_mtng_counts.each do |mtng|
+              if mtng[:event_date] == ed
+                case mtng[:event_type_id]
+                when 2 #old format meeting
+                  combined_counts[ed][:old_format] = mtng[:member_count]
+                when 10 #inperson meeting
+                  #puts "found inperson meeting for date #{ed} and count #{mtng[event_type_id: 10][:member_count]}\n"
+                  combined_counts[ed][:inperson] = mtng[:member_count]
+                when 11 #zoom meeting
+                  combined_counts[ed][:zoom] = mtng[:member_count]
+                else
+                  puts "unknown meeting type #{mtng[:event_type_id]}\n"
+                  #do nothing
+                end
+              end
+              @attendance_data = combined_counts
+            end
+          end
+        when '2' #POTA
+          puts "POTA selected"
+        when '3' #field day
+          puts "field day selected"
+        when '4' #holiday & bbq
+          puts "holiday & bbq selected"
+        when '5' #board meeting
+          puts "board meeting selected"
+        else
+          puts "other event type selected"
+        end
+      end
+      if combined_counts.nil?
+        session[:msg] = "Data for this event type is currently unavailable"
+        redirect '/r/event/attendance'
+      else
+        #summarize by event date
+        event_date_sum = 0
+        @attendance_data.each do |k,v|
+          v.each do |type, count|
+            event_date_sum += count
+          end
+          #add event date total to hash
+          v[:event_date_total] = event_date_sum
+          event_date_sum = 0 #reset for next date
+        end
+      end
+      #finally, sort by event date descending
+      @attendance_data = @attendance_data.sort_by{|k,v| k}.reverse.to_h
+      erb :e_attendance, :layout => :layout_w_logout
     end
     get '/m/query' do
       erb :query, :layout => :layout_w_logout
