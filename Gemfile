@@ -1,10 +1,10 @@
 source 'https://rubygems.org'
 
-ruby '3.2.6'
+ruby '3.3.10'
 
 
 gem 'rackup', '2.2.1'
-gem "puma", "6.4.3"
+gem "puma", "7.0.3"
 gem 'rake', '13.2.1'
 gem 'rspec', '3.9.0'
 gem 'coderay', '1.1.2'
