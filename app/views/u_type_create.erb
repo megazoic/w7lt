@@ -9,12 +9,13 @@
 </tr>
 </thead>
 <tbody>
+  <%p = URI::Parser.new%>
 <%for ut in @unit_types%>
 <tr>
 <td><%=ut[:type]%></td>
 <td><%=ut[:descr]%></td>
 <td><%=ut.auth_users.member.callsign%></td>
-<td><a href=<%=URI.escape("/m/unit/list/#{ut[:type]}")%>>List</a></td>
+<td><a href=<%=p.escape("/m/unit/list/#{ut[:type]}")%>>List</a></td>
 </tr>
 <%end%>
 </tbody>
