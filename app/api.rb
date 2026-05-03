@@ -23,13 +23,12 @@ require_relative 'memberActionType'
 
 module MemberTracker
   #using modular (cf classical) approach (see https://www.toptal.com/ruby/api-with-sinatra-and-sequel-ruby-tutorial)
-  RecordResult = Struct.new(:success?, :member_id, :message)
   Paid_up = Struct.new(:active, :condition)
   class API < Sinatra::Base
-    def initialize()
+    def initialize(member: nil, auth_user: nil)
       @payment = Payment.new
-      @member = Member.new
-      @auth_user = Auth_user.new
+      @member = member || Member.new
+      @auth_user = auth_user || AuthUser.new
       @role = Role.new
       @log = Log.new
       @action = Action.new
@@ -61,7 +60,7 @@ module MemberTracker
       #need to make exception for read_only editing their own profile
       ro_test_route = params['splat'][0].split('/')
       ro_action = ro_test_route.shift
-      mbr_id = Auth_user[session[:auth_user_id]].mbr_id.to_s
+      mbr_id = AuthUser[session[:auth_user_id]].mbr_id.to_s
       #test for matching id
       allow = false
       if ro_action == 'save'
@@ -119,7 +118,7 @@ module MemberTracker
         #need to reset password
         session[:auth_user_id] = auth_user_result['auth_user_id']
         session[:auth_user_roles] = auth_user_result['auth_user_roles']
-        mbr_id = Auth_user[auth_user_result['auth_user_id']].mbr_id
+        mbr_id = AuthUser[auth_user_result['auth_user_id']].mbr_id
         redirect "/reset_password/#{mbr_id}"
       elsif auth_user_result['error'] == 'inactive'
         session.clear
@@ -1064,7 +1063,7 @@ module MemberTracker
       when "auth_user" #view only current logged in users logs
         @type = "auth_user"
         @logs = []
-        au = Auth_user[session[:auth_user_id]]
+        au = AuthUser[session[:auth_user_id]]
         #are there any logs for this auth_user?
         if au.logs.length == 0
           session[:msg] = "there are no logs to view"
@@ -1085,7 +1084,7 @@ module MemberTracker
         end
       when "all"
         @type = "all"
-        aus = Auth_user.all
+        aus = AuthUser.all
         @logs = []
         no_logs = true
         aus.each do |au|
@@ -1148,7 +1147,7 @@ module MemberTracker
       #replace authorized user id, event type id
       if !@mbr_renewals.empty?
         @mbr_renewals.each do |mr|
-          mr.store(:a_user_id, Auth_user[mr[:a_user_id]].member.callsign)
+          mr.store(:a_user_id, AuthUser[mr[:a_user_id]].member.callsign)
           mr.store(:renewal_type, RenewalEventType[mr[:renewal_event_type_id]].name)
         end
       end
@@ -1156,7 +1155,7 @@ module MemberTracker
       #replace authorized user id, and add event type = renewal
       if !mbr_dues_payments.empty?
         mbr_dues_payments.each do |md|
-          md.store(:a_user_id, Auth_user[md[:a_user_id]].member.callsign)
+          md.store(:a_user_id, AuthUser[md[:a_user_id]].member.callsign)
           md.store(:renewal_type, "dues payment")
         end
       end
@@ -1498,7 +1497,7 @@ module MemberTracker
         elmer_mbr = "N/A"
         elmer_id = nil
         unit_array = []
-        unit_meta = {unit_creator: Auth_user[u.a_user_id].member.callsign, unit_created_at: u.ts.strftime("%m-%d-%y"),
+        unit_meta = {unit_creator: AuthUser[u.a_user_id].member.callsign, unit_created_at: u.ts.strftime("%m-%d-%y"),
           unit_active: u.active, unit_type: u.unit_type.type}
         #check if listing elmer or family units; need to add info specific to these
         if @u_c[0] == 'elmer' || unit_meta[:unit_type] == 'elmer'
@@ -1626,7 +1625,7 @@ module MemberTracker
       @unit = Unit[params[:id].to_i]
       #get a list of member ids that belong to this unit
       #also, if the unit is an elmer, find that elmer member
-      @unit_creator_callsign = Auth_user[@unit.a_user_id].member.callsign
+      @unit_creator_callsign = AuthUser[@unit.a_user_id].member.callsign
       unit_mbrs = []
       @unit_elmer = nil
       @unit.members.each do |mbr|
@@ -2560,7 +2559,7 @@ module MemberTracker
       end
       #build the log notes
       old_au_id = payment.a_user_id
-      auth_users_callsigns = {"old" => Auth_user[old_au_id].member.callsign, "new" => Auth_user[session[:auth_user_id]].member.callsign}
+      auth_users_callsigns = {"old" => AuthUser[old_au_id].member.callsign, "new" => AuthUser[session[:auth_user_id]].member.callsign}
       #need to edit the log for this payment
       augmented_notes = params[:notes].empty? ? "" : "#{params[:notes]}\n"
       log_pay = Log[payment.log_id]
@@ -2582,7 +2581,7 @@ module MemberTracker
         if payment.auditLog.empty?
           #need to alert the user and exit out of this route
           session[:msg] = "UNSUCCESSFUL, this payment record does not have an audit trail, cannot delete payment id: #{payment.id}"
-          augmented_notes << "\nattempt to delete payment id: #{payment.id} by #{Auth_user[session[:auth_user_id]].member.callsign} failed on #{Time.now.strftime("%m-%d-%y:%H:%M:%S")}"
+          augmented_notes << "\nattempt to delete payment id: #{payment.id} by #{AuthUser[session[:auth_user_id]].member.callsign} failed on #{Time.now.strftime("%m-%d-%y:%H:%M:%S")}"
           log_pay.notes = augmented_notes
           log_pay.save
           redirect '/m/payments/show'
@@ -2734,7 +2733,7 @@ module MemberTracker
       @renewals = []
       mrs.each do |mr|
         @renewals << {id: mr[:id], fname: Member[mr[:mbr_id]].fname, lname: Member[mr[:mbr_id]].lname,
-          callsign: Member[mr[:mbr_id]].callsign, recorded_by: Auth_user[mr[:a_user_id]].member.callsign,
+          callsign: Member[mr[:mbr_id]].callsign, recorded_by: AuthUser[mr[:a_user_id]].member.callsign,
           event_type: RenewalEventType[mr[:renewal_event_type_id]].name, mbr_id: mr[:mbr_id],
           notes: mr[:notes], ts: mr[:ts]}
       end
@@ -2742,7 +2741,7 @@ module MemberTracker
       #replace authorized user id, and add event type = renewal
       if !mbr_dues_payments.empty?
         mbr_dues_payments.each do |md|
-          md.store(:recorded_by, Auth_user[md[:a_user_id]].member.callsign)
+          md.store(:recorded_by, AuthUser[md[:a_user_id]].member.callsign)
           md.store(:event_type, "dues payment")
           md.store(:fname, Member[md[:mbr_id]].fname)
           md.store(:lname, Member[md[:mbr_id]].lname)
@@ -2816,8 +2815,8 @@ module MemberTracker
         augmented_notes << "old notes #{mbr_renewal_record[:notes]},
         new notes #{params[:notes]}\n"
       end
-      old_a_user_cs = Member[Auth_user[mbr_renewal_record[:a_user_id]].values[:mbr_id]].callsign
-      new_a_user_cs = Member[Auth_user[session[:auth_user_id]].values[:mbr_id]].callsign
+      old_a_user_cs = Member[AuthUser[mbr_renewal_record[:a_user_id]].values[:mbr_id]].callsign
+      new_a_user_cs = Member[AuthUser[session[:auth_user_id]].values[:mbr_id]].callsign
       if old_a_user_cs != new_a_user_cs
         augmented_notes << "old authorized user: #{old_a_user_cs}, new authorized user: #{new_a_user_cs}"
       end
@@ -2924,7 +2923,7 @@ module MemberTracker
     get '/m/mbr_renewals/destroy/:id' do
       renewal_record = MbrRenewal[params[:id]]
       @mbr_renewal_record = {id: params[:id], fname: Member[renewal_record[:mbr_id]].fname, lname: Member[renewal_record[:mbr_id]].lname,
-          recorded_by: Auth_user[renewal_record[:a_user_id]].member.callsign, mbr_callsign: Member[renewal_record[:mbr_id]].callsign,
+          recorded_by: AuthUser[renewal_record[:a_user_id]].member.callsign, mbr_callsign: Member[renewal_record[:mbr_id]].callsign,
           event_type: RenewalEventType[renewal_record[:renewal_event_type_id]].name,
           notes: renewal_record[:notes], ts: renewal_record[:ts]}
       erb :rnwl_record_destroy, :layout => :layout_w_logout
@@ -2937,7 +2936,7 @@ module MemberTracker
       end
       mbr_renewal_records = DB[:mbr_renewals]
       rnwl = mbr_renewal_records.where(id: params[:rnwl_id]).first
-      rnwl_auser = Auth_user[rnwl[:a_user_id]].member.callsign
+      rnwl_auser = AuthUser[rnwl[:a_user_id]].member.callsign
       rnwl_event_type = RenewalEventType[rnwl[:renewal_event_type_id]][:name]
       rnwl_event_date = rnwl[:ts].strftime("%D")
       autmented_notes = "deletion of member renewal record. Prev notes: #{rnwl[:notes]}\nReason for delete notes: #{params[:notes]}\nPrev authorized by #{rnwl_auser},
@@ -3026,7 +3025,7 @@ module MemberTracker
       tm = Member[mbr_action[:member_target]]
       target_member_name = "#{tm.fname} #{tm.lname}"
       #get the authorized user
-      au = Auth_user[mbr_action[:a_user_id]]
+      au = AuthUser[mbr_action[:a_user_id]]
       auth_user_name = "#{au.member.fname} #{au.member.lname}"
       #get the tasked to member
       tasked_to_mbr_name = mbr_action[:tasked_to_mbr_id].nil? ? "none" : "#{Member[mbr_action[:tasked_to_mbr_id]].fname} #{Member[mbr_action[:tasked_to_mbr_id]].lname}"
@@ -3113,7 +3112,7 @@ module MemberTracker
         @logs = nil
       else
         @logs.each do |l|
-          l[:a_user_name] = "#{Auth_user[l[:a_user_id]].member.fname} #{Auth_user[l[:a_user_id]].member.lname}"
+          l[:a_user_name] = "#{AuthUser[l[:a_user_id]].member.fname} #{AuthUser[l[:a_user_id]].member.lname}"
           #l[:ts] = l[:ts].strftime("%m/%d/%Y")
           l[:notes] = l[:notes].gsub(/\n/, '<br>')
         end
@@ -3279,7 +3278,7 @@ module MemberTracker
       @au_list = []
       #get a 2D array of [[mbr_id, auth_user_id]] for each auth_user
       #except for currently logged in admin
-      au = Auth_user.exclude(id: session[:auth_user_id]).select(:id, :mbr_id).map(){|x| [x.mbr_id, x.id]}
+      au = AuthUser.exclude(id: session[:auth_user_id]).select(:id, :mbr_id).map(){|x| [x.mbr_id, x.id]}
       #fill this array with additional info
       au.each do |u|
         au_hash = Hash.new
@@ -3289,7 +3288,7 @@ module MemberTracker
         au_hash["lname"] = m.values[:lname]
         au_hash["callsign"] = m.values[:callsign]
         #get_roles returns a 2D array [[role_id, role_descr],[]] or nil
-        roles = Auth_user[u[1]].get_roles
+        roles = AuthUser[u[1]].get_roles
         if roles.nil?
           roles = 'na'
         else
@@ -3311,7 +3310,7 @@ module MemberTracker
     get '/a/auth_user/role/update/:id' do
       @mbr_to_update = Member.select(:id, :fname, :lname, :callsign, :email)[params[:id].to_i]
       #get role associated with this auth_user
-      au = Auth_user.where(mbr_id: params[:id]).first
+      au = AuthUser.where(mbr_id: params[:id]).first
       @mbr_to_update[:role] = au.role
       @au_roles = Role.map(){|x| [x.rank, x.id, x.description]}
       @au_roles.sort!
@@ -3321,7 +3320,7 @@ module MemberTracker
       notes_only = false
       #start building the log string
       l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: Action.get_action_id("auth_u"))
-      au = Auth_user.where(mbr_id: params[:mbr_id]).first
+      au = AuthUser.where(mbr_id: params[:mbr_id]).first
       old_au_role = au.role.name
       new_au_role = Role[params[:role_id]].name
       #if there's something in notes put a newline after it and add it to the log
@@ -3375,7 +3374,7 @@ module MemberTracker
       @tmp_msg = session[:msg]
       session[:msg] = nil
       #only want members who are not already auth users
-      existing_au_mbr_ids = Auth_user.map{|x| x.mbr_id}
+      existing_au_mbr_ids = AuthUser.map{|x| x.mbr_id}
       @sel_au_from_mbrs = Member.exclude(id: existing_au_mbr_ids).select(:id, :fname, :lname, :callsign, :email).all
       erb :au_create, :layout => :layout_w_logout
     end
@@ -3383,7 +3382,7 @@ module MemberTracker
       #expecting params keys :notes, :mbr_id, :role_id
       email = Member[params[:mbr_id].to_i].email
       #test for existing user with these credentials
-      existing_auth_user = Auth_user.first(mbr_id: params[:mbr_id])
+      existing_auth_user = AuthUser.first(mbr_id: params[:mbr_id])
       if !existing_auth_user.nil?
         session[:msg] = 'this auth_user already exists, select update instead of create new'
         redirect "/a/auth_user/create"
@@ -3404,7 +3403,7 @@ module MemberTracker
       encrypted_pwd = BCrypt::Password.create(password)
       begin
         DB.transaction do
-          auth_user = Auth_user.new(:password => encrypted_pwd, :mbr_id => params[:mbr_id].to_i,
+          auth_user = AuthUser.new(:password => encrypted_pwd, :mbr_id => params[:mbr_id].to_i,
             :time_pwd_set => Time.now, :new_login => 1, :last_login => Time.now, :role_id => params[:role_id])
           auth_user.save
           l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: Action.get_action_id("auth_u"))
@@ -3435,6 +3434,7 @@ module MemberTracker
       output
     end
     post '/members' do
+      request.body.rewind
       member_data = JSON.parse(request.body.read)
       result = @member.record(member_data)
       if result.success?

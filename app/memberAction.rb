@@ -18,7 +18,7 @@ module MemberTracker
         mbr = Member.where(id: ma.member_target).first
         if mbr
           #build auth user name
-          a_user_name = "#{Auth_user.where(id: ma.a_user_id).first.member.fname} #{Auth_user.where(id: ma.a_user_id).first.member.lname}"
+          a_user_name = "#{AuthUser.where(id: ma.a_user_id).first.member.fname} #{AuthUser.where(id: ma.a_user_id).first.member.lname}"
           #build the tasked to member name
           tasked_to_mbr = Member.where(id: ma.tasked_to_mbr_id).select(:fname, :lname, :callsign).first
           if tasked_to_mbr

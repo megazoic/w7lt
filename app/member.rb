@@ -1,8 +1,10 @@
 require_relative '../config/sequel'
 
 module MemberTracker
+  RecordResult = Struct.new(:success?, :member_id, :message)
+
   class Member < Sequel::Model
-    one_to_one :auth_user, :class=>"MemberTracker::Auth_user", key: :mbr_id
+    one_to_one :auth_user, :class=>"MemberTracker::AuthUser", key: :mbr_id
     one_to_many :logs, :class=>"MemberTracker::Log", key: :mbr_id
     many_to_many :units, left_key: :mbr_id, right_key: :unit_id, join_table: :members_units
     many_to_many :events, left_key: :mbr_id, right_key: :event_id, join_table: :members_events

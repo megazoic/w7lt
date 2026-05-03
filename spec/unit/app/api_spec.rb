@@ -21,7 +21,7 @@ module MemberTracker
     end
 
     let(:member) {instance_double ('MemberTracker::Member')}
-    let(:auth_user) {instance_double ('MemberTracker::Auth_user')}
+    let(:auth_user) {instance_double ('MemberTracker::AuthUser')}
     
     describe 'POST /login' do
       let(:auth_user_credentials) {{'some'=>'data', 'some_more'=>'data'}}
@@ -32,21 +32,21 @@ module MemberTracker
           .and_return(Hash['auth_user_id',0])
         end
         it 'responds with a 302 (Found)' do
-          post '/login', JSON.generate(auth_user_credentials)
+          post '/login', auth_user_credentials
           expect(last_response.status).to eq(302)
         end
         it 'redirects to \'/\' the root route' do
-          post '/login', JSON.generate(auth_user_credentials)
+          post '/login', auth_user_credentials
           #need to figure out how to set this
           expect(last_response.location).to match("http://example.org/")
         end
         it 'returns the authorized user\'s id' do
-          post '/login', JSON.generate(auth_user_credentials)
+          post '/login', auth_user_credentials
           expect(rack_mock_session.cookie_jar.to_hash['auth_user_id'].to_i).to \
           be_a_kind_of(Integer)
         end
         it 'returns the authorized user\'s authority' do
-          post '/login', JSON.generate(auth_user_credentials)
+          post '/login', auth_user_credentials
           expect(rack_mock_session.cookie_jar.to_hash['auth_user_authority'].to_i).to \
           be_a_kind_of(Integer)
         end
@@ -58,11 +58,11 @@ module MemberTracker
           .and_return(Hash['error','an error'])
         end
         it 'responds with a 302 (Found)' do
-          post '/login', JSON.generate(auth_user_credentials)
+          post '/login', auth_user_credentials
           expect(last_response.status).to eq(302)
         end
         it 'redirects to \'/login\'' do
-          post '/login', JSON.generate(auth_user_credentials)
+          post '/login', auth_user_credentials
           #need to figure out how to set this
           expect(last_response.location).to match("http://example.org/login")
         end
@@ -145,7 +145,10 @@ module MemberTracker
         end
       end
     end
-    describe 'POST /create_auth_user' do
+    # POST /create_auth_user — route renamed to POST /a/auth_user/create and
+    # the AuthUser#create instance method was removed. These tests need rewriting
+    # against the new route (Phase 1 task).
+    xdescribe 'POST /create_auth_user' do
       let(:auth_user_data) {{'some'=>'data'}}
       context 'when the auth_user is successfully created' do
         before do

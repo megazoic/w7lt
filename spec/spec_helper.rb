@@ -14,8 +14,18 @@
 #
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 require 'rspec_sequel_matchers'
+require 'sequel'
+require 'bcrypt'
 
 ENV['RACK_ENV'] = 'test'
+
+# Run migrations before any spec file requires a model file.
+# Sequel introspects the schema at class-definition time, so tables must
+# exist before `class Member < Sequel::Model` is evaluated.
+Sequel.extension :migration
+DB ||= Sequel.connect(ENV.fetch('DATABASE_URL'))
+Sequel::Model.plugin :validation_helpers
+Sequel::Migrator.run(DB, File.expand_path('../db/migrations', __dir__))
 
 RSpec.configure do |config|
   # from openhood/rspec_sequel_matchers gem instructions

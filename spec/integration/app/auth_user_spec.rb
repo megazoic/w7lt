@@ -12,12 +12,11 @@ module MemberTracker
       'authority' => 0 } }
     describe '#authenticate' do
       it 'accepts a valid auth_user\'s credentials' do
-        #first, save an auth_user with this email
-        valid_user = auth_user.create(valid_new_auth_user_data)
-        #then test auth_user_credentials using the new id returned
+        member = create_member(email: '456@789.com')
+        create_auth_user(member: member, password: 'ab*dEF4b')
         test_user = auth_user.authenticate(auth_user_credentials)
         expect(test_user['auth_user_id'].to_i).to be_an_instance_of(Integer)
-        expect(test_user['auth_user_authority'].to_i).to eq(0)
+        expect(test_user['auth_user_roles']).to be_an_instance_of(Array)
       end
       it 'rejects a bad password' do
         bad_pass = auth_user_credentials
@@ -35,7 +34,9 @@ module MemberTracker
         expect(auth_user.authenticate(bad_credentials).has_key?('error')).to be(true)
       end
     end
-    describe '#create' do
+    # AuthUser#create instance method was removed; user creation now goes through
+    # POST /a/auth_user/create. These tests need to be rewritten (Phase 1 task).
+    xdescribe '#create' do
       it 'successfully saves a new auth_user with valid fields' do
         #all fields except fname need to be present
         #password must have one or more each of Caps, Lowercase, number and

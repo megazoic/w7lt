@@ -1,3 +1,4 @@
 require 'sequel'
-#for remote use Heroku
-DB = Sequel.connect(ENV['DATABASE_URL'])
+# Use ||= so spec_helper can connect and run migrations before models load,
+# without triggering a "already initialized constant" warning.
+DB ||= Sequel.connect(ENV['DATABASE_URL'])

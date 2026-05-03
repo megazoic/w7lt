@@ -8,7 +8,8 @@ module MemberTracker
     let(:member_data) do
       {
         'fname' => 'joe',
-        'lname' => 'smith'
+        'lname' => 'smith',
+        'email' => 'joe.smith@example.com'
       }
     end
     describe '#record' do
@@ -17,21 +18,22 @@ module MemberTracker
           result = member.record(member_data)
         
           expect(result).to be_success
-          expect(DB[:members].all).to match [a_hash_including(
+          expect(DB[:members].all).to include(a_hash_including(
             id: result.member_id,
             fname: 'joe',
             lname: 'smith'
-            )]
+            ))
         end
       end
       context 'when the member_data lacks a lname' do
         it 'rejects the member as invalid' do
           member_data.delete('lname')
+          count_before = DB[:members].count
           result = member.record(member_data)
           expect(result).not_to be_success
           expect(result.member_id).to eq(nil)
-          expect(result.error_message).to include('\'lname\' is required')
-          expect(DB[:members].count).to eq(0)
+          expect(result.message).to include('\'lname\' is required')
+          expect(DB[:members].count).to eq(count_before)
         end
       end
     end

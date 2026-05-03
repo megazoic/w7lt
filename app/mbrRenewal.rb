@@ -3,7 +3,7 @@ require_relative '../config/sequel'
 module MemberTracker
   class MbrRenewal < Sequel::Model
     one_to_many :log, :class =>"MemberTracker::Log", key: :mbr_renewal_id
-    many_to_one :auth_user, :class=>Auth_user, key: :a_user_id
+    many_to_one :auth_user, :class=>AuthUser, key: :a_user_id
     many_to_one :member, :class=>Member, key: :mbr_id
     many_to_one :renewalEventType
     RENEWAL_WINDOW = 14 #14 days = 2 weeks

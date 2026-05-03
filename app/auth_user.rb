@@ -5,7 +5,7 @@ require 'securerandom'
 #the administrator (auth_user) has to have the role with the lowest id in the Roles table
 
 module MemberTracker
-  class Auth_user < Sequel::Model
+  class AuthUser < Sequel::Model
     #many_to_one :role, :class=>"MemberTracker::Role", left_key: :user_id, right_key: :role_id, join_table: :roles_users
     many_to_one :role, :class=>"MemberTracker::Role", key: :role_id
     many_to_one :member, :class=>"MemberTracker::Member", key: :mbr_id
@@ -36,13 +36,13 @@ module MemberTracker
       if mbrs.count > 1
         mbrs.each do |m|
           #look through the auth_user table to find corresponding member
-          auth_user = Auth_user.first(mbr_id: m.id)
+          auth_user = AuthUser.first(mbr_id: m.id)
           if !auth_user.nil?
             break
           end
         end
       else
-        auth_user = Auth_user.first(mbr_id: mbrs[0].id)
+        auth_user = AuthUser.first(mbr_id: mbrs[0].id)
       end
       if !auth_user.nil?
         #check to see if first time login
@@ -104,7 +104,7 @@ module MemberTracker
     end
     def update(au_password, mbr_id)
       encrypted_pwd = BCrypt::Password.create(au_password).to_s
-      au = Auth_user.where(mbr_id: mbr_id).update(password: encrypted_pwd, new_login: 0)
+      au = AuthUser.where(mbr_id: mbr_id).update(password: encrypted_pwd, new_login: 0)
     end
     def get_roles(type = "default")
       #returns an array [[role_id, role_description],[]]
