@@ -1,44 +1,4 @@
-tr:nth-child(even) {background: #CCC}
-tr:nth-child(odd) {background: #FFF}
-table, th, td {
-	border: 1px solid black;
-	border-collapse: collapse;
-}
-th, td {
-	padding: 7px;
-}
-table td {
-	word-break: break-word;
-}
-.eventTable {
-	width: 1500px;
-}
-table{
-	table-layout: auto;
-}
-/* constrain width of a column */
-.td-constrain{
-  width: 150px;
-  overflow-x: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 250px;
-  min-width: 250px;
-}
-/* text style */
-.highlight {
-	background-color: #fff2ac;
-}
-.textColor {
-	color: blue;
-}
-#alert {
-	border: 1px solid silver;
-	padding: 15px;
-	
-}
-/* from https://www.w3schools.com/howto/howto_js_password_validation.asp */
- /* Style all input fields */
+/* Base input styling — overridden per-element by Tailwind; w-auto on checkboxes/radios overrides width */
 input {
   width: 20em;
   padding: 12px;
@@ -49,46 +9,16 @@ input {
   margin-bottom: 16px;
 }
 
-/* Style the submit button */
-input[type=submit] {
-  background-color: #4CAF50;
-  color: white;
-}
-
-/* Style the container for inputs */
-.container {
-  background-color: #f1f1f1;
-  padding: 20px;
-}
-
-/* The message box is shown when the user clicks on the password field */
+/* JS-controlled visibility */
 #message {
-  display:none;
-  background: #f1f1f1;
-  color: #000;
-  position: relative;
-  padding: 20px;
-  margin-top: 10px;
+  display: none;
 }
 
-#message p {
-  padding: 10px 35px;
-  font-size: 18px;
-}
-/* Non dues payments need to be hidden at first */
 #nonDues {
-  display:none;
-  background: #f1f1f1;
-  color: #000;
-  position: relative;
-  padding: 20px;
-  margin-top: 10px;
+  display: none;
 }
-/*For columns in log table*/
-.notes{
-	max-width: 100px;
-}
-/* Add a green text color and a checkmark when the requirements are right */
+
+/* Password validation feedback (reset_password.erb) */
 .valid {
   color: green;
 }
@@ -98,13 +28,7 @@ input[type=submit] {
   left: -35px;
   content: "&#10004;";
 }
-.renew {
-	color: red;
-}
-.bogus_email {
-	color: red;
-}
-/* Add a red text color and an "x" icon when the requirements are wrong */
+
 .invalid {
   color: red;
 }
@@ -113,12 +37,17 @@ input[type=submit] {
   position: relative;
   left: -35px;
   content: "&#10006;";
-} 
-/* End w3schools example*/
-/* Misc styles */
-/* for textarea boxes */
-.lgtext { width: 400px; height: 100px; }
-.mdtext { width: auto; height: 70px; }
+}
+
+/* Semantic classes used across templates */
+.renew {
+  color: red;
+}
+
+.bogus_email {
+  color: red;
+}
+
 em {
   font-style: italic;
   text-decoration: solid underline purple 2px;
