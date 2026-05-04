@@ -13,9 +13,8 @@
   <table class="w-full border-collapse text-sm">
     <thead>
       <tr class="bg-gray-100 text-left">
-        <th class="border border-gray-300 px-2 py-1">First</th>
-        <th class="border border-gray-300 px-2 py-1">Last</th>
-        <th class="border border-gray-300 px-2 py-1">Call</th>
+        <th class="border border-gray-300 px-2 py-1">Name</th>
+        <th class="border border-gray-300 px-2 py-1 w-20">Call</th>
         <th class="border border-gray-300 px-2 py-1">Membership</th>
         <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">This Event Type</th>
         <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">All Other Types</th>
@@ -25,9 +24,11 @@
     <tbody>
       <% @attendees.each do |mbr| %>
       <tr class="odd:bg-white even:bg-gray-50 <%= mbr[:mbrship_renewal_active] ? 'renew' : '' %>">
-        <td class="border border-gray-200 px-2 py-0.5"><%= mbr[:fname] %></td>
-        <td class="border border-gray-200 px-2 py-0.5"><%= mbr[:lname] %></td>
-        <td class="border border-gray-200 px-2 py-0.5"><%= mbr[:callsign] %></td>
+        <td class="border border-gray-200 px-2 py-0.5">
+          <span class="whitespace-nowrap"><%= mbr[:fname] %></span>
+          <span class="whitespace-nowrap"><%= mbr[:lname] %></span>
+        </td>
+        <td class="border border-gray-200 px-2 py-0.5 w-20 whitespace-nowrap"><%= mbr[:callsign] %></td>
         <td class="border border-gray-200 px-2 py-0.5">
           <% if mbr[:mbrship_renewal_date] == 'none' %>
             has not joined
@@ -37,7 +38,7 @@
         </td>
         <td class="border border-gray-200 px-2 py-0.5 text-center"><%= mbr[:attendance][:same] %></td>
         <td class="border border-gray-200 px-2 py-0.5 text-center"><%= mbr[:attendance][:other] %></td>
-        <td class="border border-gray-200 px-2 py-0.5">
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap">
           <a href="/r/member/show/<%= mbr[:mbr_id] %>" class="text-blue-600 hover:underline text-xs">view</a>
         </td>
       </tr>

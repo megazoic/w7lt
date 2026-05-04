@@ -29,7 +29,7 @@
         <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap <%= am[:is_past_due] ? 'renew' : '' %>">
           <%= am[:mbrship_renewal_date].is_a?(String) ? am[:mbrship_renewal_date] : am[:mbrship_renewal_date].strftime("%Y, %b, %d") %>
         </td>
-        <td class="border border-gray-200 px-2 py-0.5">
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap">
           <a href="/r/member/show/<%= am[:id] %>" class="text-blue-600 hover:underline text-xs">view</a>
         </td>
       </tr>

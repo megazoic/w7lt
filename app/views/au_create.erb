@@ -6,7 +6,6 @@
         <th class="border border-gray-300 px-2 py-1">First</th>
         <th class="border border-gray-300 px-2 py-1">Last</th>
         <th class="border border-gray-300 px-2 py-1">Call</th>
-        <th class="border border-gray-300 px-2 py-1">Email</th>
         <th class="border border-gray-300 px-2 py-1"></th>
       </tr>
     </thead>
@@ -16,8 +15,8 @@
         <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= member[:fname] %></td>
         <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= member[:lname] %></td>
         <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= member[:callsign] %></td>
-        <td class="border border-gray-200 px-2 py-0.5"><%= member[:email] %></td>
-        <td class="border border-gray-200 px-2 py-0.5">
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap">
+          <a href="/r/member/show/<%= member[:id] %>" class="text-blue-600 hover:underline text-xs">view</a> |
           <a href="/a/auth_user/role/set/<%= member[:id] %>" class="text-blue-600 hover:underline text-xs">select</a>
         </td>
       </tr>

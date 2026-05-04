@@ -22,7 +22,7 @@
         <td class="border border-gray-200 px-2 py-0.5 text-center"><%= data[:zoom] %></td>
         <td class="border border-gray-200 px-2 py-0.5 text-center font-medium"><%= data[:event_date_total] %></td>
         <td class="border border-gray-200 px-2 py-0.5"><%= data[:name] %> &mdash; <%= data[:descr] %></td>
-        <td class="border border-gray-200 px-2 py-0.5">
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap">
           <a href="/m/event/attendees/show/<%= data[:event_id] %>" class="text-blue-600 hover:underline text-xs">Details</a>
         </td>
       </tr>

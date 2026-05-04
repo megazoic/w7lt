@@ -14,10 +14,10 @@
     <tbody>
       <% @event_types.each do |et| %>
       <tr class="odd:bg-white even:bg-gray-50">
-        <td class="border border-gray-200 px-2 py-0.5"><%= et[:name] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= et[:name] %></td>
         <td class="border border-gray-200 px-2 py-0.5"><%= et[:descr] %></td>
         <td class="border border-gray-200 px-2 py-0.5"><%= et.auth_users.member.callsign %></td>
-        <td class="border border-gray-200 px-2 py-0.5">
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap">
           <a href="<%= URI::Parser.new.escape("/m/event/list/#{et[:id]}") %>" class="text-blue-600 hover:underline text-xs">List</a>
         </td>
       </tr>

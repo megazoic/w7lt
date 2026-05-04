@@ -15,7 +15,7 @@
       <tr class="odd:bg-white even:bg-gray-50">
         <td class="border border-gray-200 px-2 py-0.5"><%= rt[:name] %></td>
         <td class="border border-gray-200 px-2 py-0.5"><%= rt[:descr] %></td>
-        <td class="border border-gray-200 px-2 py-0.5">
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap">
           <a href="<%= URI::Parser.new.escape("/m/member/refer/type/list/#{rt[:id]}") %>" class="text-blue-600 hover:underline text-xs">List</a>
         </td>
       </tr>

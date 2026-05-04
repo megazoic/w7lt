@@ -14,10 +14,10 @@
     <tbody>
       <% @unit_types.each do |ut| %>
       <tr class="odd:bg-white even:bg-gray-50">
-        <td class="border border-gray-200 px-2 py-0.5"><%= ut[:type] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= ut[:type] %></td>
         <td class="border border-gray-200 px-2 py-0.5"><%= ut[:descr] %></td>
         <td class="border border-gray-200 px-2 py-0.5"><%= ut.auth_users.member.callsign %></td>
-        <td class="border border-gray-200 px-2 py-0.5">
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap">
           <a href="<%= URI::Parser.new.escape("/m/unit/list/#{ut[:type]}") %>" class="text-blue-600 hover:underline text-xs">List</a>
         </td>
       </tr>
