@@ -1,46 +1,83 @@
-<h3>Edit existing Member renewal information for <span class="textColor"><%="#{@mbr_renewal[:fname]} #{@mbr_renewal[:lname]}"%></span></h3>
-<form action='/m/mbr_renewals/edit' method='POST' name="mbrRenewal" onsubmit="return validateRnwlForm()">
-	<input type="hidden" name="rnwal_id" value="<%=@mbr_renewal[:id]%>">
-	<!-- add validation -->
-<br />
-	<h5>Member Table info</h5>
-	<label for="mbrship_renewal_date">Membership Renewal Date (MM/DD/YY)</label>
-	<input type="text" name="mbrship_renewal_date" value="<%=@mbr_renewal[:mbrship_renewal_date].strftime("%D")%>" id="mbrship_renewal_date" onfocusout="validateMbrRnwlDate(this)">
-	<!--onfocusout="validateFirstName(this)"-->
-	<br />Halt Membership Renewals?
-	<label for="mbrship_renewal_halt_true">True</label>
-	<input type="radio" name="mbrship_renewal_halt" <% if @mbr_renewal[:mbrship_renewal_halt] == true %>checked<%end%> id="mbrship_renewal_halt_true" value="true">
-	<label for="mbrship_renewal_halt_false">False</label>
-		<input type="radio" name="mbrship_renewal_halt" <% if @mbr_renewal[:mbrship_renewal_halt] == false %>checked<%end%> id="mbrship_renewal_halt_false" value="false">
-	<br />Membership Renewal Active?
-	<label for="mbrship_renewal_active_true">True</label>
-	<input type="radio" name="mbrship_renewal_active" <% if @mbr_renewal[:mbrship_renewal_active] == true %>checked<%end%> id="mbrship_renewal_active_true" value="true">
-	<label for="mbrship_renewal_active_false">False</label>
-		<input type="radio" name="mbrship_renewal_active" <% if @mbr_renewal[:mbrship_renewal_active] == false %>checked<%end%> id="mbrship_renewal_active_false" value="false">
-	<br />
-	<label for="mbrship_renewal_contacts">Times contacted</label>
-	<select name="mbrship_renewal_contacts" id=mbrship_renewal_contacts>
-		<option value="0"<%if @mbr_renewal[:mbrship_renewal_contacts] == 0%>selected = true<%end%>>0</option>
-		<option value="1"<%if @mbr_renewal[:mbrship_renewal_contacts] == 1%>selected = true<%end%>>1</option>
-		<option value="2"<%if @mbr_renewal[:mbrship_renewal_contacts] == 2%>selected = true<%end%>>2</option>
-	</select>
-	<br />
-	<hr />
-	<h5>Membership Renewal Table info</h5>
-	<p>Renewal Event Type</p>
-	<table>
-		<%@renewal_event_types_array.each do |et|%>
-		<tr>
-			<td><input type="radio" name="event_type" id=<%="et_#{et[:id]}"%>
-				<% if @mbr_renewal[:renewal_event_type_id] == et[:id] %>checked<%end%>
-				 value=<%=et[:id]%>></td>
-			<td><label for=<%="et_#{et[:id]}"%>><%=et[:name]%></label></td>
-		</tr>
-		<%end%>
-	</table>
-	<br />
-	<label for="notes">Notes:</label>
-	<input type="text" name="notes" value="<%=@mbr_renewal[:notes]%>" id="notes"/>
-	<br />
- 	<input type="submit" value="Submit"/> | <a href="/m/mbr_renewals/show">Cancel</a>
+<h3 class="text-xl font-bold text-gray-800 mb-4">
+  Edit Renewal — <span class="text-blue-600"><%= "#{@mbr_renewal[:fname]} #{@mbr_renewal[:lname]}" %></span>
+</h3>
+
+<form action="/m/mbr_renewals/edit" method="POST" name="mbrRenewal" onsubmit="return validateRnwlForm();"
+      class="space-y-5 max-w-md">
+  <input type="hidden" name="rnwal_id" value="<%= @mbr_renewal[:id] %>">
+
+  <fieldset class="border border-gray-200 rounded p-4 space-y-3">
+    <legend class="text-xs font-semibold text-gray-600 px-1">Member Table Info</legend>
+
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="mbrship_renewal_date">
+        Membership Renewal Date <span class="text-gray-400">(MM/DD/YY)</span>
+      </label>
+      <input type="text" name="mbrship_renewal_date" id="mbrship_renewal_date"
+             value="<%= @mbr_renewal[:mbrship_renewal_date].nil? ? '' : @mbr_renewal[:mbrship_renewal_date].strftime('%D') %>"
+             onfocusout="validateMbrRnwlDate(this)"
+             class="border border-gray-300 rounded px-3 py-1.5 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    </div>
+
+    <div>
+      <p class="text-xs text-gray-600 mb-1">Halt Membership Renewals?</p>
+      <div class="flex gap-4 text-sm">
+        <label class="inline-flex items-center gap-1">
+          <input type="radio" name="mbrship_renewal_halt" id="mbrship_renewal_halt_true" value="true" class="w-auto"
+                 <%= @mbr_renewal[:mbrship_renewal_halt] == true ? 'checked' : '' %> /> True
+        </label>
+        <label class="inline-flex items-center gap-1">
+          <input type="radio" name="mbrship_renewal_halt" id="mbrship_renewal_halt_false" value="false" class="w-auto"
+                 <%= @mbr_renewal[:mbrship_renewal_halt] == false ? 'checked' : '' %> /> False
+        </label>
+      </div>
+    </div>
+
+    <div>
+      <p class="text-xs text-gray-600 mb-1">Membership Renewal Active?</p>
+      <div class="flex gap-4 text-sm">
+        <label class="inline-flex items-center gap-1">
+          <input type="radio" name="mbrship_renewal_active" id="mbrship_renewal_active_true" value="true" class="w-auto"
+                 <%= @mbr_renewal[:mbrship_renewal_active] == true ? 'checked' : '' %> /> True
+        </label>
+        <label class="inline-flex items-center gap-1">
+          <input type="radio" name="mbrship_renewal_active" id="mbrship_renewal_active_false" value="false" class="w-auto"
+                 <%= @mbr_renewal[:mbrship_renewal_active] == false ? 'checked' : '' %> /> False
+        </label>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="mbrship_renewal_contacts">Times Contacted</label>
+      <select name="mbrship_renewal_contacts" id="mbrship_renewal_contacts"
+              class="border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <% [0, 1, 2].each do |n| %>
+        <option value="<%= n %>"<%= @mbr_renewal[:mbrship_renewal_contacts] == n ? ' selected' : '' %>><%= n %></option>
+        <% end %>
+      </select>
+    </div>
+  </fieldset>
+
+  <fieldset class="border border-gray-200 rounded p-4 space-y-2">
+    <legend class="text-xs font-semibold text-gray-600 px-1">Renewal Event Type</legend>
+    <% @renewal_event_types_array.each do |et| %>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="radio" name="event_type" id="et_<%= et[:id] %>" value="<%= et[:id] %>" class="w-auto"
+             <%= @mbr_renewal[:renewal_event_type_id] == et[:id] ? 'checked' : '' %> />
+      <%= et[:name] %>
+    </label>
+    <% end %>
+  </fieldset>
+
+  <div>
+    <label class="block text-xs text-gray-600 mb-1" for="notes">Notes</label>
+    <input type="text" name="notes" id="notes" value="<%= @mbr_renewal[:notes] %>"
+           class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+  </div>
+
+  <div class="flex items-center gap-4">
+    <input type="submit" value="Submit"
+           class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer" />
+    <a href="/m/mbr_renewals/show" class="text-sm text-gray-500 hover:underline">Cancel</a>
+  </div>
 </form>

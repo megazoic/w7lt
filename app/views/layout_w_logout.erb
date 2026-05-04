@@ -1,48 +1,99 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html lang="en">
   <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PARC membership CMS</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" type="text/css" href="/stylesheets/style.css" />
-	<script type="text/javascript" src="/js/script.js"></script>
+    <script type="text/javascript" src="/js/script.js"></script>
   </head>
-  <body <%if @is_pwdreset%>id="PwdReset"<%end%>>
-    <form action="/logout" method="POST">
-      <input type="submit" value="Sign Out" />
-    </form>
-	<br />
-  <table>
-  <tr><td><a href="/r/dump/mbr">Members Table</a></td><td><a href="/r/member/list">List members</a></td><td><a href="/r/member/mbr_rpt">Members & ARRL</a></td></tr>
-  <%if session[:auth_user_roles].include?('mbr_mgr')%>
-  <tr><td><a href="/m/query">Query the DB</a></td><td><a href="/m/member/create">Add a new member</a></td><td><a href="/m/mbr_renewals/show">List Renewals</a></td></tr>
-  <tr><td><a href="/m/member/refer/type/list/all">List all Member referrals</a></td><td><a href="/m/member/refer/type/create">Create/Edit Referral Types</a></td><td><a href=<%="/api/mbr_renewal/find/#{ENV['MBRRENEW_SECRET']}"%>>1st Renewal Notice</a></td></tr>
-  <tr><td><a href='/m/unit/list/all'>View/Edit all units</a></td><td><a href='/m/unit/create'>Build a new Unit</a></td><td><a href=<%="/api/mbr_renewal/2nd_notice/#{ENV['MBRRENEW_SECRET']}"%>>2nd Renewal Notice</a></td></tr>
-  <tr><td><a href="/r/member/list">Record payment</a></td><td><a href="/m/payments/show">View payments</a></td><td><a href='/m/unit/display/fam_unit/status'>Fam Mbrship Renewal</a></td></tr>
-  <tr><td><a href='/m/unit/type/create/'>Create/Edit/View unit types</a></td><td>Payment Rpt <a href='/m/payments/report/all/html'>HTML</a> | <a href='/m/payments/report/all/csv'>CSV</a></td><td><a href='/r/member/mbr_survey'>JF Survey</a></td></tr>
-  <tr><td><a href="/m/log/view/all">View all logs</a></td><td><a href="/m/log/view/auth_user">View your logs</a></td><td><a href="/m/followup/show">Follow up</a></td></tr>
-  <tr><td><a href='/m/log/view/general'>View general logs</a></td><td><a href='/m/log/create/'>Create a Log Record</a></td><td><a href="/r/event/attendance">Attendance</a></td></tr>
-  <tr><td><a href='/m/event/type/create/'>Create an Event Type</a></td><td><a href='/m/event/create'>Create an Event</a></td><td></td></tr>
-  <tr><td><a href='/m/event/list/all'>View Events</a></td><td></td><td></td></tr>
-	<%end%><%if session[:auth_user_roles].include?('auth_u')%>
-    <tr><td><a href="/a/auth_user/list">List administrators</a></td><td><a href="/a/auth_user/create">Add an administrator</a></td><td></td></tr>
-	<%end%>
-  </table
-	<br />
-	<% if @tmp_msg %>
-		<div id="alert">
-			<%= @tmp_msg %>
-		</div>
-	<% end %>
-  <noscript>
-      <style type="text/css">
-          .pagecontainer {display:none;}
-      </style>
-      <div class="noscriptmsg">
-      You don't have javascript enabled.  Please enable it to use this site.
+  <body <%if @is_pwdreset%>id="PwdReset"<%end%> class="bg-gray-50 min-h-screen">
+
+    <!-- Top bar -->
+    <header class="bg-gray-800 text-white shadow-md">
+      <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
+        <span class="font-semibold tracking-wide text-sm">PARC CMS</span>
+        <form action="/logout" method="POST">
+          <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded">Sign Out</button>
+        </form>
       </div>
-  </noscript>
-<div class='pagecontainer'>
-     <%= yield %>
-</div>
- </body>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-gray-200 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 py-3 space-y-2 text-sm">
+
+        <!-- Always visible -->
+        <div class="flex flex-wrap gap-x-5 gap-y-1">
+          <a href="/r/dump/mbr" class="text-blue-600 hover:underline">Members Table</a>
+          <a href="/r/member/list" class="text-blue-600 hover:underline">List Members</a>
+          <a href="/r/member/mbr_rpt" class="text-blue-600 hover:underline">Members &amp; ARRL</a>
+        </div>
+
+        <!-- Member manager links -->
+        <%if session[:auth_user_roles].include?('mbr_mgr')%>
+        <div class="flex flex-wrap gap-x-5 gap-y-1 border-t border-gray-100 pt-2">
+          <a href="/m/query" class="text-blue-600 hover:underline">Query DB</a>
+          <a href="/m/member/create" class="text-blue-600 hover:underline">Add Member</a>
+          <a href="/m/mbr_renewals/show" class="text-blue-600 hover:underline">List Renewals</a>
+          <a href="/m/member/refer/type/list/all" class="text-blue-600 hover:underline">Member Referrals</a>
+          <a href="/m/member/refer/type/create" class="text-blue-600 hover:underline">Referral Types</a>
+          <a href="<%="/api/mbr_renewal/find/#{ENV['MBRRENEW_SECRET']}"%>" class="text-blue-600 hover:underline">1st Renewal Notice</a>
+          <a href="/m/unit/list/all" class="text-blue-600 hover:underline">View/Edit Units</a>
+          <a href="/m/unit/create" class="text-blue-600 hover:underline">Add Unit</a>
+          <a href="<%="/api/mbr_renewal/2nd_notice/#{ENV['MBRRENEW_SECRET']}"%>" class="text-blue-600 hover:underline">2nd Renewal Notice</a>
+          <a href="/r/member/list" class="text-blue-600 hover:underline">Record Payment</a>
+          <a href="/m/payments/show" class="text-blue-600 hover:underline">View Payments</a>
+          <a href="/m/unit/display/fam_unit/status" class="text-blue-600 hover:underline">Family Renewal</a>
+          <a href="/m/unit/type/create/" class="text-blue-600 hover:underline">Unit Types</a>
+          <span class="text-gray-600">Payment Rpt:
+            <a href="/m/payments/report/all/html" class="text-blue-600 hover:underline">HTML</a> |
+            <a href="/m/payments/report/all/csv" class="text-blue-600 hover:underline">CSV</a>
+          </span>
+          <a href="/r/member/mbr_survey" class="text-blue-600 hover:underline">JF Survey</a>
+          <a href="/m/log/view/all" class="text-blue-600 hover:underline">All Logs</a>
+          <a href="/m/log/view/auth_user" class="text-blue-600 hover:underline">Your Logs</a>
+          <a href="/m/followup/show" class="text-blue-600 hover:underline">Follow Up</a>
+          <a href="/m/log/view/general" class="text-blue-600 hover:underline">General Logs</a>
+          <a href="/m/log/create/" class="text-blue-600 hover:underline">Create Log</a>
+          <a href="/r/event/attendance" class="text-blue-600 hover:underline">Attendance</a>
+          <a href="/m/event/type/create/" class="text-blue-600 hover:underline">Event Types</a>
+          <a href="/m/event/create" class="text-blue-600 hover:underline">Create Event</a>
+          <a href="/m/event/list/all" class="text-blue-600 hover:underline">View Events</a>
+        </div>
+        <%end%>
+
+        <!-- Admin links -->
+        <%if session[:auth_user_roles].include?('auth_u')%>
+        <div class="flex flex-wrap gap-x-5 gap-y-1 border-t border-gray-100 pt-2">
+          <a href="/a/auth_user/list" class="text-blue-600 hover:underline">List Administrators</a>
+          <a href="/a/auth_user/create" class="text-blue-600 hover:underline">Add Administrator</a>
+        </div>
+        <%end%>
+
+      </div>
+    </nav>
+
+    <!-- Flash message -->
+    <% if @tmp_msg %>
+    <div class="max-w-7xl mx-auto px-4 pt-4">
+      <div id="alert" class="border border-yellow-400 bg-yellow-50 rounded p-4 text-sm text-yellow-800 whitespace-pre-wrap">
+        <%= @tmp_msg %>
+      </div>
+    </div>
+    <% end %>
+
+    <noscript>
+      <style type="text/css">.pagecontainer {display:none;}</style>
+      <div class="max-w-7xl mx-auto px-4 py-6 text-red-600 font-semibold">
+        You don&apos;t have JavaScript enabled. Please enable it to use this site.
+      </div>
+    </noscript>
+
+    <main class="max-w-7xl mx-auto px-4 py-6 pagecontainer">
+      <%= yield %>
+    </main>
+
+  </body>
 </html>

@@ -1,29 +1,35 @@
-<div>
-  <h3>Recent payments</h3>
-</div>
-<div>
-	<table>
-		<tr>
-			<th>Member Name</th>
-			<th>Admin Name</th>
-			<th>Pay Type</th>
-			<th>Pay Method</th>
-			<th>Pay Amount</th>
-      <th>Date</th>
-			<th>Notes</th>
-      <th></th>
-		</tr>
-		<% for pay in @pay %>
-		<tr>
-		<td><%=pay[:mbr_name]%></td>
-		<td><%=pay[:auth_name]%></td>
-		<td><%=pay[:type]%></td>
-		<td><%=pay[:mode]%></td>
-		<td><%=pay[:amount]%></td>
-		<td><%=pay[:ts]%></td>
-		<td class="td-constrain"><%=pay[:notes]%></td>
-    <td><a href="/m/payment/show/<%=pay[:id]%>">view</a> | <a href="/m/payments/edit/<%=pay[:id]%>">edit</a> | <a href="/m/payments/destroy/<%=pay[:id]%>">delete</a></td>
-		</tr>
-		<% end %>
-	</table>
+<h3 class="text-xl font-bold text-gray-800 mb-4">Recent Payments</h3>
+<div class="overflow-x-auto">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Member</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Posted By</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Type</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Method</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Amount</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Date</th>
+        <th class="border border-gray-300 px-2 py-1">Notes</th>
+        <th class="border border-gray-300 px-2 py-1"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @pay.each do |pay| %>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= pay[:mbr_name] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= pay[:auth_name] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= pay[:type] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= pay[:mode] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= pay[:amount] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= pay[:ts] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 max-w-xs truncate"><%= pay[:notes].to_s[0, 80] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap text-xs">
+          <a href="/m/payment/show/<%= pay[:id] %>" class="text-blue-600 hover:underline">view</a> |
+          <a href="/m/payments/edit/<%= pay[:id] %>" class="text-blue-600 hover:underline">edit</a> |
+          <a href="/m/payments/destroy/<%= pay[:id] %>" class="text-blue-600 hover:underline">delete</a>
+        </td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
 </div>

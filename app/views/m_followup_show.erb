@@ -1,57 +1,78 @@
-<br/>
-<h1>Action: <%= @action_type[:callme][:descr] %></h1>
-<table>
-  <thead>
-    <tr>
-      <th>Member Name</th>
-      <th>Attended Meeting*</th>
-      <th>Authorized User</th>
-      <th>Tasked To</th>
-      <th>Notes</th>
-      <th>Timestamp</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @mbr_call_me_actions.each do |ma| %>
-      <tr>
-        <td><a href="/r/member/show/<%=ma[:target_member_id]%>"><%= ma[:target_member_name] %></a></td>
-        <td><%= ma[:attended_meeting] ? 'Yes' : 'No' %></td>
-        <td><%= ma[:a_user_name] %></td>
-        <td><%= ma[:tasked_to] %></td>
-        <td><%= ma[:notes] %><% if ma[:has_logs] == true %><em> More notes</em><% end %></td>
-        <td><%= ma[:ts] %></td>
-        <td><a href="/m/member_action/add_note?mbr_action_id=<%=ma[:id]%>&type=<%=@action_type[:callme][:name]%>">Add Note</a> | <a href="/m/mbr_callme/edit/<%=ma[:id]%>">edit</a></td>
+<h3 class="text-xl font-bold text-gray-800 mb-4">Action: <%= @action_type[:callme][:descr] %></h3>
+<div class="overflow-x-auto mb-8">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <th class="border border-gray-300 px-2 py-1">Member</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Attended Meeting*</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Auth User</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Tasked To</th>
+        <th class="border border-gray-300 px-2 py-1">Notes</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Timestamp</th>
+        <th class="border border-gray-300 px-2 py-1"></th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
-<br/>
-<h1>Action: <%= @action_type[:nonrenewal][:descr] %></h1>
-<table>
-  <thead>
-    <tr>
-      <th>Member Name</th>
-      <th>Attended Meeting*</th>
-      <th>Authorized User</th>
-      <th>Tasked To</th>
-      <th>Notes</th>
-      <th>Timestamp</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @mbr_non_renewal_actions.each do |ma| %>
-      <tr>
-        <td><a href="/r/member/show/<%=ma[:target_member_id]%>"><%= ma[:target_member_name] %></a></td>
-        <td><%= ma[:attended_meeting] ? 'Yes' : 'No' %></td>
-        <td><%= ma[:a_user_name] %></td>
-        <td><%= ma[:tasked_to] %></td>
-        <td><%= ma[:notes] %></td>
-        <td><%= ma[:ts] %><% if ma[:has_logs] == true %><em> More notes</em><% end %></td>
-        <td><a href="/m/member_action/add_note?mbr_action_id=<%=ma[:id]%>&type=<%=@action_type[:nonrenewal][:name]%>">Add Note</a> | <a href="/m/mbr_non_renewals/edit/<%=ma[:id]%>">edit</a></td>
+    </thead>
+    <tbody>
+      <% @mbr_call_me_actions.each do |ma| %>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="border border-gray-200 px-2 py-0.5">
+          <a href="/r/member/show/<%= ma[:target_member_id] %>" class="text-blue-600 hover:underline">
+            <span class="whitespace-nowrap"><%= ma[:target_member_name] %></span>
+          </a>
+        </td>
+        <td class="border border-gray-200 px-2 py-0.5 text-center"><%= ma[:attended_meeting] ? 'Yes' : 'No' %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= ma[:a_user_name] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= ma[:tasked_to] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 max-w-xs">
+          <%= ma[:notes] %><% if ma[:has_logs] %> <em class="text-gray-400">More notes</em><% end %>
+        </td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= ma[:ts] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap text-xs">
+          <a href="/m/member_action/add_note?mbr_action_id=<%= ma[:id] %>&type=<%= @action_type[:callme][:name] %>" class="text-blue-600 hover:underline">Add Note</a> |
+          <a href="/m/mbr_callme/edit/<%= ma[:id] %>" class="text-blue-600 hover:underline">edit</a>
+        </td>
       </tr>
-    <% end %>
-  </tbody>
-</table>
-<p>* Attended Meeting: This indicates if the member attended a meeting within the last 90 days.</p>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<h3 class="text-xl font-bold text-gray-800 mb-4">Action: <%= @action_type[:nonrenewal][:descr] %></h3>
+<div class="overflow-x-auto mb-4">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <th class="border border-gray-300 px-2 py-1">Member</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Attended Meeting*</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Auth User</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Tasked To</th>
+        <th class="border border-gray-300 px-2 py-1">Notes</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Timestamp</th>
+        <th class="border border-gray-300 px-2 py-1"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @mbr_non_renewal_actions.each do |ma| %>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="border border-gray-200 px-2 py-0.5">
+          <a href="/r/member/show/<%= ma[:target_member_id] %>" class="text-blue-600 hover:underline">
+            <span class="whitespace-nowrap"><%= ma[:target_member_name] %></span>
+          </a>
+        </td>
+        <td class="border border-gray-200 px-2 py-0.5 text-center"><%= ma[:attended_meeting] ? 'Yes' : 'No' %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= ma[:a_user_name] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= ma[:tasked_to] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 max-w-xs"><%= ma[:notes] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap">
+          <%= ma[:ts] %><% if ma[:has_logs] %> <em class="text-gray-400">More notes</em><% end %>
+        </td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap text-xs">
+          <a href="/m/member_action/add_note?mbr_action_id=<%= ma[:id] %>&type=<%= @action_type[:nonrenewal][:name] %>" class="text-blue-600 hover:underline">Add Note</a> |
+          <a href="/m/mbr_non_renewals/edit/<%= ma[:id] %>" class="text-blue-600 hover:underline">edit</a>
+        </td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<p class="text-xs text-gray-500">* Attended Meeting: member attended a meeting within the last 90 days.</p>

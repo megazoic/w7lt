@@ -1,17 +1,21 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html lang="en">
   <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PARC membership CMS</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" type="text/css" href="/stylesheets/style.css" />
-	<script type="text/javascript" src="/js/script.js"></script>
+    <script type="text/javascript" src="/js/script.js"></script>
   </head>
-  <body <%if @is_pwdreset%>id="PwdReset"<%end%>>
-    <%= yield %>
-	<% if @tmp_msg %>
-		<div id="alert">
-			<%= @tmp_msg %>
-		</div>
-	<% end %>
+  <body <%if @is_pwdreset%>id="PwdReset"<%end%> class="bg-gray-50 min-h-screen">
+    <div class="max-w-lg mx-auto px-4 py-10">
+      <%= yield %>
+      <% if @tmp_msg %>
+      <div id="alert" class="mt-6 border border-yellow-400 bg-yellow-50 rounded p-4 text-sm text-yellow-800">
+        <%= @tmp_msg %>
+      </div>
+      <% end %>
+    </div>
   </body>
 </html>

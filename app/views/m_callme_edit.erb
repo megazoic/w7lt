@@ -1,44 +1,43 @@
-<h1>Edit Member Action type 'Call Me':</br>for <%=@mbr_action[:target_member_name]%></h1>
-<p>Action Type: <%=@mbr_action[:action_type]%></p>
-<form action="/m/mbr_callme/update/<%= @mbr_action[:id] %>" method="post">
+<h3 class="text-xl font-bold text-gray-800 mb-1">Edit Call Member Action</h3>
+<p class="text-sm text-gray-600 mb-4">
+  Member: <strong><%= @mbr_action[:target_member_name] %></strong>
+  &mdash; <span class="text-gray-500"><%= @mbr_action[:action_type] %></span>
+</p>
 
-  <label for="tasked_to_mbr_id">Tasked To:</label>
-  <select name="tasked_to_mbr_id" id="tasked_to_mbr_id">
-    <option value=>-- Select Member --</option>
-    <% @mbrs.each do |mbr| %>
-      <option value="<%= mbr[:id] %>" <%= 'selected' if mbr[:id] == @mbr_action[:tasked_to_mbr_id] %>>
-        <%= "#{mbr[:fname]} #{mbr[:lname]} [#{mbr[:callsign]}]"%>
+<form action="/m/mbr_callme/update/<%= @mbr_action[:id] %>" method="POST" class="space-y-4 max-w-md">
+
+  <div>
+    <label class="block text-xs text-gray-600 mb-1" for="tasked_to_mbr_id">Tasked To</label>
+    <select name="tasked_to_mbr_id" id="tasked_to_mbr_id"
+            class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <option value="">-- Select Member --</option>
+      <% @mbrs.each do |mbr| %>
+      <option value="<%= mbr[:id] %>"<%= mbr[:id] == @mbr_action[:tasked_to_mbr_id] ? ' selected' : '' %>>
+        <%= "#{mbr[:fname]} #{mbr[:lname]} [#{mbr[:callsign]}]" %>
       </option>
-    <% end %>
-  </select>
-  <br/>
+      <% end %>
+    </select>
+  </div>
 
-  <label for="completed">Mark as Completed:</label>
-  <input type="checkbox" name="completed" id="completed" value="1" <%= "checked" if @mbr_action[:completed] %> />
-  <br/>
+  <div>
+    <label class="block text-xs text-gray-600 mb-1" for="notes">Notes</label>
+    <textarea name="notes" id="notes" rows="4"
+              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><%= @mbr_action[:notes] %></textarea>
+  </div>
 
-  <label for="notes">Notes:</label>
-  <textarea name="notes" id="notes" rows="4" cols="50"><%= @mbr_action[:notes] %></textarea>
-  <br/>
+  <div>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="completed" id="completed" value="1" class="w-auto"
+             <%= @mbr_action[:completed] ? 'checked' : '' %> />
+      Mark as Completed
+    </label>
+  </div>
 
-  <button type="submit">Update Action</button>
+  <div class="flex items-center gap-4">
+    <button type="submit"
+            class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer">
+      Update Action
+    </button>
+    <a href="/m/followup/show" class="text-sm text-gray-500 hover:underline">Cancel</a>
+  </div>
 </form>
-
-<script type="text/javascript">
-  document.addEventListener('DOMContentLoaded', () => {
-    const taskedToInput = document.getElementById('tasked_to');
-    const members = <%= @mbrs.to_json.gsub('</', '<\/') %>;
-
-    taskedToInput.addEventListener('blur', () => {
-      const member = members.find(m => String(m.id) == String(taskedToInput.value));
-      if (member) {
-        taskedToInput.value = `${member.id} ${member.name} ${member.callsign}`;
-      }
-    });
-  });
-
-	const inputField = document.getElementById('tasked_to');
-	inputField.addEventListener('focus', function() {
-  		this.select();
-	});
-</script>

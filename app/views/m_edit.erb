@@ -1,152 +1,272 @@
 <%#
-:fname	:lname	:email	:city	:street
-:zip	:state	:callsign	:phm	:phm_pub
-:phh	:phh_pub	:phw	:phw_pub
-:license_class	:arrl
-:arrl_expire	:ares	:net	:ve	:elmer :sota
+:fname  :lname  :email  :city   :street
+:zip    :state  :callsign :phm  :phm_pub
+:phh    :phh_pub :phw   :phw_pub
+:license_class :arrl
+:arrl_expire :ares :net :ve :elmer :sota
 %>
-<h3>Edit existing OR add new member: <span class="textColor"><%="#{@member[:fname]} #{@member[:lname]}"%></span></h3>
-<div id="dup_new_mbr">
-<%if !@existing_mbrs.empty?%>
-  ########################################<br />
-  You have entered a possible duplicate new member
-  <br />Here are the similar members already in the database. Please select one to edit<br />
-  <% @existing_mbrs.each do |em|%>
-    <a href="/m/member/edit/<%=em.id%>"><%="#{em.fname} #{em.lname}, #{em.callsign}"%></a>
-  <%end%>
-<%end%>
+<h3 class="text-xl font-bold text-gray-800 mb-4">
+  Edit / Add Member:
+  <span class="text-blue-600"><%= @member[:fname] %> <%= @member[:lname] %></span>
+</h3>
+
+<% if !@existing_mbrs.empty? %>
+<div id="dup_new_mbr" class="mb-4 border border-yellow-400 bg-yellow-50 rounded p-4 text-sm">
+  <p class="font-semibold text-yellow-800 mb-2">Possible duplicate — similar members already in the database:</p>
+  <% @existing_mbrs.each do |em| %>
+  <p><a href="/m/member/edit/<%= em.id %>" class="text-blue-600 hover:underline">
+    <%= em.fname %> <%= em.lname %>, <%= em.callsign %>
+  </a></p>
+  <% end %>
 </div>
-<form action='/m/member/create' method='POST' name="mbrVitals" onsubmit="return validateMbrForm();">
-<br />
-  <%if !@existing_mbrs.empty?%>
-    <label for="save_override">Or, check here to go ahead and save as a new member</label>
-    <input type="checkbox" name="override" id="save_override" value="1" /><br />
-    ########################################<br />
-  <%end%>
-  <%if session[:auth_user_roles].include?('auth_u')%>
-  <label for="payment_field">Need to submit payment information for this member?</label>
-  <input type="checkbox" name="payment" id="payment_field" value="1" />
+<% end %>
+
+<form action="/m/member/create" method="POST" name="mbrVitals" onsubmit="return validateMbrForm();"
+      class="space-y-6 max-w-2xl">
+
+  <% if !@existing_mbrs.empty? %>
+  <label class="flex items-center gap-2 text-sm">
+    <input type="checkbox" name="override" id="save_override" value="1" class="w-auto" />
+    Override: save as a new member anyway
+  </label>
   <% end %>
-  <br />
-	<label for="fname">First*</label>
-	<input type="text" name="fname" value="<%=@member[:fname]%>" id="fname" onfocusout="validateFirstName(this)">
-	<label for="lname">Last*</label>
-	<input type="text" name="lname" value="<%=@member[:lname]%>" id="lname" onfocusout="validateLastName(this)">
-	<label for="callsign">Callsign</label>
-	<input type="text" name="callsign" value="<%=@member[:callsign]%>" id="callsign" size="10"><br />
-  *required field<br />
-	<p>Address:</p>
-  <input type="hidden" id="old_email" value="<%=@member[:email]%>">
-	<label for="email">email*</label>
-	<input type="text" name="email" value="<%=@member[:email]%>" id="email" onfocusout="validateEmail(this)" <%if @member[:email_bogus] == true %>class="invalid"<%end%>> |
-  	<label for="email_bogus">Is Email Bogus?</label>
-  	<input type="hidden" name="email_bogus" value="false">
-  	<input type="checkbox" name="email_bogus" id="email_bogus" value="true" <%=@member[:email_bogus] == true  ? "checked='checked'" : nil%>>
-	 <br />OK to email about club activities?
-   <select id="ok_to_email" name="ok_to_email">
-   		<option value="true" <%=@member[:ok_to_email] == true ? "selected" : nil%>>Yes</option>
-   		<option value="false" <%=@member[:ok_to_email] == false ? "selected" : nil%>>No</option>
+
+  <% if session[:auth_user_roles].include?('auth_u') %>
+  <label class="flex items-center gap-2 text-sm">
+    <input type="checkbox" name="payment" id="payment_field" value="1" class="w-auto" />
+    Include payment information for this member
+  </label>
+  <% end %>
+
+  <!-- Name & Callsign -->
+  <fieldset class="border border-gray-200 rounded p-4 space-y-3">
+    <legend class="text-sm font-semibold text-gray-700 px-1">Name &amp; Callsign</legend>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div>
+        <label class="block text-xs text-gray-600 mb-1" for="fname">First <span class="text-red-500">*</span></label>
+        <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+               type="text" name="fname" id="fname" value="<%= @member[:fname] %>" onfocusout="validateFirstName(this)" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1" for="lname">Last <span class="text-red-500">*</span></label>
+        <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+               type="text" name="lname" id="lname" value="<%= @member[:lname] %>" onfocusout="validateLastName(this)" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1" for="callsign">Callsign</label>
+        <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+               type="text" name="callsign" id="callsign" value="<%= @member[:callsign] %>" />
+      </div>
+    </div>
+    <p class="text-xs text-gray-400">* required field</p>
+  </fieldset>
+
+  <!-- Email -->
+  <fieldset class="border border-gray-200 rounded p-4 space-y-3">
+    <legend class="text-sm font-semibold text-gray-700 px-1">Email</legend>
+    <input type="hidden" id="old_email" value="<%= @member[:email] %>">
+    <div class="flex flex-wrap items-center gap-3">
+      <input class="flex-1 min-w-0 border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 <%= @member[:email_bogus] ? 'invalid' : '' %>"
+             type="text" name="email" id="email" value="<%= @member[:email] %>" onfocusout="validateEmail(this)" />
+      <label class="flex items-center gap-1 text-sm whitespace-nowrap">
+        <input type="hidden" name="email_bogus" value="false">
+        <input type="checkbox" name="email_bogus" id="email_bogus" value="true" class="w-auto"
+               <%= @member[:email_bogus] == true ? "checked='checked'" : nil %> />
+        Mark as bogus
+      </label>
+    </div>
+    <label class="flex items-center gap-2 text-sm">
+      OK to email about club activities?
+      <select id="ok_to_email" name="ok_to_email"
+              class="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="true"  <%= @member[:ok_to_email] == true  ? "selected" : nil %>>Yes</option>
+        <option value="false" <%= @member[:ok_to_email] == false ? "selected" : nil %>>No</option>
       </select>
-  <br /><label for="street">Street</label>
-	<input type="text" name="street" value="<%=@member[:street]%>" id="street">
-	<label for="city">City</label>
-	<input type="text" name="city" value="<%=@member[:city]%>" id="city">
-	<label for="state">State</label>
-	<input type="text" name="state" value="<%=@member[:state]%>" id="state"><br />
-	<label for="fname">Zip Code</label>
-	<input type="text" name="zip" value="<%=@member[:zip]%>" id="zip" size="10" onfocusout="validateZip(this)"> format XXXXX-XXXX (last 4 optional)<br />
-	<p>Phone: XXX-XXX-XXXX Format</p>
-	<label for="phh">Home</label>
-	<input type="text" name="phh" value="<%=@member[:phh]%>" id="phh" onfocusout="validatePh(this)">
-	<label for="phh_pub">Ok to Publish? (check if Yes)</label>
-	<input type="hidden" name="phh_pub" value="0">
-	<input type="checkbox" name="phh_pub" id="phh_pub" value="1" <%=@member[:phh_pub]==1  ? "checked" : nil%>><br />
-	<label for="phw">Work</label>
-	<input type="text" name="phw" value="<%=@member[:phw]%>" id="phw"  onfocusout="validatePh(this)">
-	<label for="phw_pub">Ok to Publish?</label>
-	<input type="hidden" name="phw_pub" value="0">
-	<input type="checkbox" name="phw_pub" id="phw_pub" value="1" <%=@member[:phw_pub]==1  ? "checked" : nil%>><br />
-	<label for="phm">Mobile</label>
-	<input type="text" name="phm" value="<%=@member[:phm]%>" id="phm"  onfocusout="validatePh(this)">
-	<label for="phm_pub">Ok to Publish?</label>
-	<input type="hidden" name="phm_pub" value="0">
-	<input type="checkbox" name="phm_pub" id="phm_pub" value="1" <%=@member[:phm_pub]==1  ? "checked" : nil%>><br />
-	License class <select id="license_class" name="license_class">
-    <option value="none" <%=@member[:license_class] == 'none' ? "selected" : nil%>>None</option>
-		<option value="tech" <%=@member[:license_class] == 'tech' ? "selected" : nil%>>Tech</option>
-		<option value="general" <%=@member[:license_class] == 'general' ? "selected" : nil%>>General</option>
-		<option value="extra" <%=@member[:license_class] == 'extra' ? "selected" : nil%>>Extra</option>
-		<option value="GMRS" <%=@member[:license_class] == 'GMRS' ? "selected" : nil%>>GMRS</option>
-	</select>
-	<br />
-  First recorded: (YYYY-MM) format
-  <input type="text" name="mbr_since" id="mbr_since" onfocusout="validateMbrSince(this)"
-    value=<%=(@member[:mbr_since] == '' || @member[:mbr_since].nil?) ? Time.now.strftime("%Y-%m") : @member[:mbr_since].strftime("%Y-%m")%>>
-  <br />
-  <label for="notes_field">Leave notes for this member here</label>
-  <textarea name="notes" id="notes_field" rows="3" cols="65"></textarea>
-  <br />
-  <% #if we are editing an existing member, new member would only be a hash %>
+    </label>
+  </fieldset>
+
+  <!-- Address -->
+  <fieldset class="border border-gray-200 rounded p-4 space-y-3">
+    <legend class="text-sm font-semibold text-gray-700 px-1">Address</legend>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="street">Street</label>
+      <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+             type="text" name="street" id="street" value="<%= @member[:street] %>" />
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div>
+        <label class="block text-xs text-gray-600 mb-1" for="city">City</label>
+        <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+               type="text" name="city" id="city" value="<%= @member[:city] %>" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1" for="state">State</label>
+        <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+               type="text" name="state" id="state" value="<%= @member[:state] %>" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1" for="zip">Zip <span class="font-normal text-gray-400">(XXXXX-XXXX)</span></label>
+        <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+               type="text" name="zip" id="zip" value="<%= @member[:zip] %>" onfocusout="validateZip(this)" />
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- Phone -->
+  <fieldset class="border border-gray-200 rounded p-4 space-y-3">
+    <legend class="text-sm font-semibold text-gray-700 px-1">Phone <span class="font-normal text-gray-400">(XXX-XXX-XXXX)</span></legend>
+    <% [['phh', 'Home'], ['phw', 'Work'], ['phm', 'Mobile']].each do |field, label| %>
+    <div class="flex flex-wrap items-center gap-3">
+      <label class="w-14 text-sm text-gray-600 shrink-0"><%= label %></label>
+      <input class="flex-1 min-w-0 border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+             type="text" name="<%= field %>" id="<%= field %>" value="<%= @member[field.to_sym] %>" onfocusout="validatePh(this)" />
+      <label class="flex items-center gap-1 text-sm whitespace-nowrap">
+        <input type="hidden" name="<%= field %>_pub" value="0">
+        <input type="checkbox" name="<%= field %>_pub" id="<%= field %>_pub" value="1" class="w-auto"
+               <%= @member["#{field}_pub".to_sym] == 1 ? "checked" : nil %> />
+        OK to publish
+      </label>
+    </div>
+    <% end %>
+  </fieldset>
+
+  <!-- Membership -->
+  <fieldset class="border border-gray-200 rounded p-4 space-y-3">
+    <legend class="text-sm font-semibold text-gray-700 px-1">Membership</legend>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div>
+        <label class="block text-xs text-gray-600 mb-1" for="license_class">License Class</label>
+        <select id="license_class" name="license_class"
+                class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="none"    <%= @member[:license_class] == 'none'    ? "selected" : nil %>>None</option>
+          <option value="tech"    <%= @member[:license_class] == 'tech'    ? "selected" : nil %>>Tech</option>
+          <option value="general" <%= @member[:license_class] == 'general' ? "selected" : nil %>>General</option>
+          <option value="extra"   <%= @member[:license_class] == 'extra'   ? "selected" : nil %>>Extra</option>
+          <option value="GMRS"    <%= @member[:license_class] == 'GMRS'    ? "selected" : nil %>>GMRS</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1" for="mbr_since">First Recorded <span class="font-normal text-gray-400">(YYYY-MM)</span></label>
+        <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+               type="text" name="mbr_since" id="mbr_since" onfocusout="validateMbrSince(this)"
+               value="<%= (@member[:mbr_since] == '' || @member[:mbr_since].nil?) ? Time.now.strftime("%Y-%m") : @member[:mbr_since].strftime("%Y-%m") %>" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1" for="mbrship_renewal_date">Renewal Date <span class="font-normal text-gray-400">(MM/DD/YY)</span></label>
+        <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+               type="text" name="mbrship_renewal_date" id="mbrship_renewal_date" onfocusout="validateMbrRnwlDate(this)"
+               <% if !@member[:mbrship_renewal_date].nil? %>value="<%= @member[:mbrship_renewal_date].strftime("%D") %>"<% end %> />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1" for="refer">How did they find us?</label>
+        <select id="refer" name="refer_type_id"
+                class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="none">Don&apos;t know</option>
+          <% MemberTracker::ReferType.each do |rt| %>
+          <option value="<%= rt.id %>" <%= @member[:refer_type_id] == rt.id ? "selected" : nil %>><%= rt.name %></option>
+          <% end %>
+        </select>
+        <p class="text-xs text-gray-400 mt-1">
+          Need a new type? Save this member first, visit the
+          <a href="/m/member/refer/type/create" class="text-blue-600 hover:underline">referral types page</a>,
+          then return to edit this member.
+        </p>
+      </div>
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="notes_field">Notes for this member</label>
+      <textarea name="notes" id="notes_field" rows="3"
+                class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+    </div>
+  </fieldset>
+
+  <!-- Call Request -->
   <% if @member.is_a?(Hash) == false %>
-  <% if @member[:call_request_length] > 1 %>
-	<h2>This member has more than one uncompleted call request. Please <a href="/m/mbr_actions/show">correct here</a></h2>
-  <% else %>
-  <div id="call_back">
-  	<label for="member_call">Does this member want a callback?</label>
-  	<input type="checkbox" name="callme" id="member_call" 
-		<%=@member.member_actions.empty? == true ? nil : "checked"%> />
-  	<br />
-  	<label for="notes_field">What is the reason for the call?</label>
-  	<textarea name="callwhy" id="why_call_field" rows="3" cols="65"><%=@member[:call_request]%></textarea>
-  	<br />
+    <% if @member[:call_request_length] > 1 %>
+    <div class="border border-red-400 bg-red-50 rounded p-3 text-sm text-red-700">
+      This member has more than one uncompleted call request.
+      Please <a href="/m/mbr_actions/show" class="underline">correct here</a>.
+    </div>
+    <% else %>
+    <fieldset id="call_back" class="border border-gray-200 rounded p-4 space-y-2">
+      <legend class="text-sm font-semibold text-gray-700 px-1">Call Request</legend>
+      <label class="flex items-center gap-2 text-sm">
+        <input type="checkbox" name="callme" id="member_call" class="w-auto"
+               <%= @member.member_actions.empty? ? nil : "checked" %> />
+        This member wants a callback
+      </label>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1" for="why_call_field">Reason for call</label>
+        <textarea name="callwhy" id="why_call_field" rows="3"
+                  class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><%= @member[:call_request] %></textarea>
+      </div>
+    </fieldset>
+    <% end %>
+  <% end %>
+
+  <!-- Affiliations & Volunteering -->
+  <fieldset class="border border-gray-200 rounded p-4">
+    <legend class="text-sm font-semibold text-gray-700 px-1">Affiliations &amp; Volunteering</legend>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm mt-2">
+      <label class="flex items-center gap-2">
+        <input type="hidden" name="arrl" value="0">
+        <input type="checkbox" name="arrl" id="arrl" value="1" class="w-auto"
+               <%= @member[:arrl] == 1 ? "checked='checked'" : nil %> onClick="arrlSet(this);" />
+        ARRL
+      </label>
+      <div class="col-span-2">
+        <label class="text-xs text-gray-600" for="arrl_expire">Expire date (YYYY-MM-DD)</label>
+        <input class="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+               type="text" name="arrl_expire" id="arrl_expire" value="<%= @member[:arrl_expire] %>"
+               <%= @member[:arrl] == 0 ? 'disabled="disabled"' : nil %> onfocusout="validateArrlExpDate(this)" />
+      </div>
+      <label class="flex items-center gap-2">
+        <input type="hidden" name="ares" value="0">
+        <input type="checkbox" name="ares" id="ares" value="1" class="w-auto" <%= @member[:ares] == 1 ? "checked='checked'" : nil %> />
+        ARES
+      </label>
+      <label class="flex items-center gap-2">
+        <input type="hidden" name="net" value="0">
+        <input type="checkbox" name="net" id="net" value="1" class="w-auto" <%= @member[:net] == 1 ? "checked='checked'" : nil %> />
+        Portland NET
+      </label>
+      <label class="flex items-center gap-2">
+        <input type="hidden" name="ve" value="0">
+        <input type="checkbox" name="ve" id="ve" value="1" class="w-auto" <%= @member[:ve] == 1 ? "checked='checked'" : nil %> />
+        VE
+      </label>
+      <label class="flex items-center gap-2">
+        <input type="hidden" name="elmer" value="0">
+        <input type="checkbox" name="elmer" id="elmer" value="1" class="w-auto" <%= @member[:elmer] == 1 ? "checked='checked'" : nil %> />
+        Elmer
+      </label>
+      <label class="flex items-center gap-2">
+        <input type="checkbox" name="sota" id="sota" value="1" class="w-auto" <%= @member[:sota] == 1 ? "checked='checked'" : nil %> />
+        SOTA
+      </label>
+    </div>
+  </fieldset>
+
+  <!-- Modes -->
+  <fieldset class="border border-gray-200 rounded p-4">
+    <legend class="text-sm font-semibold text-gray-700 px-1">Modes</legend>
+    <div class="flex flex-wrap gap-x-5 gap-y-2 text-sm mt-2">
+      <% @modes.each do |k, v| %>
+      <label class="flex items-center gap-1">
+        <input type="hidden" name="mode_<%= v %>" value="0">
+        <input type="checkbox" name="mode_<%= v %>" id="mode_<%= v %>" value="1" class="w-auto"
+               <%= @member[:modes].include?(k.to_s) ? "checked='checked'" : nil %> />
+        <%= v %>
+      </label>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <input type="hidden" name="id" value="<%= @member[:id] %>">
+  <div class="flex items-center gap-4">
+    <input type="submit" value="Submit" onsubmit="validateMbrForm()"
+           class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer" />
+    <a href="/r/member/list" class="text-sm text-gray-500 hover:underline">Cancel</a>
   </div>
-  <% end %>
-  <% end %>
-  <% #end editing an existing member %>
-  How did this member hear about the club?
-  <select id="refer" name="refer_type_id">
-    <option value='none'>Don&apos;t know</option>
-    <%MemberTracker::ReferType.each do |rt|%>
-  		<option value=<%=rt.id%> <%=@member[:refer_type_id] == rt.id ? "selected" : nil%>><%=rt.name%></option>
-    <%end%>
-  </select>
-  <br />(If you don&apos;t see the type that you need to add,
-      finish with this member&apos;s entry, visit the create referral page and return to editing this member, 
-      <a href=''>or click here to modify referral types directly without saving this member&apos;s data</a>)
-  <br />
-	<label for="mbrship_renewal_date">Membership Renewal Date (MM/DD/YY)</label>
-	<input type="text" name="mbrship_renewal_date" <%if !@member[:mbrship_renewal_date].nil?%>value="<%=@member[:mbrship_renewal_date].strftime("%D")%>"<%end%> id="mbrship_renewal_date" onfocusout="validateMbrRnwlDate(this)">
-  <br />
-	<p>Other Affiliations and Volunteering</p>
-	<label for="arrl">ARRL</label>
-	<input type="hidden" name="arrl" value="0">
-	<input type="checkbox" name="arrl" id="arrl" value="1" <%=@member[:arrl] == 1  ? "checked='checked'" : nil%> onClick="arrlSet(this);">
-	Expire date YYYY-MM-DD <input type="text" name="arrl_expire" id="arrl_expire" value="<%=@member[:arrl_expire]%>"  <%if @member[:arrl] == 0 %>disabled="disabled"<% end %> onfocusout="validateArrlExpDate(this)">
-	<br/>
-	<label for="ares">ARES</label>
-	<input type="hidden" name="ares" value="0">
-	<input type="checkbox" name="ares" id="ares" value="1" <%=@member[:ares] == 1  ? "checked='checked'" : nil%>>
-	<br />
-	<label for="net">Portland NET</label>
-	<input type="hidden" name="net" value="0">
-	<input type="checkbox" name="net" id="net" value="1" <%=@member[:net] == 1  ? "checked='checked'" : nil%>>
-	<br />
-	<label for="ve">VE</label>
-	<input type="hidden" name="ve" value="0">
-	<input type="checkbox" name="ve" id="ve" value="1" <%=@member[:ve] == 1  ? "checked='checked'" : nil%>>
-	<br />
-	<label for="elmer">Elmer</label>
-	<input type="hidden" name="elmer" value="0">
-	<input type="checkbox" name="elmer" id="elmer" value="1" <%=@member[:elmer] == 1  ? "checked='checked'" : nil%>>
-	<br />
-	<label for="sota">SOTA</label>
-	<input type="checkbox" name="sota" id="sota" value="1" <%=@member[:sota] == 1  ? "checked='checked'" : nil%>>
-	<input type="hidden" name="id" value="<%=@member[:id]%>">
-  <p>Modes:
-  <%@modes.each do |k,v|%>
-  	<label for=<%="mode_#{v}"%>><%="#{v}"%></label>
-  	<input type="hidden" name=<%="mode_#{v}"%> value="0">
-  	<input type="checkbox" name=<%="mode_#{v}"%> id=<%="mode_#{v}"%> value="1" <%=@member[:modes].include?(k.to_s)  ? "checked='checked'" : nil%>>
-  <%end%></p>	<hr />
- 	<input type="submit" value="Submit" onsubmit="validateMbrForm()"> | <a href="/r/member/list">Cancel</a>
+
 </form>

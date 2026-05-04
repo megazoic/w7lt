@@ -1,107 +1,157 @@
-<h3>Add a payment for member <span class="textColor"><%="#{@mbr_pay[:fname]} #{@mbr_pay[:lname]}, #{@mbr_pay[:callsign]}"%></span></h3>
-<br />
 <script>
-  var payFees = JSON.parse('<%=@payFees.to_json%>');
+  var payFees = JSON.parse('<%= @payFees.to_json %>');
 </script>
-<form action='/m/payment/new' method='POST' name="mbrPay" onsubmit="return validateMbrPayForm()">
-  <input type="hidden" name="mbr_id" value=<%=@mbr_pay[:id]%>>
-  <input type="hidden" name="mbrship_renewal_date_old" value=<%=@mbr_pay[:mbrship_renewal_date]%>>
-  <input type="hidden" name="mbr_type_old" id="old_mbr_type" value=<%=@mbr_pay[:mbr_type]%>>
-  <label for="payment_type_field">Payment type is </label>
-  <select name="payment_type" id="payment_type_field" onchange="duesSet(this)">
-    <option value="">--Choose type--</option>
-    <% @payType.each do |t| %>
-      <option value=<%="#{t.values[:id]}"%>><%=t.values[:type]%></option>
-    <% end %>
-  </select>
-  <br />
-  <div id="message">
-    Member Type:
-    <select id="mbr_type" name="mbr_type" >
-    <%@payFees.each do |k,v|%>
-      <%next if k == "none"%>
-      <option value=<%=k%> id=<%="pay_#{v}"%> <%=@mbr_type_selected == k ? "selected" : nil%>><%="#{k}: $#{v}"%></option>
-    <%end%>
+
+<h3 class="text-xl font-bold text-gray-800 mb-1">
+  Add a payment for <span class="text-blue-600"><%= "#{@mbr_pay[:fname]} #{@mbr_pay[:lname]}, #{@mbr_pay[:callsign]}" %></span>
+</h3>
+
+<form action="/m/payment/new" method="POST" name="mbrPay" onsubmit="return validateMbrPayForm();"
+      class="space-y-4 max-w-lg mt-4">
+  <input type="hidden" name="mbr_id" value="<%= @mbr_pay[:id] %>">
+  <input type="hidden" name="mbrship_renewal_date_old" value="<%= @mbr_pay[:mbrship_renewal_date] %>">
+  <input type="hidden" name="mbr_type_old" id="old_mbr_type" value="<%= @mbr_pay[:mbr_type] %>">
+
+  <div>
+    <label class="block text-xs text-gray-600 mb-1" for="payment_type_field">Payment Type <span class="text-red-500">*</span></label>
+    <select name="payment_type" id="payment_type_field" onchange="duesSet(this)"
+            class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <option value="">-- Choose type --</option>
+      <% @payType.each do |t| %>
+      <option value="<%= t.values[:id] %>"><%= t.values[:type] %></option>
+      <% end %>
     </select>
-    <br/><br/>
-    <input type="checkbox" name="other_pmt" id="other_pmt" onchange="other_pmtSet(this)"/>
-    <label for="other_pmt">Need to record non-standard payment</label></br>
-    <input type="text" name="other_pmt" id="other_pmt_field" maxlength="5" size="4" disabled/>
-    <label for="other_pmt_field">Enter this non-standard payment here (dollar amount only)</label>
-    <br/>
-    <%if !@mbr_pay[:renewal_too_early].nil?%>
-      <p style="color: red;">This member is renewing too early, their next renewal date is one year from <%=Date.parse(@mbr_pay[:mbrship_renewal_date].to_s)%>.</p>
-      <p>Their renewal date will be set with today&#39;s date effectively shortening their last dues payment
-    <%end%>
-      
-    <%if @mbr_pay[:mbr_type] == 'family'%>
-      <br/><%@mbr_family.each {|mbr|%><%="#{mbr} "%><%}%>membership will also be renewed unless this renewal is non-family type
-      <p>If dues payment is for non-family type, then this family member will be removed from family unit and no other members of this
-      family will have a membership renewal.
-    <%end%>
-    <br/>
-    <p>After this payment is submitted, <%="#{@mbr_pay[:fname]} #{@mbr_pay[:lname]} will have the following
-    membership renewal date #{(@mbr_pay[:new_renewal_date].strftime('%d, %b %Y'))}."%>
-    <p>If needed, use the edit member details page to change this date after you submit this payment<br/>
-    <table>
-        <thead>
-            <tr>
-                <th colspan="2">Member Renewal Details (note, current renewal date is last recorded payment)</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>suspend renewals: <%=@mbr_pay[:mbrship_renewal_halt]%></td>
-                <td>membership renewal active: <%=@mbr_pay[:mbrship_renewal_active]%></td>
-            </tr>
-            <tr>
-                <td>times contacted: <%=@mbr_pay[:mbrship_renewal_contacts]%></td>
-                <%if @mbr_pay[:mbrship_renewal_date].nil? %>
-                  <td>current renewal date: N.A.</td>
-                <% else %>
-                  <td>current renewal date: <%=@mbr_pay[:mbrship_renewal_date].strftime('%d, %b %Y')%></td>
-                <% end %>
-            </tr>
-        </tbody>
-    </table>
-    <p><%="The last recorded dues payment was made on: #{@mbr_pay[:last_dues_pmt_date]}"%><br/><br/>
-    <table>
-        <thead>
-            <tr>
-                <th colspan="3">Member Renewal Event Details</th>
-            </tr>
-            <tr>
-            <th>Event Type</th>
-            <th>Notes</th>
-            <th>Date</th>
-            </tr>
-        </thead>
-        <tbody>
-        <%@mbr_renewal_events.each do |event|%>
-            <tr>
-                <td><%=event[:renewal_event_type]%></td>
-                <td><%=event[:notes]%></td>
-                <td><%=event[:ts].strftime('%Y %b %a')%></td>
-            </tr>
-        <%end%>
-       </tbody>
-    </table>
- </div>
-  <div id="nonDues">
-  <label for="nonDues_amt_field">Payment amount (with or without decimal eg 23.00 or 23)</label>
-    <input type="text" name="nonDues_pmt" id="nonDues_pmt_field" maxlength="7" size="4" disabled onfocusout="validatePayAmt(this)"/>
   </div>
-  <br/>
-  <label for="payment_method_field">Payment method is </label>
-  <select name="payment_method" id="payment_method_field">
-  <option value="">--Choose method--</option>
-    <% @payMethod.each do |m| %>
-      <option value=<%="#{m.values[:id]}"%>><%=m.values[:mode]%></option>
+
+  <!-- Dues section — JS-controlled visibility via id="message" -->
+  <div id="message" class="space-y-3 border border-gray-200 rounded p-4 bg-gray-50">
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="mbr_type">Member Type</label>
+      <select id="mbr_type" name="mbr_type"
+              class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <% @payFees.each do |k, v| %>
+        <% next if k == "none" %>
+        <option value="<%= k %>" id="pay_<%= v %>"<%= @mbr_type_selected == k ? ' selected' : '' %>><%= "#{k}: $#{v}" %></option>
+        <% end %>
+      </select>
+    </div>
+
+    <div class="flex items-start gap-3">
+      <input type="checkbox" name="other_pmt" id="other_pmt" onchange="other_pmtSet(this)" class="w-auto mt-0.5" />
+      <div class="flex-1">
+        <label for="other_pmt" class="text-sm text-gray-700">Record non-standard payment</label>
+        <div class="mt-1 flex items-center gap-2">
+          <input type="text" name="other_pmt" id="other_pmt_field" maxlength="5" size="4" disabled
+                 class="border border-gray-300 rounded px-2 py-1 text-sm w-20 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <label for="other_pmt_field" class="text-xs text-gray-500">Dollar amount only</label>
+        </div>
+      </div>
+    </div>
+
+    <% if !@mbr_pay[:renewal_too_early].nil? %>
+    <div class="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
+      <p>This member is renewing too early — next renewal date is one year from <%= Date.parse(@mbr_pay[:mbrship_renewal_date].to_s) %>.</p>
+      <p class="mt-1">Their renewal date will be set to today, effectively shortening their last dues payment.</p>
+    </div>
     <% end %>
-  </select>
-  <br/>
-  <label for="notes_field">Notes</label>
-  <textarea name="notes" id="notes_field" rows="6" cols="65"></textarea>
-  <br/>
-	<input type="submit" value="Submit"> | <a href="/r/member/list">Cancel</a>
+
+    <% if @mbr_pay[:mbr_type] == 'family' %>
+    <div class="text-sm text-gray-700 bg-yellow-50 border border-yellow-200 rounded p-2">
+      <p><%= @mbr_family.join(', ') %> — membership will also be renewed unless this renewal is non-family type.</p>
+      <p class="mt-1 text-xs text-gray-500">If dues payment is for non-family type, this member will be removed from the family unit and no other members will have a membership renewal.</p>
+    </div>
+    <% end %>
+
+    <p class="text-sm text-gray-700">
+      After this payment, <strong><%= "#{@mbr_pay[:fname]} #{@mbr_pay[:lname]}" %></strong>
+      will have renewal date <strong><%= @mbr_pay[:new_renewal_date].strftime('%d %b %Y') %></strong>.
+      <span class="text-xs text-gray-500 block mt-0.5">Use the edit member page to change this date after submitting if needed.</span>
+    </p>
+
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="border border-gray-300 px-2 py-1 text-left" colspan="2">Member Renewal Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="odd:bg-white even:bg-gray-50">
+            <td class="border border-gray-200 px-2 py-0.5">Suspend renewals: <%= @mbr_pay[:mbrship_renewal_halt] %></td>
+            <td class="border border-gray-200 px-2 py-0.5">Renewal active: <%= @mbr_pay[:mbrship_renewal_active] %></td>
+          </tr>
+          <tr class="odd:bg-white even:bg-gray-50">
+            <td class="border border-gray-200 px-2 py-0.5">Times contacted: <%= @mbr_pay[:mbrship_renewal_contacts] %></td>
+            <td class="border border-gray-200 px-2 py-0.5">
+              Current renewal date:
+              <% if @mbr_pay[:mbrship_renewal_date].nil? %>
+                N/A
+              <% else %>
+                <%= @mbr_pay[:mbrship_renewal_date].strftime('%d %b %Y') %>
+              <% end %>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="text-sm text-gray-600">Last recorded dues payment: <strong><%= @mbr_pay[:last_dues_pmt_date] %></strong></p>
+
+    <% if !@mbr_renewal_events.empty? %>
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="border border-gray-300 px-2 py-1 text-left" colspan="3">Member Renewal Event Details</th>
+          </tr>
+          <tr class="bg-gray-50">
+            <th class="border border-gray-300 px-2 py-1">Event Type</th>
+            <th class="border border-gray-300 px-2 py-1">Notes</th>
+            <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @mbr_renewal_events.each do |event| %>
+          <tr class="odd:bg-white even:bg-gray-50">
+            <td class="border border-gray-200 px-2 py-0.5"><%= event[:renewal_event_type] %></td>
+            <td class="border border-gray-200 px-2 py-0.5"><%= event[:notes] %></td>
+            <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= event[:ts].strftime('%Y %b %a') %></td>
+          </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <% end %>
+  </div>
+
+  <!-- Non-dues payment amount — JS-controlled via id="nonDues" -->
+  <div id="nonDues">
+    <label class="block text-xs text-gray-600 mb-1" for="nonDues_pmt_field">Payment Amount <span class="text-gray-400">(e.g. 23 or 23.00)</span></label>
+    <input type="text" name="nonDues_pmt" id="nonDues_pmt_field" maxlength="7" size="4" disabled
+           onfocusout="validatePayAmt(this)"
+           class="border border-gray-300 rounded px-3 py-1.5 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+  </div>
+
+  <div>
+    <label class="block text-xs text-gray-600 mb-1" for="payment_method_field">Payment Method <span class="text-red-500">*</span></label>
+    <select name="payment_method" id="payment_method_field"
+            class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <option value="">-- Choose method --</option>
+      <% @payMethod.each do |m| %>
+      <option value="<%= m.values[:id] %>"><%= m.values[:mode] %></option>
+      <% end %>
+    </select>
+  </div>
+
+  <div>
+    <label class="block text-xs text-gray-600 mb-1" for="notes_field">Notes</label>
+    <textarea name="notes" id="notes_field" rows="5"
+              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+  </div>
+
+  <div class="flex items-center gap-4">
+    <input type="submit" value="Submit"
+           class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer" />
+    <a href="/r/member/list" class="text-sm text-gray-500 hover:underline">Cancel</a>
+  </div>
 </form>

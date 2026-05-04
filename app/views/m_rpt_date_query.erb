@@ -4,18 +4,33 @@
   };
 </script>
 
-<h2>This form will use today's date unless you enter a different one</h2>
-<p>All active members will be individuals whose membership is current as of the date chosen</p>
-<form action='/r/member/mbr_rpt' method='POST' name="rptYear" onsubmit="return validateMbrCountForm()">
-<input type="radio" name="date" id="date_today" value="date_today" checked/>
-<label for="date_today">Today's date</label>
-<br />
-<input type="radio" name="date" id="date_other" value="date_other" onclick="mbrRptDateSet(this)"/>
-<label for="date_other">Choose another date</label>
-<div id="newDate">
-  <label for="date_field">Enter a different date MM/DD/YY</label>
-  <input type="text" name="newDate" id="date_field" onfocusout="validateMbrRnwlDate(this)"/>
-</div>
-<br />
-<input type="submit" value="Submit"> | <a href="/r/member/list">Cancel</a>
+<h3 class="text-xl font-bold text-gray-800 mb-1">Member Count Report</h3>
+<p class="text-sm text-gray-500 mb-4">Active members are those whose membership is current as of the date chosen.</p>
+
+<form action="/r/member/mbr_rpt" method="POST" name="rptYear" onsubmit="return validateMbrCountForm();"
+      class="space-y-4 max-w-sm">
+  <div class="space-y-2 text-sm">
+    <label class="flex items-center gap-2">
+      <input type="radio" name="date" id="date_today" value="date_today" checked class="w-auto" />
+      Today's date
+    </label>
+    <label class="flex items-center gap-2">
+      <input type="radio" name="date" id="date_other" value="date_other" onclick="mbrRptDateSet(this)" class="w-auto" />
+      Choose another date
+    </label>
+  </div>
+
+  <div id="newDate">
+    <label class="block text-xs text-gray-600 mb-1" for="date_field">
+      Enter date <span class="text-gray-400">(MM/DD/YY)</span>
+    </label>
+    <input type="text" name="newDate" id="date_field" onfocusout="validateMbrRnwlDate(this)"
+           class="border border-gray-300 rounded px-3 py-1.5 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+  </div>
+
+  <div class="flex items-center gap-4">
+    <input type="submit" value="Submit"
+           class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer" />
+    <a href="/r/member/list" class="text-sm text-gray-500 hover:underline">Cancel</a>
+  </div>
 </form>

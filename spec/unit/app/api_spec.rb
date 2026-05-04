@@ -145,48 +145,5 @@ module MemberTracker
         end
       end
     end
-    # POST /create_auth_user — route renamed to POST /a/auth_user/create and
-    # the AuthUser#create instance method was removed. These tests need rewriting
-    # against the new route (Phase 1 task).
-    xdescribe 'POST /create_auth_user' do
-      let(:auth_user_data) {{'some'=>'data'}}
-      context 'when the auth_user is successfully created' do
-        before do
-          allow(auth_user).to receive(:create)
-          .with(auth_user_data)
-          .and_return({'auth_user_id' => 5, 'auth_user_authority'=>0})
-        end
-        it 'returns the auth_user id' do
-          post '/create_auth_user', JSON.generate(auth_user_data)
-          parsed = parsedJSON
-          expect(parsed).to include('auth_user_id' => 5)
-        end
-        it 'responds with a 200 (OK)' do
-          post '/create_auth_user', JSON.generate(auth_user_data)
-          expect(last_response.status).to eq(200)
-        end
-        it 'returns the auth_user\'s authority' do
-          post '/create_auth_user', JSON.generate(auth_user_data)
-          parsed = parsedJSON
-          expect(parsed).to include('auth_user_authority' => 0)
-        end
-      end
-      context 'when the auth_user fails to be created' do
-        before do
-          allow(auth_user).to receive(:create)
-          .with(auth_user_data)
-          .and_return({'error' => 'incomplete'})
-        end
-        it 'returns error message' do
-          post '/create_auth_user', JSON.generate(auth_user_data)
-          parsed = parsedJSON
-          expect(parsed).to have_key('error')
-        end
-        it 'responds with a 422 (Unprossable Entry)' do
-          post '/create_auth_user', JSON.generate(auth_user_data)
-          expect(last_response.status).to eq(422)
-        end
-      end
-    end
   end
 end

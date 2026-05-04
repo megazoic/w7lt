@@ -1,55 +1,108 @@
-<br /><h3>Edit event</h3>
-<form action='/m/event/create' method='POST' name='edit_event' onsubmit="return validateCreateEventForm()">
-<input type='hidden' name='event_id' value='<%=@event.id%>'>
-<label for='event_date'>Date and time of Event (format is 'YYYY-MM-DD HH:MM')</label>
-<br /><input type='text' name='event_date' value='<%=@event.ts.to_s[0,16]%>'>
-<br /><label for='general_notes'>Notes for log</label>
-<br /><textarea name='general_notes' id='general_notes' class='lgtext'><%=@pared_notes%></textarea>
-<br />
-Event Type:
-<select id="type" name="event_type_id">
-  <% for event_type in @event_types %>
-    <option value='<%=event_type[:id]%>' <%if @event[:event_type_id] == event_type[:id]%>selected='selected'<%end%> ><%=event_type[:name]%></option>
-  <%end%>
-</select>
-<br/><label for="name">Name of Event</label>
-<input type='text' name='name' id='new_type_name' value='<%=@event[:name]%>'>
-<br/><label for="description">Description of event</label>
-<input type='text' name='descr' value='<%=@event[:descr]%>'>
-<br /><label for="duration">Duration of event (hrs)</label>
-<select name='duration' id='duration'>
-<option>none</option>
-<%5.times do |t|%>
-  <option <%if @event[:duration] == t+1%>selected='selected'<%end%>><%=t+1%></option>
-<%end%>
-</select>
-<br />Duration units<br />
-Hours<input type='radio' name='duration_units' id='durat_hrs' value='hrs' <%if @event[:duration_units] == 'hrs'%>checked<%end%>> | 
-Days<input type='radio' name='duration_units' id='durat_days' value='days' <%if @event[:duration_units] == 'days'%>checked<%end%>>
-<br/>
-<h3>Pick One Event Contact and All Attendees</h3> (put other organzers in the description)
-<br/><label for="guest_notes">Add Guest Attendess separated by a semicolon ';'</label><br/>
-<textarea name='guest_notes' id='guest_notes' class='lgtext'><%=@guest_notes%></textarea>
-	<table>
-		<tr>
-      <th>Organzer</th>
-			<th>First Name</th>
-			<th>Last Name</th>
-			<th>call</th>
-			<th>attendee</th>
-		</tr>
-		<% for member in @mbrs %>
-		<tr>
-		<td><input type='radio' name='mbr_id' value=<%=member[:id]%> 
-    <%=@event[:mbr_id] == member[:id] ? "checked" : nil%>></td>
-		<td><%=member[:fname]%></td>
-		<td><%=member[:lname]%></td>
-		<td><%=member[:callsign]%></td>
-		<td><input type='checkbox' name='id:<%=member[:id]%>' value='1' 
-    <%=@mbrs_attending.include?(member[:id]) ? "checked" : nil%>/></td>
-		</tr>
-		<% end %>
-	</table>
+<h3 class="text-xl font-bold text-gray-800 mb-4">Edit Event</h3>
+<form action="/m/event/create" method="POST" name="edit_event" onsubmit="return validateCreateEventForm();"
+      class="space-y-5">
+  <input type="hidden" name="event_id" value="<%= @event.id %>">
 
-<input type='submit' value='Submit'/> | <a href="/home">Cancel</a>
-</form>    
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="event_date">Date &amp; Time <span class="text-gray-400">(YYYY-MM-DD HH:MM)</span></label>
+      <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+             type="text" name="event_date" id="event_date" value="<%= @event.ts.to_s[0, 16] %>" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="type">Event Type <span class="text-red-500">*</span></label>
+      <select id="type" name="event_type_id"
+              class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <% @event_types.each do |event_type| %>
+        <option value="<%= event_type[:id] %>"<%= @event[:event_type_id] == event_type[:id] ? ' selected' : '' %>><%= event_type[:name] %></option>
+        <% end %>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="new_type_name">Event Name</label>
+      <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+             type="text" name="name" id="new_type_name" value="<%= @event[:name] %>" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1">Description</label>
+      <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+             type="text" name="descr" value="<%= @event[:descr] %>" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="duration">Duration</label>
+      <div class="flex items-center gap-3">
+        <select name="duration" id="duration"
+                class="border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option<%= @event[:duration].nil? || @event[:duration] == 'none' ? ' selected' : '' %>>none</option>
+          <% 5.times do |t| %><option<%= @event[:duration] == t + 1 ? ' selected' : '' %>><%= t + 1 %></option><% end %>
+        </select>
+        <span class="text-sm text-gray-600">
+          <label class="inline-flex items-center gap-1">
+            <input type="radio" name="duration_units" id="durat_hrs" value="hrs" class="w-auto"<%= @event[:duration_units] == 'hrs' ? ' checked' : '' %> /> Hours
+          </label>
+          &nbsp;
+          <label class="inline-flex items-center gap-1">
+            <input type="radio" name="duration_units" id="durat_days" value="days" class="w-auto"<%= @event[:duration_units] == 'days' ? ' checked' : '' %> /> Days
+          </label>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-2xl">
+    <label class="block text-xs text-gray-600 mb-1" for="general_notes">Notes for log</label>
+    <textarea name="general_notes" id="general_notes" rows="4"
+              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><%= @pared_notes %></textarea>
+  </div>
+
+  <div class="max-w-2xl">
+    <label class="block text-xs text-gray-600 mb-1" for="guest_notes">
+      Guest attendees <span class="text-gray-400">(separated by semicolon)</span>
+    </label>
+    <textarea name="guest_notes" id="guest_notes" rows="3"
+              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><%= @guest_notes %></textarea>
+  </div>
+
+  <!-- Member attendance table -->
+  <div>
+    <h3 class="text-base font-semibold text-gray-800 mb-1">
+      Pick One Organizer <span class="text-red-500">*</span> and All Attendees
+    </h3>
+    <p class="text-xs text-gray-500 mb-2">Other organizers go in the description field.</p>
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr class="bg-gray-100 text-left">
+            <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Organizer <span class="text-red-500">*</span></th>
+            <th class="border border-gray-300 px-2 py-1">First</th>
+            <th class="border border-gray-300 px-2 py-1">Last</th>
+            <th class="border border-gray-300 px-2 py-1">Call</th>
+            <th class="border border-gray-300 px-2 py-1">Attendee</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @mbrs.each do |member| %>
+          <tr class="odd:bg-white even:bg-gray-50">
+            <td class="border border-gray-200 px-2 py-0.5 text-center">
+              <input type="radio" name="mbr_id" value="<%= member[:id] %>" class="w-auto"<%= @event[:mbr_id] == member[:id] ? ' checked' : '' %> />
+            </td>
+            <td class="border border-gray-200 px-2 py-0.5"><%= member[:fname] %></td>
+            <td class="border border-gray-200 px-2 py-0.5"><%= member[:lname] %></td>
+            <td class="border border-gray-200 px-2 py-0.5"><%= member[:callsign] %></td>
+            <td class="border border-gray-200 px-2 py-0.5 text-center">
+              <input type="checkbox" name="id:<%= member[:id] %>" value="1" class="w-auto"<%= @mbrs_attending.include?(member[:id]) ? ' checked' : '' %> />
+            </td>
+          </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-4">
+    <input type="submit" value="Submit"
+           class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer" />
+    <a href="/home" class="text-sm text-gray-500 hover:underline">Cancel</a>
+  </div>
+
+</form>

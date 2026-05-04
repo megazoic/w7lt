@@ -1,71 +1,46 @@
-<h3>Use this form to select members by...</h3>
-<form acton="/m/query" method="POST">
-<ul>
-  <li>Membership status</li>
-  <li>
-    <select id="paid_up_q" name="paid_up_q">
+<h3 class="text-xl font-bold text-gray-800 mb-6">Query Members</h3>
+<form action="/m/query" method="POST" class="space-y-6 max-w-sm">
+
+  <div>
+    <label class="block text-sm font-semibold text-gray-700 mb-1" for="paid_up_q">Membership Status</label>
+    <select id="paid_up_q" name="paid_up_q"
+            class="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
       <option value="">Pick one</option>
       <option value="1">Dues Paid</option>
       <option value="0">Dues Unpaid</option>
     </select>
-  </li>
-  <li>Membership Type</li>
-  <ul>
-  <li>
-  <input type="checkbox" name="mbr_full" id="mbr_full" value="full" />
-  <label for="full">Full</label>
-  </li>
-  <li>
-  <input type="checkbox" name="mbr_student" id="mbr_student" value="student" />
-  <label for="student">Student</label>
-  </li>
-  <li>
-  <input type="checkbox" name="mbr_family" id="mbr_family" value="family" />
-  <label for="family">Family</label>
-  </li>
-  <li>
-  <input type="checkbox" name="mbr_lifetime" id="mbr_lifetime" value="lifetime" />
-  <label for="honorary">Lifetime</label>
-  </li>
-  <li>
-  <input type="checkbox" name="mbr_honorary" id="mbr_honorary" value="honorary" />
-  <label for="honorary">Honorary</label>
-  </li>
-  <li>
-  <input type="checkbox" name="mbr_none" id="mbr_none" value="none" />
-  <label for="honorary">Guest</label>
-  </li>
-  </ul>
-  <li>Club or Association</li>
-  <ul>
-  <li>
-  <input type="checkbox" name="arrl" id="arrl" value="1" />
-  <label for="arrl">ARRL</label>
-  </li>
-  <li>
-  <input type="checkbox" name="ares" id="ares" value="1" />
-  <label for="ares">ARES</label>
-  </li>
-  <li>
-  <input type="checkbox" name="pdxnet" id="pdxnet" value="1" />
-  <label for="pdxnet">Portland NET</label>
-  </li>
-  <li>
-  <input type="checkbox" name="sota" id="sota" value="1" />
-  <label for="sota">SOTA</label>
-  </li>
-  </ul>
-  <li>Mentor</li>
-  <ul>
-  <li>
-  <input type="checkbox" name="ve" id="ve" value="1" />
-  <label for="ve">VE</label>
-  </li>
-  <li>
-  <input type="checkbox" name="elmer" id="elmer" value="1" />
-  <label for="elmer">Elmer</label>
-  </li>
-  </ul>
-</ul>
- <input type="submit" value="Submit">
+  </div>
+
+  <fieldset>
+    <legend class="text-sm font-semibold text-gray-700 mb-2">Membership Type</legend>
+    <div class="space-y-1 text-sm text-gray-700">
+      <label class="flex items-center gap-2"><input type="checkbox" name="mbr_full"     value="full"     class="w-auto" /> Full</label>
+      <label class="flex items-center gap-2"><input type="checkbox" name="mbr_student"  value="student"  class="w-auto" /> Student</label>
+      <label class="flex items-center gap-2"><input type="checkbox" name="mbr_family"   value="family"   class="w-auto" /> Family</label>
+      <label class="flex items-center gap-2"><input type="checkbox" name="mbr_lifetime" value="lifetime" class="w-auto" /> Lifetime</label>
+      <label class="flex items-center gap-2"><input type="checkbox" name="mbr_honorary" value="honorary" class="w-auto" /> Honorary</label>
+      <label class="flex items-center gap-2"><input type="checkbox" name="mbr_none"     value="none"     class="w-auto" /> Guest</label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend class="text-sm font-semibold text-gray-700 mb-2">Club or Association</legend>
+    <div class="space-y-1 text-sm text-gray-700">
+      <label class="flex items-center gap-2"><input type="checkbox" name="arrl"   value="1" class="w-auto" /> ARRL</label>
+      <label class="flex items-center gap-2"><input type="checkbox" name="ares"   value="1" class="w-auto" /> ARES</label>
+      <label class="flex items-center gap-2"><input type="checkbox" name="pdxnet" value="1" class="w-auto" /> Portland NET</label>
+      <label class="flex items-center gap-2"><input type="checkbox" name="sota"   value="1" class="w-auto" /> SOTA</label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend class="text-sm font-semibold text-gray-700 mb-2">Mentor</legend>
+    <div class="space-y-1 text-sm text-gray-700">
+      <label class="flex items-center gap-2"><input type="checkbox" name="ve"    value="1" class="w-auto" /> VE</label>
+      <label class="flex items-center gap-2"><input type="checkbox" name="elmer" value="1" class="w-auto" /> Elmer</label>
+    </div>
+  </fieldset>
+
+  <input type="submit" value="Submit"
+         class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer" />
 </form>

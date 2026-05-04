@@ -1,26 +1,44 @@
-<!-- filepath: /Users/nickdev/dev/ruby/working_apps/w7lt/app/views/mbr_non_renew_edit.erb -->
-<h2>Edit Non-Renewal Action for <%= @mbr_action[:target_member_name] %></h2>
+<h3 class="text-xl font-bold text-gray-800 mb-1">Edit Non-Renewal Action</h3>
+<p class="text-sm text-gray-600 mb-4">
+  Member: <strong><%= @mbr_action[:target_member_name] %></strong>
+  &mdash; <span class="text-gray-500"><%= @mbr_action[:action_type] %></span>
+</p>
 
-<form action="/m/mbr_non_renewals/update/<%= @mbr_action[:id] %>" method="post">
-  <label for="tasked_to_mbr_id">Tasked To:</label>
-  <select name="tasked_to_mbr_id" id="tasked_to_mbr_id">
-    <option value=>-- Select Member --</option>
-    <% @mbrs.each do |mbr| %>
-      <option value="<%= mbr[:id] %>" <%= 'selected' if mbr[:id] == @mbr_action[:tasked_to_mbr_id] %>>
-        <%= "#{mbr[:fname]} #{mbr[:lname]} [#{mbr[:callsign]}]"%>
+<form action="/m/mbr_non_renewals/update/<%= @mbr_action[:id] %>" method="POST"
+      class="space-y-4 max-w-md">
+
+  <div>
+    <label class="block text-xs text-gray-600 mb-1" for="tasked_to_mbr_id">Tasked To</label>
+    <select name="tasked_to_mbr_id" id="tasked_to_mbr_id"
+            class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <option value="">-- Select Member --</option>
+      <% @mbrs.each do |mbr| %>
+      <option value="<%= mbr[:id] %>"<%= mbr[:id] == @mbr_action[:tasked_to_mbr_id] ? ' selected' : '' %>>
+        <%= "#{mbr[:fname]} #{mbr[:lname]} [#{mbr[:callsign]}]" %>
       </option>
-    <% end %>
-  </select>
-  <br/>
+      <% end %>
+    </select>
+  </div>
 
-  <label for="notes">Notes:</label>
-    <textarea name="notes" id="notes" rows="4" cols="50"><%= @mbr_action[:notes] %></textarea>
-  <br/>
-  <label for="completed">Completed:</label>
-    <input type="checkbox" name="completed" id="completed" <%= @mbr_action[:completed] ? 'checked' : '' %> />
-  <br/>
-  
+  <div>
+    <label class="block text-xs text-gray-600 mb-1" for="notes">Notes</label>
+    <textarea name="notes" id="notes" rows="4"
+              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><%= @mbr_action[:notes] %></textarea>
+  </div>
 
-  <button type="submit">Update Non-Renewal</button>
-  <a href="/m/mbr_non_renewals/show">Cancel</a>
+  <div>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="completed" id="completed" class="w-auto"
+             <%= @mbr_action[:completed] ? 'checked' : '' %> />
+      Completed
+    </label>
+  </div>
+
+  <div class="flex items-center gap-4">
+    <button type="submit"
+            class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer">
+      Update Non-Renewal
+    </button>
+    <a href="/m/mbr_non_renewals/show" class="text-sm text-gray-500 hover:underline">Cancel</a>
+  </div>
 </form>

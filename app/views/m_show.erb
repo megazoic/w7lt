@@ -1,121 +1,210 @@
 <%#
-:fname	:lname	:email	:city	:street
-:zip	:state	:callsign	:phm	:phm_pub
-:phh	:phh_pub	:phw	:phw_pub
-:license_class	:mbr_type	:paid_up	:arrl
-:arrl_expire	:ares	:net	:ve	:elmer
+:fname  :lname  :email  :city   :street
+:zip    :state  :callsign :phm  :phm_pub
+:phh    :phh_pub :phw   :phw_pub
+:license_class :mbr_type :paid_up :arrl
+:arrl_expire :ares :net :ve :elmer
 :SOTA
 %>
-<h1>Member: <%="#{@member[:fname]} #{@member[:lname]}, #{@member[:callsign]}"%></h1>
-<br>
-<% if session[:auth_user_roles].include?('mbr_mgr') %>
-<a href="/m/payment/new/<%=@member[:id]%>">Record a payment for this member</a></br>
-<a href="/m/mbr_callme/new/<%=@member[:id]%>">Create a call member action for this member</a>
-<% end %>
+<div class="flex items-baseline justify-between flex-wrap gap-2 mb-4">
+  <h1 class="text-2xl font-bold text-gray-800">
+    <%= @member[:fname] %> <%= @member[:lname] %><% if @member[:callsign] %>, <%= @member[:callsign] %><% end %>
+  </h1>
+  <div class="flex gap-3 text-sm">
+    <% if session[:auth_user_roles].include?('mbr_mgr') || MemberTracker::AuthUser[session[:auth_user_id]].member.id == @member[:id] %>
+    <a href="/m/member/edit/<%= @member[:id] %>" class="text-blue-600 hover:underline">Edit Member</a>
+    <% end %>
+    <% if session[:auth_user_roles].include?('mbr_mgr') %>
+    <a href="/m/payment/new/<%= @member[:id] %>" class="text-blue-600 hover:underline">Record Payment</a>
+    <a href="/m/mbr_callme/new/<%= @member[:id] %>" class="text-blue-600 hover:underline">Create Call Request</a>
+    <% end %>
+  </div>
+</div>
+
 <% if !@call_requests.empty? %>
-<div>
-  <h3>THIS MEMBER HAS UNCOMPLETED CALL REQUESTS</h3>
-  <p>check the <a href="/m/mbr_actions/show">call request list</a> for details</p>
+<div class="mb-4 border border-red-400 bg-red-50 rounded p-3 text-sm text-red-700 font-semibold">
+  This member has uncompleted call requests &mdash;
+  <a href="/m/mbr_actions/show" class="underline">view call request list</a>
 </div>
 <% end %>
-<p>Address: <%="#{@member[:street]}"%><br />
-	<%="#{@member[:city]} #{@member[:state]} #{@member[:zip]}"%><br /></p>
-	<p>Email: <%if @member[:email_bogus] == true %><span class="bogus_email">Is Bogus: <%=@member[:email]%> ****</span><%else%><%=@member[:email]%><%end%> | Okay to use for contact about club activities? <%=@member[:ok_to_email] == true ? "Yes" : "No"%>
-<p>Phone:<br /><span class="textColor">Home</span> <%="#{@member[:phh]} publish? "%><span class="highlight"><%=@member[:phh_pub].to_i == 0 ? "N" : "Y"%></span><br />
-<p><span class="textColor">Work</span> <%="#{@member[:phw]} publish? "%><span class="highlight"><%=@member[:phw_pub].to_i == 0 ? "N" : "Y"%></span><br />
-<p><span class="textColor">Mobile</span> <%="#{@member[:phm]} publish? "%><span class="highlight"><%=@member[:phm_pub].to_i == 0 ? "N" : "Y"%></span><br />
-<h3>Membership Details</h3>
-<p>First recorded this member on <%=@member[:mbr_since]%>
-<p>License class: <span class="highlight"><%=@member[:license_class]%></span>, member type: <span class="highlight"><%=@member[:mbr_type]%></span>
-<br />
-Other affiliations:<br />ARRL: <span class="highlight"><%=@member[:arrl].to_i == 0 ? "N" : "Y (expire #{@member[:arrl_expire]})"%></span> | ARES: <span class="highlight"><%=@member[:ares].to_i == 0 ? "N" : "Y"%></span> | Portland NET: <span class="highlight"><%=@member[:net].to_i == 0 ? "N" : "Y"%></span> | SOTA: <span class="highlight"><%=@member[:sota].to_i == 0 ? "N" : "Y"%></span><br />
-Volunteer:<br />VE <span class="highlight"><%=@member[:ve].to_i == 0 ? "N" : "Y"%></span> | Elmer <span class="highlight"><%=@member[:elmer].to_i == 0 ? "N" : "Y"%></span> | SOTA <span class="highlight"><%=@member[:sota].to_i == 0 ? "N" : "Y"%></span></p>
-<h4>Modes:</h4>
-<%if @member[:modes] == 'none'%>
-  <%='none selected'%>
-<%else%>
-  <%@member[:modes].split(",").each do |mi|%>
-    <%=" #{@modes[mi]} |"%>
-  <%end%>
-<%end%>
-<br />
-<h4>How did this member find us? <%if @member.refer_types.nil?%>We don&apos;t know<%else%><%=@member.refer_types.name%><%end%></h4>
-<%if session[:auth_user_roles].include?('mbr_mgr') || MemberTracker::AuthUser[session[:auth_user_id]].member.id == @member[:id]%><p><a href="/m/member/edit/<%= @member[:id]%>">Edit Member Details</a>
-<br /><%end%>
-<%if !@member[:mbrship_renewal_date].nil?%>
-  <p><a href="/m/mbr_renewals/new/<%= @member[:id]%>">Add Renewal Data</a>
-  <h4>Existing Renewal Data</h4>
-  <table>
-    <tr>
-    <td>Renewal is Active</td>
-    <td><%=@member[:mbrship_renewal_active]%></td>
-    </tr>
-    <tr>
-    <td>Do Not Solicit</td>
-    <td><%=@member[:mbrship_renewal_halt]%></td>
-    </tr>
-    <tr>
-    <td>Renewal Requests</td>
-    <td><%=@member[:mbrship_renewal_contacts]%></td>
-    </tr>
-    <tr>
-    <td <%if @member[:renew_due] == true%>class="renew"<%end%>>Renewal Date</td>
-    <td <%if @member[:renew_due] == true%>class="renew"<%end%>><%=@member[:mbrship_renewal_date].strftime("%D")%></td>
-    </tr>
+
+<!-- Contact -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+  <div class="bg-white border border-gray-200 rounded p-4 text-sm space-y-1">
+    <h3 class="font-semibold text-gray-700 mb-2">Address</h3>
+    <p class="text-gray-800"><%= @member[:street] %></p>
+    <p class="text-gray-800"><%= @member[:city] %> <%= @member[:state] %> <%= @member[:zip] %></p>
+  </div>
+  <div class="bg-white border border-gray-200 rounded p-4 text-sm space-y-2">
+    <h3 class="font-semibold text-gray-700 mb-2">Contact</h3>
+    <p>
+      <span class="text-gray-500">Email:</span>
+      <% if @member[:email_bogus] == true %>
+        <span class="bogus_email">&#9888; Bogus: <%= @member[:email] %></span>
+      <% else %>
+        <%= @member[:email] %>
+      <% end %>
+      &mdash; OK to email?
+      <span class="<%= @member[:ok_to_email] ? 'text-green-600' : 'text-red-600' %> font-medium">
+        <%= @member[:ok_to_email] ? 'Yes' : 'No' %>
+      </span>
+    </p>
+    <p>
+      <span class="text-blue-600 font-medium">Home</span> <%= @member[:phh] %>
+      <span class="bg-yellow-100 px-1 rounded text-xs">Publish: <%= @member[:phh_pub].to_i == 0 ? 'N' : 'Y' %></span>
+    </p>
+    <p>
+      <span class="text-blue-600 font-medium">Work</span> <%= @member[:phw] %>
+      <span class="bg-yellow-100 px-1 rounded text-xs">Publish: <%= @member[:phw_pub].to_i == 0 ? 'N' : 'Y' %></span>
+    </p>
+    <p>
+      <span class="text-blue-600 font-medium">Mobile</span> <%= @member[:phm] %>
+      <span class="bg-yellow-100 px-1 rounded text-xs">Publish: <%= @member[:phm_pub].to_i == 0 ? 'N' : 'Y' %></span>
+    </p>
+  </div>
+</div>
+
+<!-- Membership Details -->
+<div class="bg-white border border-gray-200 rounded p-4 text-sm mb-4">
+  <h3 class="font-semibold text-gray-700 mb-3">Membership Details</h3>
+  <div class="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-1">
+    <p><span class="text-gray-500">Member since:</span> <%= @member[:mbr_since] %></p>
+    <p><span class="text-gray-500">License:</span> <span class="bg-yellow-100 px-1 rounded"><%= @member[:license_class] %></span></p>
+    <p><span class="text-gray-500">Type:</span> <span class="bg-yellow-100 px-1 rounded"><%= @member[:mbr_type] %></span></p>
+    <p><span class="text-gray-500">ARRL:</span> <span class="bg-yellow-100 px-1 rounded"><%= @member[:arrl].to_i == 0 ? 'N' : "Y (exp #{@member[:arrl_expire]})" %></span></p>
+    <p><span class="text-gray-500">ARES:</span> <span class="bg-yellow-100 px-1 rounded"><%= @member[:ares].to_i == 0 ? 'N' : 'Y' %></span></p>
+    <p><span class="text-gray-500">Portland NET:</span> <span class="bg-yellow-100 px-1 rounded"><%= @member[:net].to_i == 0 ? 'N' : 'Y' %></span></p>
+    <p><span class="text-gray-500">SOTA:</span> <span class="bg-yellow-100 px-1 rounded"><%= @member[:sota].to_i == 0 ? 'N' : 'Y' %></span></p>
+    <p><span class="text-gray-500">VE:</span> <span class="bg-yellow-100 px-1 rounded"><%= @member[:ve].to_i == 0 ? 'N' : 'Y' %></span></p>
+    <p><span class="text-gray-500">Elmer:</span> <span class="bg-yellow-100 px-1 rounded"><%= @member[:elmer].to_i == 0 ? 'N' : 'Y' %></span></p>
+  </div>
+  <div class="mt-3">
+    <span class="text-gray-500">Modes:</span>
+    <% if @member[:modes] == 'none' %>
+      <span class="text-gray-400">none selected</span>
+    <% else %>
+      <span class="bg-yellow-100 px-1 rounded"><%= @member[:modes].split(",").map { |mi| @modes[mi] }.join(' | ') %></span>
+    <% end %>
+  </div>
+  <p class="mt-2"><span class="text-gray-500">Referred by:</span>
+    <%= @member.refer_types.nil? ? "Unknown" : @member.refer_types.name %>
+  </p>
+</div>
+
+<!-- Renewal Data -->
+<% if !@member[:mbrship_renewal_date].nil? %>
+<div class="bg-white border border-gray-200 rounded p-4 text-sm mb-4">
+  <div class="flex items-baseline justify-between mb-3">
+    <h3 class="font-semibold text-gray-700">Renewal Data</h3>
+    <a href="/m/mbr_renewals/new/<%= @member[:id] %>" class="text-blue-600 hover:underline text-xs">+ Add Renewal Record</a>
+  </div>
+  <table class="w-full border-collapse text-sm mb-4">
+    <tbody>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="border border-gray-200 px-3 py-1 text-gray-500">Renewal Active</td>
+        <td class="border border-gray-200 px-3 py-1"><%= @member[:mbrship_renewal_active] %></td>
+      </tr>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="border border-gray-200 px-3 py-1 text-gray-500">Do Not Solicit</td>
+        <td class="border border-gray-200 px-3 py-1"><%= @member[:mbrship_renewal_halt] %></td>
+      </tr>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="border border-gray-200 px-3 py-1 text-gray-500">Renewal Requests</td>
+        <td class="border border-gray-200 px-3 py-1"><%= @member[:mbrship_renewal_contacts] %></td>
+      </tr>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="border border-gray-200 px-3 py-1 text-gray-500 <%= @member[:renew_due] ? 'renew' : '' %>">Renewal Date</td>
+        <td class="border border-gray-200 px-3 py-1 <%= @member[:renew_due] ? 'renew' : '' %>">
+          <%= @member[:mbrship_renewal_date].strftime("%D") %>
+        </td>
+      </tr>
+    </tbody>
   </table>
-  <%if !@mbr_renewals.empty? %>
-    <br />
-    <table>
+  <% if !@mbr_renewals.empty? %>
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse text-sm">
       <thead>
-        <tr>
-          <th>Renewal Type</th>
-          <th>Recorded by</th>
-          <th>Notes</th>
-          <th>Date</th>
-          <th></th>
+        <tr class="bg-gray-100 text-left">
+          <th class="border border-gray-200 px-3 py-2">Type</th>
+          <th class="border border-gray-200 px-3 py-2">Recorded By</th>
+          <th class="border border-gray-200 px-3 py-2">Notes</th>
+          <th class="border border-gray-200 px-3 py-2">Date</th>
+          <th class="border border-gray-200 px-3 py-2"></th>
         </tr>
       </thead>
-    <%@mbr_renewals.each do |mr|%>
-      <tr>
-        <td><%=mr[:renewal_type]%></td>
-        <td><%=mr[:a_user_id]%></td>
-        <td><%=mr[:notes]%></td>
-        <td><%=mr[:ts].strftime("%D")%></td>
-        <td><%if mr[:renewal_type] == "dues payment" %><a href=<%="/m/payments/edit/#{mr[:id]}"%>
-          <% else %><a href=<%="/m/mbr_renewals/edit/#{mr[:id]}"%>
-          <%end %>>edit</a></td>
-      </tr>
-    <%end%>
+      <tbody>
+        <% @mbr_renewals.each do |mr| %>
+        <tr class="odd:bg-white even:bg-gray-50">
+          <td class="border border-gray-200 px-3 py-1"><%= mr[:renewal_type] %></td>
+          <td class="border border-gray-200 px-3 py-1"><%= mr[:a_user_id] %></td>
+          <td class="border border-gray-200 px-3 py-1 max-w-xs break-words"><%= mr[:notes] %></td>
+          <td class="border border-gray-200 px-3 py-1 whitespace-nowrap"><%= mr[:ts].strftime("%D") %></td>
+          <td class="border border-gray-200 px-3 py-1">
+            <% if mr[:renewal_type] == "dues payment" %>
+              <a href="/m/payments/edit/<%= mr[:id] %>" class="text-blue-600 hover:underline text-xs">edit</a>
+            <% else %>
+              <a href="/m/mbr_renewals/edit/<%= mr[:id] %>" class="text-blue-600 hover:underline text-xs">edit</a>
+            <% end %>
+          </td>
+        </tr>
+        <% end %>
+      </tbody>
     </table>
-  <%end%>
-<%elsif @member[:mbr_type] != "honorary"%>
-  <h3>This user is a guest</h3>Use log notes to track attempts to get this user to sign up as a member
-<%end%>
-<h4>Donations</h4>
-<table>
-  <thead>
-    <tr>
-      <th>Type</th>
-      <th>Date</th>
-      <th>Amount</th>
-    </tr>
-  </thead>
-  <body>
-    <%@mbr_donations.each do |md_key, md_val|%>
-    <tr>
-      <td><%=md_val[:payment_type]%></td>
-      <td><%=md_val[:date]%></td>
-      <td><%=md_val[:amount]%></td>
-    </tr>
-    <%end%>
-  </body>
-</table>
-<h4>Log notes:</h4>
-<a href="/m/log/create/<%=@member[:id]%>">Add a log note for this member</a>
-<br />
-<%@member.logs_dataset.order(:id).each do |l|%>
-  ################################
-  <br />Auth User <%="#{l.auth_user.member.fname} #{l.auth_user.member.lname}, #{l.auth_user.member.callsign}"%>
-  <p>Date <%=l.ts.strftime("%m-%d-%y")%></p>
-  <p><%=l.notes%></p>
-<%end%>
+  </div>
+  <% end %>
+</div>
+<% elsif @member[:mbr_type] != "honorary" %>
+<div class="bg-yellow-50 border border-yellow-300 rounded p-3 text-sm text-yellow-800 mb-4">
+  <strong>This user is a guest.</strong> Use log notes to track attempts to get this user to sign up as a member.
+</div>
+<% end %>
+
+<!-- Donations -->
+<div class="bg-white border border-gray-200 rounded p-4 text-sm mb-4">
+  <h3 class="font-semibold text-gray-700 mb-3">Donations</h3>
+  <% if @mbr_donations.empty? %>
+  <p class="text-gray-400">No donations on record.</p>
+  <% else %>
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <th class="border border-gray-200 px-3 py-2">Type</th>
+        <th class="border border-gray-200 px-3 py-2">Date</th>
+        <th class="border border-gray-200 px-3 py-2">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @mbr_donations.each do |_key, val| %>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="border border-gray-200 px-3 py-1"><%= val[:payment_type] %></td>
+        <td class="border border-gray-200 px-3 py-1"><%= val[:date] %></td>
+        <td class="border border-gray-200 px-3 py-1"><%= val[:amount] %></td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% end %>
+</div>
+
+<!-- Log Notes -->
+<div class="bg-white border border-gray-200 rounded p-4 text-sm">
+  <div class="flex items-baseline justify-between mb-3">
+    <h3 class="font-semibold text-gray-700">Log Notes</h3>
+    <a href="/m/log/create/<%= @member[:id] %>" class="text-blue-600 hover:underline text-xs">+ Add Note</a>
+  </div>
+  <% if @member.logs_dataset.count == 0 %>
+  <p class="text-gray-400">No log notes.</p>
+  <% else %>
+  <div class="space-y-3">
+    <% @member.logs_dataset.order(:id).each do |l| %>
+    <div class="border-t border-gray-100 pt-3">
+      <p class="text-xs text-gray-500">
+        <%= l.auth_user.member.fname %> <%= l.auth_user.member.lname %>, <%= l.auth_user.member.callsign %>
+        &mdash; <%= l.ts.strftime("%m-%d-%y") %>
+      </p>
+      <p class="mt-1 text-gray-800 whitespace-pre-wrap"><%= l.notes %></p>
+    </div>
+    <% end %>
+  </div>
+  <% end %>
+</div>

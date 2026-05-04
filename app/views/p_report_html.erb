@@ -1,31 +1,32 @@
-<!--expect @pay to have :lname, :fname, :callsign, :pay_type, :pay_method, :pay_amount, :auth_user, :date-->
-<div>
-  <h3>Payment report:</h3><br />
-  Total payments listed: <%=@pay.count%>, ordered by date, payment type, member last name
-</div>
-<div>
-	<table>
-		<tr>
-			<th>Last Name</th>
-			<th>First Name</th>
-			<th>Call sign</th>
-			<th>Pay Type</th>
-			<th>Pay Method</th>
-			<th>Pay Amount</th>
-			<th>Posted by</th>
-      <th>Date</th>
-		</tr>
-		<% for pay in @pay %>
-		<tr>
-		<td><%=pay[:lname]%></td>
-		<td><%=pay[:fname]%></td>
-		<td><%=pay[:callsign]%></td>
-		<td><%=pay[:pay_type]%></td>
-		<td><%=pay[:pay_method]%></td>
-		<td><%=pay[:pay_amount]%></td>
-		<td><%=pay[:auth_user]%></td>
-		<td><%=pay[:date]%></td>
-    </tr>
-    <%end%>
+<h3 class="text-xl font-bold text-gray-800 mb-1">Payment Report: <%= @rpt_type %></h3>
+<p class="text-sm text-gray-500 mb-4">Total payments: <%= @pay.count %> — ordered by date, payment type, member last name</p>
+<div class="overflow-x-auto">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <th class="border border-gray-300 px-2 py-1">Last</th>
+        <th class="border border-gray-300 px-2 py-1">First</th>
+        <th class="border border-gray-300 px-2 py-1">Call</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Pay Type</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Pay Method</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Amount</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Posted By</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @pay.each do |pay| %>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="border border-gray-200 px-2 py-0.5"><%= pay[:lname] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= pay[:fname] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= pay[:callsign] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= pay[:pay_type] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= pay[:pay_method] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= pay[:pay_amount] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= pay[:auth_user] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= pay[:date] %></td>
+      </tr>
+      <% end %>
+    </tbody>
   </table>
 </div>

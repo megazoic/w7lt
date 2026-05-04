@@ -1,30 +1,37 @@
-<%u_type=@u_c.shift%>
-
-<h3>Units List: <%=u_type.capitalize%></h3>
-<table>
-<tr>
-  <%if u_type == 'all'%>
-    <th>Unit Type</th>
-  <%end%>
-	<th>Unit Creator</th>
-	<th>Creation Date</th>
-	<th>Active</th>
-  <th>Notes</th>
-  <th>Members</th>
-  <th>Edit</th>
-</tr>
-<%@u_c.each do |unit|%>
-  <%meta=unit[0]%>
-		<tr>
-    <%if u_type == 'all'%>
-      <td><%=meta[:unit_type]%></td>
-    <%end%>
-		<td><%=meta[:unit_creator]%></td>
-		<td><%=meta[:unit_created_at]%></td>
-		<td><%if meta[:unit_active] == 1%>Yes<%else%>No<%end%></td>
-    <td><%=meta[:unit_notes]%></td>
-    <td><%=unit[2]%></td>
-    <td><a href="/m/unit/edit/<%=unit[1]%>">edit</a></td>
-		</tr>
-<%end%>
-</table>
+<% u_type = @u_c.shift %>
+<h3 class="text-xl font-bold text-gray-800 mb-4">Units: <%= u_type.capitalize %></h3>
+<div class="overflow-x-auto">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <% if u_type == 'all' %>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Unit Type</th>
+        <% end %>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Creator</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Created</th>
+        <th class="border border-gray-300 px-2 py-1">Active</th>
+        <th class="border border-gray-300 px-2 py-1">Notes</th>
+        <th class="border border-gray-300 px-2 py-1">Members</th>
+        <th class="border border-gray-300 px-2 py-1"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @u_c.each do |unit| %>
+      <% meta = unit[0] %>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <% if u_type == 'all' %>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= meta[:unit_type] %></td>
+        <% end %>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= meta[:unit_creator] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= meta[:unit_created_at] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 text-center"><%= meta[:unit_active] == 1 ? 'Yes' : 'No' %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= meta[:unit_notes] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= unit[2] %></td>
+        <td class="border border-gray-200 px-2 py-0.5">
+          <a href="/m/unit/edit/<%= unit[1] %>" class="text-blue-600 hover:underline text-xs">edit</a>
+        </td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

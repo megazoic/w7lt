@@ -8,7 +8,6 @@ th, td {
 	padding: 7px;
 }
 table td {
-	white-space:pre;
 	word-break: break-word;
 }
 .eventTable {

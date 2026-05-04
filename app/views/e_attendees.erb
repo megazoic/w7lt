@@ -1,49 +1,69 @@
-<h3>List of attendees for Event <%=@event.name%> on <%=@event.ts.strftime("%B %d, %Y")%></h3>
-Event description: <%=@event.descr%>
-<br />
-<p>Contact for event: <%="#{@e_contact[:fname]} #{@e_contact[:lname]}, #{@e_contact[:callsign]}"%></p>
-<p>Attendees already in our database: <font color=red>Mbrship current in red</font> means these are in active renewal</p>
-<table>
-<tr>
-	<th>First Name</th>
-	<th>Last Name</th>
-	<th>call</th>
-	<th>Mbrship current?</th>
-  <th>Attendance this event type</th>
-  <th>Attendance all other event types</th>
-  <th></th>
-</tr>
-<%@attendees.each do |mbr|%>
-  <tr>
-  <td><%=mbr[:fname]%></td>
-  <td><%=mbr[:lname]%></td>
-  <td><%=mbr[:callsign]%></td>
-  <td<%if mbr[:mbrship_renewal_active] %>
-          class="renew"
-        <%end%>>
-        <%if mbr[:mbrship_renewal_date] == 'none'%>
-          has not joined
-        <%else%>
-          <%=mbr[:mbrship_renewal_date] > Date.today ? "yes" : "no"%>
-        <%end%>
-  </td>
-  <td><%=mbr[:attendance][:same]%></td>
-  <td><%=mbr[:attendance][:other]%></td>
-  <td><a href=<%="/r/member/show/#{mbr[:mbr_id]}"%>>view</a></td>
-  </tr>
-<%end%>
-</table>
-<br />
-<h3>List of attendees</h3>
-<%=@attendee_list%>
-<br />
-<h3>Email list of attendees</h3>
-<%=@attendee_emails%>
-<br />
-<br />
-<%if !@guests.empty?%>
-Attendees just added to database enclosed in {} those who aren't in the database enclosed in [] (should these be entered?)'</br>
-<%@guests.each do |guest|%>
-  <p><%=guest%></p>
-<%end%>
-<%end%>
+<h3 class="text-xl font-bold text-gray-800 mb-1">
+  <%= @event.name %> &mdash; <%= @event.ts.strftime("%B %d, %Y") %>
+</h3>
+<p class="text-sm text-gray-600 mb-1"><%= @event.descr %></p>
+<p class="text-sm text-gray-600 mb-4">
+  Contact: <span class="font-medium"><%= "#{@e_contact[:fname]} #{@e_contact[:lname]}, #{@e_contact[:callsign]}" %></span>
+</p>
+<p class="text-xs text-gray-500 mb-3">
+  Members in <span class="renew font-medium">red</span> have active renewal status.
+</p>
+
+<div class="overflow-x-auto mb-6">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <th class="border border-gray-300 px-2 py-1">First</th>
+        <th class="border border-gray-300 px-2 py-1">Last</th>
+        <th class="border border-gray-300 px-2 py-1">Call</th>
+        <th class="border border-gray-300 px-2 py-1">Membership</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">This Event Type</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">All Other Types</th>
+        <th class="border border-gray-300 px-2 py-1"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @attendees.each do |mbr| %>
+      <tr class="odd:bg-white even:bg-gray-50 <%= mbr[:mbrship_renewal_active] ? 'renew' : '' %>">
+        <td class="border border-gray-200 px-2 py-0.5"><%= mbr[:fname] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= mbr[:lname] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= mbr[:callsign] %></td>
+        <td class="border border-gray-200 px-2 py-0.5">
+          <% if mbr[:mbrship_renewal_date] == 'none' %>
+            has not joined
+          <% else %>
+            <%= mbr[:mbrship_renewal_date] > Date.today ? "current" : "expired" %>
+          <% end %>
+        </td>
+        <td class="border border-gray-200 px-2 py-0.5 text-center"><%= mbr[:attendance][:same] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 text-center"><%= mbr[:attendance][:other] %></td>
+        <td class="border border-gray-200 px-2 py-0.5">
+          <a href="/r/member/show/<%= mbr[:mbr_id] %>" class="text-blue-600 hover:underline text-xs">view</a>
+        </td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<div class="space-y-4 text-sm">
+  <div>
+    <h4 class="font-semibold text-gray-700 mb-1">Attendee List</h4>
+    <p class="text-gray-800"><%= @attendee_list %></p>
+  </div>
+  <div>
+    <h4 class="font-semibold text-gray-700 mb-1">Email List</h4>
+    <p class="text-gray-800 break-all"><%= @attendee_emails %></p>
+  </div>
+  <% if !@guests.empty? %>
+  <div>
+    <h4 class="font-semibold text-gray-700 mb-1">Guest Notes</h4>
+    <p class="text-xs text-gray-500 mb-1">
+      Entries in {} were just added to the database. Entries in [] are not in the database — should they be entered?
+    </p>
+    <% @guests.each do |guest| %>
+    <p class="text-gray-800"><%= guest %></p>
+    <% end %>
+  </div>
+  <% end %>
+</div>

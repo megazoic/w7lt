@@ -1,32 +1,38 @@
 <!-- Display attendance query form for an event type, use checkbox input type -->
-<h2>Attendance Query</h2>
-<div style="color:red;" id="wrong_choice" hidden>
+<h2 class="text-xl font-bold text-gray-800 mb-2">Attendance Query</h2>
+<p class="text-sm text-amber-700 font-medium mb-4">Note: Only general meetings are currently supported. Other event types will return no results.</p>
+
+<div id="wrong_choice" hidden class="mb-4 border border-red-400 bg-red-50 rounded p-3 text-sm text-red-700">
   <% if @no_data %>
-    <p><%= @no_data %></p>
+  <p><%= @no_data %></p>
   <% end %>
 </div>
-<h3>Note: Only general meetings are supported. Other event types will return no results.</h3>
-<form action="/r/event/attendance" method="post">
-  <label for="event_type_id">Event Type:</label><br>
-    <% @event_types.each do |key,value| %>
-        <input type="radio" id="et_<%= key %>" name="event_type_id" value="<%= key %>">
-        <label for="et_<%= key %>"><%= value %></label><br>
-    <% end %>
-  <input type="submit" value="View Attendance">
+
+<form action="/r/event/attendance" method="post" class="space-y-4 max-w-sm">
+  <fieldset>
+    <legend class="text-sm font-semibold text-gray-700 mb-2">Event Type</legend>
+    <div class="space-y-1 text-sm text-gray-700">
+      <% @event_types.each do |key, value| %>
+      <label class="flex items-center gap-2">
+        <input type="radio" id="et_<%= key %>" name="event_type_id" value="<%= key %>" class="w-auto" />
+        <%= value %>
+      </label>
+      <% end %>
+    </div>
+  </fieldset>
+  <input type="submit" value="View Attendance"
+         class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer" />
 </form>
-<!-- Set up JS to select first radio button by default -->
+
 <script>
   document.addEventListener("DOMContentLoaded", function() {
     const firstRadio = document.querySelector('input[name="event_type_id"]');
-    if (firstRadio) {
-      firstRadio.checked = true;
-    }
+    if (firstRadio) firstRadio.checked = true;
   });
-  //add event listener to form submission to check if a radio button other than general meeting is selected
   const form = document.querySelector('form[action="/r/event/attendance"]');
   form.addEventListener("submit", function(event) {
     const selectedEventType = document.querySelector('input[name="event_type_id"]:checked').value;
-    if (selectedEventType !== "1") { //assuming "1" is the value for general meeting
+    if (selectedEventType !== "1") {
       event.preventDefault();
       const warningDiv = document.getElementById("wrong_choice");
       warningDiv.hidden = false;

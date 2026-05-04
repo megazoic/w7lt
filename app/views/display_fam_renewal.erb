@@ -1,35 +1,33 @@
-<h2>Details of family units and renewal dates</h2>
-<table>
-<thead>
-  <tr>
-    <th>Unit id</th>
-    <th>*Active</th>
-    <th>Mbr ID</th>
-    <th>F Name</th>
-    <th>L Name</th>
-    <th>Renewal Date</th>
-  </tr>
-</thead>
-  <tbody>
-  <%@fam_mbrship_details.each do |fd|%>
-    <%row_no = 0%>
-    <%fd[:mbrs].each do |d|%>
-      <tr>
-        <%if row_no == 0%>
-          <td><%=fd[:unit_id]%></td>
-          <td><%=fd[:active]%></td>
-        <%else%>
-          <td></td>
-          <td></td>
-        <%end%>
-        <td><%=d[0]%></td>
-        <td><%=d[1]%></td>
-        <td><%=d[2]%></td>
-        <td <%if d[4] == true %>class="renew"<%end%>><%=d[3]%></td>
+<h3 class="text-xl font-bold text-gray-800 mb-1">Family Units &amp; Renewal Dates</h3>
+<p class="text-xs text-gray-500 mb-4">*Active: has at least 2 members (regardless of payment status)</p>
+
+<div class="overflow-x-auto">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <th class="border border-gray-300 px-2 py-1">Unit ID</th>
+        <th class="border border-gray-300 px-2 py-1">*Active</th>
+        <th class="border border-gray-300 px-2 py-1">Mbr ID</th>
+        <th class="border border-gray-300 px-2 py-1">First</th>
+        <th class="border border-gray-300 px-2 py-1">Last</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Renewal Date</th>
       </tr>
-      <%row_no = row_no + 1%>
-    <%end%>
-  <%end%>
-  </tbody>
-</table>
-<p>*Active: has at least 2 members (regardless of payment status)
+    </thead>
+    <tbody>
+      <% @fam_mbrship_details.each do |fd| %>
+      <% row_no = 0 %>
+      <% fd[:mbrs].each do |d| %>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="border border-gray-200 px-2 py-0.5"><%= row_no == 0 ? fd[:unit_id] : '' %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= row_no == 0 ? fd[:active] : '' %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= d[0] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= d[1] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= d[2] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap <%= d[4] == true ? 'renew' : '' %>"><%= d[3] %></td>
+      </tr>
+      <% row_no += 1 %>
+      <% end %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

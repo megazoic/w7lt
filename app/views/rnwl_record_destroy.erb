@@ -1,32 +1,47 @@
-<h3>Delete Renewal Record for Member <%=@mbr_renewal_record[:mbr_callsign]%></h3>
-<br/>
-<div>
-	<table>
-		<tr>
-			<th>First Name</th>
-			<th>Last Name</th>
-			<th>Recorded By</th>
-			<th>Record Type</th>
-			<th>Notes</th>
-			<th>Date</th>
-		</tr>
-			<tr>
-				<td><%=@mbr_renewal_record[:fname]%></td>
-				<td><%=@mbr_renewal_record[:lname]%></td>
-				<td><%=@mbr_renewal_record[:recorded_by]%></td>
-				<td><%=@mbr_renewal_record[:event_type]%></td>
-				<td><%=@mbr_renewal_record[:notes][0,20]%></td>
-				<td><%=@mbr_renewal_record[:ts].strftime("%Y, %b, %d")%></td>
-			</tr>
-	</table>
+<h3 class="text-xl font-bold text-gray-800 mb-4">
+  Delete Renewal Record — <%= @mbr_renewal_record[:mbr_callsign] %>
+</h3>
+
+<div class="overflow-x-auto mb-6">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <th class="border border-gray-300 px-2 py-1">First</th>
+        <th class="border border-gray-300 px-2 py-1">Last</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Recorded By</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Record Type</th>
+        <th class="border border-gray-300 px-2 py-1">Notes</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="bg-white">
+        <td class="border border-gray-200 px-2 py-0.5"><%= @mbr_renewal_record[:fname] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= @mbr_renewal_record[:lname] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= @mbr_renewal_record[:recorded_by] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= @mbr_renewal_record[:event_type] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= @mbr_renewal_record[:notes][0, 20] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= @mbr_renewal_record[:ts].strftime("%Y, %b, %d") %></td>
+      </tr>
+    </tbody>
+  </table>
 </div>
 
-<form action='/m/mbr_renewals/destroy' method='POST' name="mbrRenDestroy" onsubmit="validateRnwlDestroy()">
-<input type="hidden" name="rnwl_id" value=<%=@mbr_renewal_record[:id]%>>
-<input type="hidden" name="confirm" id="confirmIt" value="No">
-<input type="hidden" name"notes" value="">
-<label for="notes">Log notes</label>
-<input type="text" name="notes" placeholder="Enter Notes Here">
-</br>
-<input type="submit" value="Submit"> | <a href="/m/mbr_renewals/show">Cancel</a>
+<form action="/m/mbr_renewals/destroy" method="POST" name="mbrRenDestroy" onsubmit="validateRnwlDestroy();"
+      class="space-y-4 max-w-md">
+  <input type="hidden" name="rnwl_id" value="<%= @mbr_renewal_record[:id] %>">
+  <input type="hidden" name="confirm" id="confirmIt" value="No">
+  <input type="hidden" name="notes" value="">
+
+  <div>
+    <label class="block text-xs text-gray-600 mb-1" for="notes_text">Log Notes</label>
+    <input type="text" name="notes" id="notes_text" placeholder="Enter notes here"
+           class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+  </div>
+
+  <div class="flex items-center gap-4">
+    <input type="submit" value="Submit"
+           class="bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer" />
+    <a href="/m/mbr_renewals/show" class="text-sm text-gray-500 hover:underline">Cancel</a>
+  </div>
 </form>

@@ -1,42 +1,49 @@
-<!-- filepath: /Users/nickdev/dev/ruby/working_apps/w7lt/app/views/m_member_action_add_note.erb -->
-<h2>Add Note to Member Action</h2>
+<h3 class="text-xl font-bold text-gray-800 mb-4">Add Note to Member Action</h3>
 
-<ul>
-  <li><strong>Member:</strong> <%= @mbr_action[:target_member_name] %></li>
-  <li><strong>Description:</strong> <%= @mbr_action[:notes] %></li>
-  <li><strong>Tasked To:</strong> <%= @mbr_action[:tasked_to_mbr_name] %></li>
-</ul>
+<div class="max-w-lg space-y-1 text-sm mb-6">
+  <div class="flex gap-2">
+    <span class="text-gray-500 w-24 shrink-0">Member</span>
+    <span class="font-medium"><%= @mbr_action[:target_member_name] %></span>
+  </div>
+  <div class="flex gap-2">
+    <span class="text-gray-500 w-24 shrink-0">Description</span>
+    <span><%= @mbr_action[:notes] %></span>
+  </div>
+  <div class="flex gap-2">
+    <span class="text-gray-500 w-24 shrink-0">Tasked To</span>
+    <span><%= @mbr_action[:tasked_to_mbr_name] %></span>
+  </div>
+</div>
 
-<h3>Previous Log Notes</h3>
-<% if @logs && @logs.any? %>
-  <ul>
+<div class="max-w-lg mb-6">
+  <h4 class="text-sm font-semibold text-gray-700 mb-2">Previous Log Notes</h4>
+  <% if @logs && @logs.any? %>
+  <div class="space-y-3">
     <% @logs.each do |log| %>
-      <li>
-        <strong>Date:</strong> <%= log[:ts].strftime("%m/%d/%Y") if log[:ts] %><br>
-        <strong>Note:</strong> <%= log[:notes] %>
-      </li>
+    <div class="border border-gray-200 rounded p-3 text-sm bg-white">
+      <p class="text-xs text-gray-400 mb-1"><%= log[:ts].strftime("%m/%d/%Y") if log[:ts] %></p>
+      <!-- notes contain pre-rendered <br> tags from the route -->
+      <p class="text-gray-800"><%= log[:notes] %></p>
+    </div>
     <% end %>
-  </ul>
-<% else %>
-  <p>No previous log notes.</p>
-<% end %>
+  </div>
+  <% else %>
+  <p class="text-sm text-gray-500">No previous log notes.</p>
+  <% end %>
+</div>
 
-<h3>Add Additional Log Note</h3>
-<form action="/m/member_action/add_note" method="post">
-  <input type="hidden" name="mbr_action_id" value="<%= @mbr_action[:id] %>">
-  <input type="hidden" name="_method" value="post">
-  <textarea name="note" rows="4" cols="60" placeholder="Enter additional log note here"></textarea>
-  <br>
-  <button type="submit">Add Note</button>
-  <a href="/m/followup/show">Cancel</a>
-</form>
-<script type="text/javascript">
-  document.addEventListener('DOMContentLoaded', () => {
-    const noteTextarea = document.querySelector('textarea[name="note"]');
-    if (noteTextarea) {
-      noteTextarea.addEventListener('focus', () => {
-        noteTextarea.select();
-      });
-    }
-  });
-</script>
+<div class="max-w-lg">
+  <h4 class="text-sm font-semibold text-gray-700 mb-2">Add Log Note</h4>
+  <form action="/m/member_action/add_note" method="POST" class="space-y-3">
+    <input type="hidden" name="mbr_action_id" value="<%= @mbr_action[:id] %>">
+    <textarea name="note" rows="4" placeholder="Enter additional log note here"
+              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+    <div class="flex items-center gap-4">
+      <button type="submit"
+              class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer">
+        Add Note
+      </button>
+      <a href="/m/followup/show" class="text-sm text-gray-500 hover:underline">Cancel</a>
+    </div>
+  </form>
+</div>

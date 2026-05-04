@@ -1,4 +1,4 @@
-<h3>The note you wanted to see</h3>
-<% @note.split("\r\n").each do |str| %>
-  <%= str %><br \>
-<% end %>
+<div class="max-w-xl">
+  <h3 class="text-lg font-semibold text-gray-800 mb-3">Log Note</h3>
+  <div class="bg-white border border-gray-200 rounded p-4 text-sm text-gray-800 whitespace-pre-wrap"><%= @note %></div>
+</div>

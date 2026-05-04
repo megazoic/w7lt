@@ -1,52 +1,68 @@
-<br /><h3>Event Types currently available</h3>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Desc</th>
-<th>Created by</th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<%for et in @event_types%>
-<tr>
-<td><%=et[:name]%></td>
-<td><%=et[:descr]%></td>
-<td><%=et.auth_users.member.callsign%></td>
-<!--need to parse the string-->
-<%p = URI::Parser.new%>
-<td><a href=<%=p.escape("/m/event/list/#{et[:id]}")%>>List</a></td>
-</tr>
-<%end%>
-</tbody>
-</table>
-</br><h3>Edit Existing Event Types</h3>
-<%if @event_types.length < 5%>
-  <%@event_types.each do |et|%>
-    <a href="/m/event/type/create/<%=et.id%>"><%=et.name%></a></br>
-  <%end%>
-<%else%>
-  <table>
-    <%@event_types.each_slice(2) do |et|%>
-      <tr><td><a href="/m/event/type/create/<%=et[0].id%>"><%=et[0].name%></a></td>
-      <%if et.length == 2%>
-        <td><a href="/m/event/type/create/<%=et[1].id%>"><%=et[1].name%></a></td></tr>
-      <%else%>
-        <td></td></tr>
-      <%end%>
-    <%end%>
-  </table>
-<%end%>
+<h3 class="text-xl font-bold text-gray-800 mb-4">Event Types</h3>
 
-</br><h3>Create/Edit New Event</h3>
-<form action='/m/event/type/create/<% if !@edit_event_type.nil?%><%=@edit_event_type.id%><%end%>' method='POST' name='new_event_type' onsubmit="return validateEventTypeForm()">
-<input type='hidden' name='editing_old_type' id='editing_old_type' value=<% if !@edit_event_type.nil? %>'1'<%else%>'0'<%end%>>
-<input type='hidden' name='old_type_names' id='old_type_names' value='<%=@old_type_names%>'>
-<br/><input type='text' name='event_type_name' id='new_type_name' <% if !@edit_event_type.nil?%>value='<%=@edit_event_type.name%>'<%end%>>
-<label for="event_name">Short Name of Event</label>
-<br/><input type='text' name='event_type_descr' <% if !@edit_event_type.nil?%>value='<%=@edit_event_type.descr%>'<%end%>>
-<label for="event_name">Description of type</label>
-<br/>
-<input type='submit' value='Submit'/> | <a href="/home">Cancel</a>
-</form>    
+<!-- Existing types table -->
+<div class="overflow-x-auto mb-6">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <th class="border border-gray-300 px-2 py-1">Name</th>
+        <th class="border border-gray-300 px-2 py-1">Description</th>
+        <th class="border border-gray-300 px-2 py-1">Created By</th>
+        <th class="border border-gray-300 px-2 py-1"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @event_types.each do |et| %>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="border border-gray-200 px-2 py-0.5"><%= et[:name] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= et[:descr] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= et.auth_users.member.callsign %></td>
+        <td class="border border-gray-200 px-2 py-0.5">
+          <a href="<%= URI::Parser.new.escape("/m/event/list/#{et[:id]}") %>" class="text-blue-600 hover:underline text-xs">List</a>
+        </td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<!-- Edit existing types -->
+<div class="mb-6">
+  <h3 class="text-base font-semibold text-gray-700 mb-2">Edit Existing Event Types</h3>
+  <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+    <% @event_types.each do |et| %>
+    <a href="/m/event/type/create/<%= et.id %>" class="text-blue-600 hover:underline"><%= et.name %></a>
+    <% end %>
+  </div>
+</div>
+
+<!-- Create / edit form -->
+<div class="max-w-md">
+  <h3 class="text-base font-semibold text-gray-700 mb-3">
+    <%= @edit_event_type.nil? ? 'Create New Event Type' : "Editing: #{@edit_event_type.name}" %>
+  </h3>
+  <form action="/m/event/type/create/<%= @edit_event_type.nil? ? '' : @edit_event_type.id %>"
+        method="POST" name="new_event_type" onsubmit="return validateEventTypeForm();"
+        class="space-y-3">
+    <input type="hidden" name="editing_old_type" id="editing_old_type"
+           value="<%= @edit_event_type.nil? ? '0' : '1' %>">
+    <input type="hidden" name="old_type_names" id="old_type_names" value="<%= @old_type_names %>">
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="new_type_name">Short Name</label>
+      <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+             type="text" name="event_type_name" id="new_type_name"
+             value="<%= @edit_event_type.nil? ? '' : @edit_event_type.name %>" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1">Description</label>
+      <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+             type="text" name="event_type_descr"
+             value="<%= @edit_event_type.nil? ? '' : @edit_event_type.descr %>" />
+    </div>
+    <div class="flex items-center gap-4">
+      <input type="submit" value="Submit"
+             class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer" />
+      <a href="/home" class="text-sm text-gray-500 hover:underline">Cancel</a>
+    </div>
+  </form>
+</div>

@@ -1,56 +1,84 @@
-</br>
-<h4>Members with active renewals: <%=@active_members.size%></h4>
-<p>those with renewal dates <font color="red">displayed in red</font> have been active > 4 weeks</p>
-<% if @active_members.size >0 %>
-<div>
-  <table>
-    <tr>
-      <th>Name</th>
-      <th>Callsign</th>
-      <th>Contacts</th>
-      <th>Renewal Date</th>
-      <th></th>
-    </tr>
-		<% @active_members.each do |am| %>
-      <tr>
-        <td><%="#{am[:fname]} #{am[:lname]}"%></td>
-        <td><%= am[:callsign]%></td>
-        <td><%= am[:mbrship_renewal_contacts]%></td>
-        <td <%if am[:is_past_due] %>
-          class="renew"
-        <%end%>
-        ><%= am[:mbrship_renewal_date].is_a?(String) ? am[:mbrship_renewal_date] : am[:mbrship_renewal_date].strftime("%Y, %b, %d")%></td>
-        <td><a href=<%="/r/member/show/#{am[:id]}"%>>view</a></td>
+<h3 class="text-xl font-bold text-gray-800 mb-1">
+  Members with Active Renewals: <%= @active_members.size %>
+</h3>
+<p class="text-xs text-gray-500 mb-4">
+  Renewal dates shown in <span class="renew font-medium">red</span> have been active &gt; 4 weeks.
+</p>
+
+<% if @active_members.size > 0 %>
+<div class="overflow-x-auto mb-6">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <th class="border border-gray-300 px-2 py-1">Name</th>
+        <th class="border border-gray-300 px-2 py-1">Callsign</th>
+        <th class="border border-gray-300 px-2 py-1">Contacts</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Renewal Date</th>
+        <th class="border border-gray-300 px-2 py-1"></th>
       </tr>
-    <% end %>
+    </thead>
+    <tbody>
+      <% @active_members.each do |am| %>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="border border-gray-200 px-2 py-0.5">
+          <span class="whitespace-nowrap"><%= am[:fname] %></span>
+          <span class="whitespace-nowrap"><%= am[:lname] %></span>
+        </td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= am[:callsign] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 text-center"><%= am[:mbrship_renewal_contacts] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap <%= am[:is_past_due] ? 'renew' : '' %>">
+          <%= am[:mbrship_renewal_date].is_a?(String) ? am[:mbrship_renewal_date] : am[:mbrship_renewal_date].strftime("%Y, %b, %d") %>
+        </td>
+        <td class="border border-gray-200 px-2 py-0.5">
+          <a href="/r/member/show/<%= am[:id] %>" class="text-blue-600 hover:underline text-xs">view</a>
+        </td>
+      </tr>
+      <% end %>
+    </tbody>
   </table>
 </div>
 <% else %>
-  <h3>There are no members with active renewals at this time</h3>
+<p class="text-gray-500 text-sm mb-6">No members with active renewals at this time.</p>
 <% end %>
-<h4>Member renewal events</h4>
-<div>
-	<table>
-		<tr>
-			<th>First Name</th>
-			<th>Last Name</th>
-			<th>Callsign</th>
-			<th>Recorded By</th>
-			<th>Record Type</th>
-			<th>Notes</th>
-			<th>Date</th>
-		</tr>
-		<% @renewals.each do |r| %>
-			<tr>
-				<td><%=r[:fname]%></td>
-				<td><a href="/r/member/show/<%= r[:mbr_id]%>"><%=r[:lname]%></a></td>
-				<td><%=r[:callsign]%></td>
-				<td><%=r[:recorded_by]%></td>
-				<td><%=r[:event_type]%></td>
-				<td><%if !r[:notes].nil? %><%=r[:notes][0,20]%><%end%></td>
-				<td><%=r[:ts].strftime("%Y, %b, %d")%></td>
-				<%if session[:auth_user_roles].include?('mbr_mgr')%><td><a href="/m/mbr_renewals/edit/<%= r[:id]%>">edit</a> | <a href="/m/mbr_renewals/destroy/<%= r[:id]%>">delete</a></td><%end%>
-			</tr>
-		<% end %>
-	</table>
+
+<h4 class="text-base font-semibold text-gray-800 mb-2">Member Renewal Events</h4>
+<div class="overflow-x-auto">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <th class="border border-gray-300 px-2 py-1">Name</th>
+        <th class="border border-gray-300 px-2 py-1">Call</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Recorded By</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Record Type</th>
+        <th class="border border-gray-300 px-2 py-1">Notes</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Date</th>
+        <% if session[:auth_user_roles].include?('mbr_mgr') %>
+        <th class="border border-gray-300 px-2 py-1"></th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody>
+      <% @renewals.each do |r| %>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="border border-gray-200 px-2 py-0.5">
+          <a href="/r/member/show/<%= r[:mbr_id] %>" class="text-blue-600 hover:underline">
+            <span class="whitespace-nowrap"><%= r[:fname] %></span>
+            <span class="whitespace-nowrap"><%= r[:lname] %></span>
+          </a>
+        </td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= r[:callsign] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= r[:recorded_by] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= r[:event_type] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= r[:notes].nil? ? '' : r[:notes][0, 20] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= r[:ts].strftime("%Y, %b, %d") %></td>
+        <% if session[:auth_user_roles].include?('mbr_mgr') %>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap text-xs">
+          <a href="/m/mbr_renewals/edit/<%= r[:id] %>" class="text-blue-600 hover:underline">edit</a> |
+          <a href="/m/mbr_renewals/destroy/<%= r[:id] %>" class="text-blue-600 hover:underline">delete</a>
+        </td>
+        <% end %>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
 </div>

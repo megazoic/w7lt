@@ -1,28 +1,35 @@
-<!-- Display attendance information for an event type -->
-<h2>Attendance Report</h2>
+<h2 class="text-xl font-bold text-gray-800 mb-4">Attendance Report</h2>
 <% if @attendance_data && !@attendance_data.empty? %>
-  <table border="1">
-    <tr>
-        <th>Event Date</th>
-        <th># Hybrid Meeting</th>
-        <th># In-Person Meeting</th>
-        <th># Online Meeting</th>
-        <th>Total Attendance</th>
-        <th>Event Name - Description</th>
-        <th>View Event Details</th>
-    </tr>
-    <% @attendance_data.each do |event_date, data| %>
-      <tr>
-        <td><%= event_date %></td>
-        <td><%= data[:old_format] %></td>
-        <td><%= data[:inperson] %></td>
-        <td><%= data[:zoom] %></td>
-        <td><%= data[:event_date_total] %></td>
-        <td><%= data[:name] %> - <%= data[:descr] %></td>
-        <td><a href="/m/event/attendees/show/<%= data[:event_id] %>">Details</a></td>
+<div class="overflow-x-auto">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Event Date</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap"># Hybrid</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap"># In-Person</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap"># Online</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Total</th>
+        <th class="border border-gray-300 px-2 py-1">Name &amp; Description</th>
+        <th class="border border-gray-300 px-2 py-1"></th>
       </tr>
-    <% end %>
+    </thead>
+    <tbody>
+      <% @attendance_data.each do |event_date, data| %>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= event_date %></td>
+        <td class="border border-gray-200 px-2 py-0.5 text-center"><%= data[:old_format] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 text-center"><%= data[:inperson] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 text-center"><%= data[:zoom] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 text-center font-medium"><%= data[:event_date_total] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= data[:name] %> &mdash; <%= data[:descr] %></td>
+        <td class="border border-gray-200 px-2 py-0.5">
+          <a href="/m/event/attendees/show/<%= data[:event_id] %>" class="text-blue-600 hover:underline text-xs">Details</a>
+        </td>
+      </tr>
+      <% end %>
+    </tbody>
   </table>
+</div>
 <% else %>
-  <p>No attendance data available for the selected event type.</p>
+<p class="text-gray-500 text-sm">No attendance data available for the selected event type.</p>
 <% end %>

@@ -19,6 +19,7 @@ routes.txt
 design/*
 *.csv*
 *.xlsx
+CLAUDE.md
 #config file
 .bundle
 

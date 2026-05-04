@@ -1,49 +1,38 @@
-<h3>Events List: <%=@event_type%></h3>
-<div class="eventTable">
-<table width="100%">
-<colgroup>
-  <%if @event_type == 'all'%>
-    <col style="width:10%">
-    <col style="width:5%">
-    <col style="width:10%">
-    <col style="width:5%">
-    <col style="width:5%">
-    <col style="width:27.5%">
-    <col style="width:27.5%">
-    <col style="width:10%">
-  <%else%>
-    <col>
-  <%end%>
-</colgroup>
-<thead>
-<tr>
-  <%if @event_type == 'all'%>
-    <th scope="col">Event Type</th>
-  <%end%>
-	<th scope="col">Event Creator</th>
-	<th scope="col">Event Contact</th>
-	<th scope="col">Date</th>
-  <th scope="col">Duration</th>
-  <th scope="col">Name</th>
-  <th scope="col">Description</th>
-  <th scope="col">Members Attended</th>
-</tr>
-</thead>
-<tbody>
-<%@events.each do |event|%>
-		<tr>
-    <%if @event_type == 'all'%>
-      <td><%=event.event_type.name%></td>
-    <%end%>
-		<td><%=MemberTracker::AuthUser[event.a_user_id].member.callsign%></td>
-		<td><%="#{MemberTracker::Member[event.mbr_id].lname}, #{MemberTracker::Member[event.mbr_id].callsign}"%></td>
-		<td><%=event.ts.strftime("%m-%d-%y")%></td>
-    <td><%="#{event.duration} hrs"%></td>
-    <td><%=event.name[0,50]%></td>
-    <td><%=event.descr[0,50]%></td>
-    <td><a href="/m/event/attendees/show/<%=event.id%>">details</a> | <a href="/m/event/edit/<%=event.id%>">edit</a></td>
-		</tr>
-<%end%>
-</tbody>
-</table>
+<h3 class="text-xl font-bold text-gray-800 mb-4">Events: <%= @event_type %></h3>
+<div class="overflow-x-auto">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <% if @event_type == 'all' %>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Event Type</th>
+        <% end %>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Creator</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Contact</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Date</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Duration</th>
+        <th class="border border-gray-300 px-2 py-1">Name</th>
+        <th class="border border-gray-300 px-2 py-1">Description</th>
+        <th class="border border-gray-300 px-2 py-1"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @events.each do |event| %>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <% if @event_type == 'all' %>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= event.event_type.name %></td>
+        <% end %>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= MemberTracker::AuthUser[event.a_user_id].member.callsign %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= "#{MemberTracker::Member[event.mbr_id].lname}, #{MemberTracker::Member[event.mbr_id].callsign}" %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= event.ts.strftime("%m-%d-%y") %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= "#{event.duration} hrs" %></td>
+        <td class="border border-gray-200 px-2 py-0.5 max-w-xs truncate"><%= event.name[0, 50] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 max-w-xs truncate"><%= event.descr[0, 50] %></td>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap text-xs">
+          <a href="/m/event/attendees/show/<%= event.id %>" class="text-blue-600 hover:underline">attendees</a> |
+          <a href="/m/event/edit/<%= event.id %>" class="text-blue-600 hover:underline">edit</a>
+        </td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
 </div>

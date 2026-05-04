@@ -1,6 +1,15 @@
-<h1>Login PARC</h1>
-  <form action="/login" method="POST">
-    <input name="email" placeholder="email" />
-    <input name="password" type="password" placeholder="Password" /><br/>
-    <input type="submit" value="Sign In" />
+<h1 class="text-2xl font-bold text-gray-800 mb-6">Login — PARC</h1>
+<form action="/login" method="POST" class="space-y-4">
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1" for="email">Email</label>
+    <input class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+           name="email" id="email" type="email" placeholder="email" />
+  </div>
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1" for="password">Password</label>
+    <input class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+           name="password" id="password" type="password" placeholder="Password" />
+  </div>
+  <input type="submit" value="Sign In"
+         class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer" />
 </form>

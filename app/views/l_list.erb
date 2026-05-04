@@ -1,39 +1,47 @@
-<%case @type%>
-<%when 'auth_user'%><h3>Logs you created</h3>
-<%when 'all'%><h3>All logs</h3>
-<%when 'general'%><h3>General logs</h3>
-<%else%>
-<%end%>
-<br/>
-<div>
-	<table>
-  <thead>
-		<tr>
-    <% if @logs[0].key?(:mbr_name) %>
-			<th>Member</th>
-    <% end %>
-			<th>Time</th>
-      <% if @logs[0].key?(:action) %>
-  			<th>Type</th>
-      <% end %>
-			<th class="notes">Notes</th>
-      <% if @logs[0].key?(:au_name) %>
-        <th>Auth_user</th>
-      <% end %>
-		</tr>
+<h3 class="text-xl font-bold text-gray-800 mb-4">
+  <% if @type == 'auth_user' %>Logs You Created
+  <% elsif @type == 'all' %>All Logs
+  <% elsif @type == 'general' %>General Logs
+  <% end %>
+</h3>
+
+<div class="overflow-x-auto">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <% if @logs[0].key?(:mbr_name) %>
+        <th class="border border-gray-300 px-2 py-1">Member</th>
+        <% end %>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Time</th>
+        <% if @logs[0].key?(:action) %>
+        <th class="border border-gray-300 px-2 py-1">Type</th>
+        <% end %>
+        <th class="border border-gray-300 px-2 py-1">Notes</th>
+        <% if @logs[0].key?(:au_name) %>
+        <th class="border border-gray-300 px-2 py-1">Auth User</th>
+        <% end %>
+      </tr>
     </thead>
     <tbody>
-		<% for log in @logs %>
-		<tr>
-		<%if log.has_key?(:mbr_name)%><td><%=log[:mbr_name]%></td><%end%>
-		<td><%=log[:time]%></td>
-		<% if @logs[0].key?(:action) %><td><%=log[:action]%></td><%end%>
-		<td><%=log[:notes]%></td>
-    <% if @logs[0].key?(:au_name) %>
-      <td><%=log[:au_name]%></td>
-    <% end %>
-		</tr>
-		<% end %>
+      <% @logs.each do |log| %>
+      <tr class="odd:bg-white even:bg-gray-50 align-top">
+        <% if log.has_key?(:mbr_name) %>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap">
+          <a href="/r/log/logNote/show/<%= log[:id] %>" class="text-blue-600 hover:underline"><%= log[:mbr_name] %></a>
+        </td>
+        <% end %>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= log[:time] %></td>
+        <% if @logs[0].key?(:action) %>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= log[:action] %></td>
+        <% end %>
+        <td class="border border-gray-200 px-2 py-0.5 max-w-xs">
+          <%= log[:notes].to_s.length > 80 ? "#{log[:notes].to_s[0, 80]}…" : log[:notes] %>
+        </td>
+        <% if @logs[0].key?(:au_name) %>
+        <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= log[:au_name] %></td>
+        <% end %>
+      </tr>
+      <% end %>
     </tbody>
-	</table>
+  </table>
 </div>

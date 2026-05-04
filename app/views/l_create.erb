@@ -1,39 +1,62 @@
-<form action='/m/log/create' method='POST' name='create_log'>
-<h4>
-<%if @type == 'general'%>
-  Creating general log notes
-  <input type='hidden' name='action' value='general_log'>  
-<%else%>
-  Creating log for <%="#{@member.fname} #{@member.lname} #{@member.callsign}"%>
-  <br />
-  <select name='log_action' id='log_action'>
-    <option value=''>Select Log Type</option>
-    <% @log_action.each do |type, id| %>
-      <option value='<%=id%>'><%=type%></option>
-    <% end %>
-  </select>
-  <input type='hidden' name='mbr_id' value=<%=@member.id%>>
-<%end%>
-</h4>
-<textarea name='notes' id='notes' class='lgtext'></textarea>
-<br /><input type='submit' value='Submit'/> | <a href="/home">Cancel</a>
+<form action="/m/log/create" method="POST" name="create_log" class="space-y-4 max-w-xl">
+
+  <% if @type == 'general' %>
+  <h4 class="text-lg font-semibold text-gray-800">Creating General Log Note</h4>
+  <input type="hidden" name="action" value="general_log">
+  <% else %>
+  <h4 class="text-lg font-semibold text-gray-800">
+    Log note for <%= @member.fname %> <%= @member.lname %> <%= @member.callsign %>
+  </h4>
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1" for="log_action">Log Type</label>
+    <select name="log_action" id="log_action"
+            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <option value="">Select Log Type</option>
+      <% @log_action.each do |type, id| %>
+      <option value="<%= id %>"><%= type %></option>
+      <% end %>
+    </select>
+  </div>
+  <input type="hidden" name="mbr_id" value="<%= @member.id %>">
+  <% end %>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1" for="notes">Notes</label>
+    <textarea name="notes" id="notes" rows="5"
+              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+  </div>
+
+  <div class="flex items-center gap-4">
+    <input type="submit" value="Submit"
+           class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer" />
+    <a href="/home" class="text-sm text-gray-500 hover:underline">Cancel</a>
+  </div>
+
 </form>
-<% if @type == 'member'%>
-<h4>Previous Log notes:</h4>
-<%@member.logs_dataset.order(:id).each do |l|%>
-  ################################
-  <br />Auth User <%="#{l.auth_user.member.fname} #{l.auth_user.member.lname}, #{l.auth_user.member.callsign}"%>
-  <p>Date <%=l.ts.strftime("%m-%d-%y")%></p>
-  <p><%=l.notes%></p>
-<%end%>
-<%end%>
+
+<% if @type == 'member' %>
+<div class="mt-8 max-w-xl">
+  <h4 class="text-base font-semibold text-gray-700 mb-3">Previous Log Notes</h4>
+  <div class="space-y-3">
+    <% @member.logs_dataset.order(:id).each do |l| %>
+    <div class="border-t border-gray-100 pt-3">
+      <p class="text-xs text-gray-500">
+        <%= l.auth_user.member.fname %> <%= l.auth_user.member.lname %>, <%= l.auth_user.member.callsign %>
+        &mdash; <%= l.ts.strftime("%m-%d-%y") %>
+      </p>
+      <p class="mt-1 text-sm text-gray-800 whitespace-pre-wrap"><%= l.notes %></p>
+    </div>
+    <% end %>
+  </div>
+</div>
+<% end %>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const form = document.forms['create_log'];
   if (!form) return;
   form.addEventListener('submit', function(e) {
     const logAction = form.elements['log_action'];
-    // Only validate if the select exists (i.e., not a general log)
     if (logAction && logAction.value.trim() === '') {
       alert('Please select a log type.');
       logAction.focus();

@@ -1,83 +1,145 @@
-<!--see https://stackoverflow.com/questions/4067469/selecting-all-text-in-html-text-input-when-clicked for exception to
-inline js used to select contents of input text-->
-<br /><h3>Create new event</h3>
-<form action='/m/event/create' method='POST' name='new_event' onsubmit="return validateCreateEventForm()">
-<label for='event_date'>Date and time of Event (format is 'YYYY-MM-DD HH:MM')</label>
-<br /><input type='text' name='event_date' id='event_date' value='<%=Time.now.strftime("%Y-%m-%d %H:%M")%>'>
-<br /><label for='general_notes'>Notes for log</label><br />
-<textarea name='general_notes' id='general_notes' class='lgtext'></textarea>
-<br />
-Event Type (this field is required):
-<select id="type" name="event_type_id">
-  <option value="none" selected>Select event type</option>
-  <% for event_type in @event_types %>
-    <option value=<%=event_type[:id]%>><%=event_type[:name]%></option>
-  <%end%>
-</select>
-<br/><label for="name">Name of Event</label>
-<input type='text' name='name' id='new_type_name'>
-<p>Best to at least fill description out for easy reference</p>
-<label for="description">Description of event</label>
-<input type='text' name='descr'>
-<br /><label for="duration">Duration of event (hrs)</label>
-<select name='duration' id='duration'>
-<option>none</option>
-<%5.times do |t|%>
-  <option><%=t+1%></option>
-<%end%>
-</select>
-<br />Duration units<br />
-Hours<input type='radio' name='duration_units' id='durat_hrs' value='hrs'> | 
-Days<input type='radio' name='duration_units' id='durat_days' value='days'>
-<br/>
-<h3>Pick One Event Contact (Organizer column, this field is required) and All Attendees</h3><h4>(note names of other organzers go in the description)</h4>
-<br/><label for="guest_notes">Add Attendees with low probability of becoming a member (eg. out of town folks)
-</label><br/>(entries separated by a semicolon and no spaces &apos;Guest,First;Guest,Second&apos;)<br/>
-<textarea name='guest_notes' id='guest_notes' class='lgtext'></textarea>
-<br/><label for="has_guests">Are there Guests to add to the database? Please check in table below to see if they haven&apos;t already been added</label>
-<input type='checkbox' name='has_guests' onchange="guestsSet(this)"/>
-<div id="message">
-At least two of the 4 fields (not including notes) for a guest need to be filled out
-<br/><table>
-<tr>
-	<th>First Name</th>
-	<th>Last Name</th>
-	<th>Callsign</th>
-	<th>Email</th>
-	<th>Notes</th>
-</tr>
-<%count = 0%>
-<%5.times do%>
-<tr>
-  <td><input type='text' name=<%="g#{count}:fname"%> value='*guest first name' onClick="this.select();"></td>
-  <td><input type='text' name=<%="g#{count}:lname"%> value='*guest last name' onClick="this.select();"></td>
-  <td><input type='text' name=<%="g#{count}:callsign"%> value='*guest callsign' onClick="this.select();"></td>
-  <td><input type='text' name=<%="g#{count}:email"%> class='guestEmail' value='*guest email' onClick="this.select();"></td>
-  <td><textarea name=<%="g#{count}:notes"%> class='mdtext' onClick="this.select();">*guest notes</textarea></td>
-</tr>
-<%count = count + 1%>
-<%end%>
-</table>
-</div>
-<br/>Enter regular members and new guests here: notes and emails for guests will be made after form is submitted
-	<table>
-		<tr>
-      <th>Organzer</th>
-			<th>First Name</th>
-			<th>Last Name</th>
-			<th>call</th>
-			<th>attendee</th>
-		</tr>
-		<% for member in @mbrs %>
-		<tr>
-		<td><input type='radio' name='mbr_id' value=<%=member[:id]%>></td>
-		<td><%=member[:fname]%></td>
-		<td><%=member[:lname]%></td>
-		<td><%=member[:callsign]%></td>
-		<td><input type='checkbox' name='id:<%=member[:id]%>' value='1'/></td>
-		</tr>
-		<% end %>
-	</table>
+<!-- see https://stackoverflow.com/questions/4067469/selecting-all-text-in-html-text-input-when-clicked for exception to inline js -->
+<h3 class="text-xl font-bold text-gray-800 mb-4">Create New Event</h3>
+<form action="/m/event/create" method="POST" name="new_event" onsubmit="return validateCreateEventForm();"
+      class="space-y-5">
 
-<input type='submit' value='Submit'/> | <a href="/home">Cancel</a>
-</form>    
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="event_date">Date &amp; Time <span class="text-gray-400">(YYYY-MM-DD HH:MM)</span></label>
+      <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+             type="text" name="event_date" id="event_date" value="<%= Time.now.strftime("%Y-%m-%d %H:%M") %>" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="type">Event Type <span class="text-red-500">*</span></label>
+      <select id="type" name="event_type_id"
+              class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="none" selected>Select event type</option>
+        <% @event_types.each do |event_type| %>
+        <option value="<%= event_type[:id] %>"><%= event_type[:name] %></option>
+        <% end %>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="new_type_name">Event Name</label>
+      <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+             type="text" name="name" id="new_type_name" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1">Description</label>
+      <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+             type="text" name="descr" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="duration">Duration</label>
+      <div class="flex items-center gap-3">
+        <select name="duration" id="duration"
+                class="border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option>none</option>
+          <% 5.times do |t| %><option><%= t + 1 %></option><% end %>
+        </select>
+        <span class="text-sm text-gray-600">
+          <label class="inline-flex items-center gap-1">
+            <input type="radio" name="duration_units" id="durat_hrs" value="hrs" class="w-auto" /> Hours
+          </label>
+          &nbsp;
+          <label class="inline-flex items-center gap-1">
+            <input type="radio" name="duration_units" id="durat_days" value="days" class="w-auto" /> Days
+          </label>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-2xl">
+    <label class="block text-xs text-gray-600 mb-1" for="general_notes">Notes for log</label>
+    <textarea name="general_notes" id="general_notes" rows="4"
+              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+  </div>
+
+  <!-- Guest attendees -->
+  <div class="max-w-2xl">
+    <label class="block text-xs text-gray-600 mb-1" for="guest_notes">
+      Low-probability guest attendees <span class="text-gray-400">(separated by semicolon, no spaces: &apos;Guest,First;Guest,Second&apos;)</span>
+    </label>
+    <textarea name="guest_notes" id="guest_notes" rows="3"
+              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+    <label class="flex items-center gap-2 text-sm mt-2">
+      <input type="checkbox" name="has_guests" onchange="guestsSet(this)" class="w-auto" />
+      There are guests to add to the database
+    </label>
+  </div>
+
+  <!-- Guest data entry table — JS-controlled visibility via id="message" -->
+  <div id="message" class="max-w-4xl">
+    <p class="text-xs text-gray-500 mb-2">At least two of the four fields (not including notes) must be filled out per guest.</p>
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr class="bg-gray-100 text-left">
+            <th class="border border-gray-300 px-2 py-1">First Name</th>
+            <th class="border border-gray-300 px-2 py-1">Last Name</th>
+            <th class="border border-gray-300 px-2 py-1">Callsign</th>
+            <th class="border border-gray-300 px-2 py-1">Email</th>
+            <th class="border border-gray-300 px-2 py-1">Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% count = 0 %>
+          <% 5.times do %>
+          <tr class="odd:bg-white even:bg-gray-50">
+            <td class="border border-gray-200 px-1 py-0.5"><input class="w-full border border-gray-300 rounded px-2 py-1 text-xs" type="text" name="<%= "g#{count}:fname" %>" value="*guest first name" onclick="this.select();" /></td>
+            <td class="border border-gray-200 px-1 py-0.5"><input class="w-full border border-gray-300 rounded px-2 py-1 text-xs" type="text" name="<%= "g#{count}:lname" %>" value="*guest last name" onclick="this.select();" /></td>
+            <td class="border border-gray-200 px-1 py-0.5"><input class="w-full border border-gray-300 rounded px-2 py-1 text-xs" type="text" name="<%= "g#{count}:callsign" %>" value="*guest callsign" onclick="this.select();" /></td>
+            <td class="border border-gray-200 px-1 py-0.5"><input class="w-full border border-gray-300 rounded px-2 py-1 text-xs guestEmail" type="text" name="<%= "g#{count}:email" %>" value="*guest email" onclick="this.select();" /></td>
+            <td class="border border-gray-200 px-1 py-0.5"><textarea class="w-full border border-gray-300 rounded px-2 py-1 text-xs" name="<%= "g#{count}:notes" %>" rows="2" onclick="this.select();">*guest notes</textarea></td>
+          </tr>
+          <% count += 1 %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Member attendance table -->
+  <div>
+    <h3 class="text-base font-semibold text-gray-800 mb-1">
+      Pick One Organizer <span class="text-red-500">*</span> and All Attendees
+    </h3>
+    <p class="text-xs text-gray-500 mb-2">Other organizers go in the description field.</p>
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr class="bg-gray-100 text-left">
+            <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Organizer <span class="text-red-500">*</span></th>
+            <th class="border border-gray-300 px-2 py-1">First</th>
+            <th class="border border-gray-300 px-2 py-1">Last</th>
+            <th class="border border-gray-300 px-2 py-1">Call</th>
+            <th class="border border-gray-300 px-2 py-1">Attendee</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @mbrs.each do |member| %>
+          <tr class="odd:bg-white even:bg-gray-50">
+            <td class="border border-gray-200 px-2 py-0.5 text-center">
+              <input type="radio" name="mbr_id" value="<%= member[:id] %>" class="w-auto" />
+            </td>
+            <td class="border border-gray-200 px-2 py-0.5"><%= member[:fname] %></td>
+            <td class="border border-gray-200 px-2 py-0.5"><%= member[:lname] %></td>
+            <td class="border border-gray-200 px-2 py-0.5"><%= member[:callsign] %></td>
+            <td class="border border-gray-200 px-2 py-0.5 text-center">
+              <input type="checkbox" name="id:<%= member[:id] %>" value="1" class="w-auto" />
+            </td>
+          </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-4">
+    <input type="submit" value="Submit"
+           class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer" />
+    <a href="/home" class="text-sm text-gray-500 hover:underline">Cancel</a>
+  </div>
+
+</form>

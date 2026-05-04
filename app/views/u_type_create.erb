@@ -1,51 +1,67 @@
-<br /><h3>Unit Types currently available</h3>
-<table>
-<thead>
-<tr>
-<th>Type</th>
-<th>Desc</th>
-<th>Created by</th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-  <%p = URI::Parser.new%>
-<%for ut in @unit_types%>
-<tr>
-<td><%=ut[:type]%></td>
-<td><%=ut[:descr]%></td>
-<td><%=ut.auth_users.member.callsign%></td>
-<td><a href=<%=p.escape("/m/unit/list/#{ut[:type]}")%>>List</a></td>
-</tr>
-<%end%>
-</tbody>
-</table>
-</br><h3>Edit Existing Unit Types</h3>
-<%if @unit_types.length < 5%>
-  <%@unit_types.each do |ut|%>
-    <a href="/m/unit/type/create/<%=ut.id%>"><%=ut.type%></a></br>
-  <%end%>
-<%else%>
-  <table>
-    <%@unit_types.each_slice(2) do |ut|%>
-      <tr><td><a href="/m/unit/type/create/<%=ut[0].id%>"><%=ut[0].type%></a></td>
-      <%if ut.length == 2%>
-        <td><a href="/m/unit/type/create/<%=ut[1].id%>"><%=ut[1].type%></a></td></tr>
-      <%else%>
-        <td></td></tr>
-      <%end%>
-    <%end%>
-  </table>
-<%end%>
+<h3 class="text-xl font-bold text-gray-800 mb-4">Unit Types</h3>
 
-</br><h3>Create/Edit New Unit Type</h3>
-<form action='/m/unit/type/create/<% if !@edit_unit_type.nil?%><%=@edit_unit_type.id%><%end%>' method='POST' name='new_unit_type' onsubmit="return validateUnitTypeForm()">
-<input type='hidden' id='editing_old_type' value=<% if !@edit_unit_type.nil? %>'1'<%else%>'0'<%end%>>
-<input type='hidden' id='old_type_names' value='<%=@old_type_names%>'>
-<br/><input type='text' name='unit_type_name' id='new_type_name' <% if !@edit_unit_type.nil?%>value='<%=@edit_unit_type.type%>'<%end%>>
-<label for="unit_name">Short Name of Type</label>
-<br/><input type='text' name='unit_type_descr' <% if !@edit_unit_type.nil?%>value='<%=@edit_unit_type.descr%>'<%end%>>
-<label for="unit_name">Description of type</label>
-<br/>
-<input type='submit' value='Submit'/> | <a href="/home">Cancel</a>
-</form>    
+<!-- Existing types table -->
+<div class="overflow-x-auto mb-6">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <th class="border border-gray-300 px-2 py-1">Type</th>
+        <th class="border border-gray-300 px-2 py-1">Description</th>
+        <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Created By</th>
+        <th class="border border-gray-300 px-2 py-1"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @unit_types.each do |ut| %>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="border border-gray-200 px-2 py-0.5"><%= ut[:type] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= ut[:descr] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= ut.auth_users.member.callsign %></td>
+        <td class="border border-gray-200 px-2 py-0.5">
+          <a href="<%= URI::Parser.new.escape("/m/unit/list/#{ut[:type]}") %>" class="text-blue-600 hover:underline text-xs">List</a>
+        </td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<!-- Edit existing types -->
+<div class="mb-6">
+  <h4 class="text-base font-semibold text-gray-700 mb-2">Edit Existing Unit Types</h4>
+  <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+    <% @unit_types.each do |ut| %>
+    <a href="/m/unit/type/create/<%= ut.id %>" class="text-blue-600 hover:underline"><%= ut.type %></a>
+    <% end %>
+  </div>
+</div>
+
+<!-- Create / edit form -->
+<div class="max-w-md">
+  <h4 class="text-base font-semibold text-gray-700 mb-3">
+    <%= @edit_unit_type.nil? ? 'Create New Unit Type' : "Editing: #{@edit_unit_type.type}" %>
+  </h4>
+  <form action="/m/unit/type/create/<%= @edit_unit_type.nil? ? '' : @edit_unit_type.id %>"
+        method="POST" name="new_unit_type" onsubmit="return validateUnitTypeForm();"
+        class="space-y-3">
+    <input type="hidden" id="editing_old_type" value="<%= @edit_unit_type.nil? ? '0' : '1' %>">
+    <input type="hidden" id="old_type_names" value="<%= @old_type_names %>">
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="new_type_name">Short Name</label>
+      <input type="text" name="unit_type_name" id="new_type_name"
+             value="<%= @edit_unit_type.nil? ? '' : @edit_unit_type.type %>"
+             class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1">Description</label>
+      <input type="text" name="unit_type_descr"
+             value="<%= @edit_unit_type.nil? ? '' : @edit_unit_type.descr %>"
+             class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    </div>
+    <div class="flex items-center gap-4">
+      <input type="submit" value="Submit"
+             class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer" />
+      <a href="/home" class="text-sm text-gray-500 hover:underline">Cancel</a>
+    </div>
+  </form>
+</div>

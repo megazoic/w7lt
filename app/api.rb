@@ -5,7 +5,6 @@ require_relative 'member'
 require_relative 'unit'
 require_relative 'unitType'
 require_relative 'auth_user'
-require_relative 'groupsIoData'
 require_relative 'role'
 require_relative 'action'
 require_relative 'log'
@@ -38,7 +37,6 @@ module MemberTracker
     enable :sessions
     if ENV["RACK_ENV"] == 'production'
       before do # need to comment this for RSpec
-        #puts request.path_info
         next if ['/login', "/api/mbr_sync/SP2ejIsG/#{ENV['MBRSYNC_SECRET']}"].include?(request.path_info)
         if session[:auth_user_id].nil?
           redirect '/login'
@@ -86,16 +84,16 @@ module MemberTracker
       end
     end
     get '/' , :provides => 'html' do
-      puts 'in get and html'
+      puts 'in get \'/\' and html'
     end
     get '/check/mbrship/status' do
-      puts ENV["RACK_ENV"]
+      #puts ENV["RACK_ENV"]
       @tmp_msg = session[:msg]
       session[:msg] = nil
       erb :mbrship_status, :layout => :layout
     end
     post '/check/mbrship/status' do
-      puts params
+      #puts params
       "good"
     end
     get '/login' do
@@ -301,7 +299,7 @@ module MemberTracker
       if params[:secret] != ENV['MBRSYNC_SECRET']
         return JSON.generate("sorry")
       end
-      puts 'in get and json'
+      #puts 'in get and json'
       #members with mbrship_renewal_date > renewal date - 1 year will be current
       m = DB[:members]
       active_mbrs = m.where{mbrship_renewal_date >= Date.today.prev_year}.as_hash(:id, [:fname, :lname, :email])
@@ -406,6 +404,10 @@ module MemberTracker
     get '/r/log/logNote/show/:id' do
       logs = DB[:logs]
       @note = logs.where(id: params[:id]).get(:notes)
+      if @note.nil?
+        session[:msg] = "Log note not found"
+        redirect '/home'
+      end
       erb :l_note_show, :layout => :layout_w_logout
     end
     get '/r/member/mbr_rpt' do
@@ -1080,6 +1082,7 @@ module MemberTracker
           h[:time] = "#{ts}"
           h[:notes] = l.notes
           h[:action] = l.action.type
+          h[:id] = l.id
           @logs << h
         end
       when "all"
@@ -1102,6 +1105,7 @@ module MemberTracker
               h[:notes] = l.notes
               h[:action] = l.action.type
               h[:au_name] = "#{l.auth_user.member.fname} #{l.auth_user.member.lname}"
+              h[:id] = l.id
               @logs << h
               @logs.reverse!
             end
@@ -1114,7 +1118,7 @@ module MemberTracker
       when "general"
         @logs = []
         Action[Action.get_action_id("general_log")].logs_dataset.order(:id).each do |l|
-          @logs << {:au_name => l.auth_user.member.callsign, :notes => l.notes, :time => l.ts.strftime("%m-%d-%Y")}
+          @logs << {:au_name => l.auth_user.member.callsign, :notes => l.notes, :time => l.ts.strftime("%m-%d-%Y"), :id => l.id}
         end
         if @logs.length == 0
           session[:msg] = "there are no logs to view"
@@ -1140,6 +1144,10 @@ module MemberTracker
       @tmp_msg = session[:msg]
       session[:msg] = nil
       @member = Member[params[:id]]
+      if @member.nil?
+        session[:msg] = "Member not found"
+        redirect '/r/member/list'
+      end
       #look for requests for a callby this member
       @call_requests = MemberAction.where(member_target: params[:id], completed: false).all
       @mbr_renewals = DB[:mbr_renewals].select(:id, :a_user_id, :renewal_event_type_id,
@@ -1907,63 +1915,7 @@ module MemberTracker
       session[:msg] = 'Password successfully reset, please login with your new password'
       redirect '/login'
     end
-    get '/m/member/groupsio' do
-      #get members who have no Groups.io account record
-      @mbrs_wo_gio = Member.select(:id, :fname, :lname).where(Sequel.lit('gio_id IS NULL')).order(:lname).all
-      count_gio_noparc = 0
-      gio = GroupsioData.new
-      if gio.setToken == 0
-        #success, retrieve data
-        if gio.getMbrData == 0
-          #success, find unmatched emails
-          gio.compareEmails
-        end
-      end
-      if gio.groupsIOError["error"].to_i == 0
-        @unmatched = gio.unmatched
-        erb :groupsio, :layout => :layout_w_logout
-      else
-        #failed send message
-        @err_msg = gio.groupsIOError["errorMsg"]
-        erb :errorMsg, :layout => :layout_w_logout
-      end
-    end
-    post '/m/member/groupsio' do
-      #if params has any numbered keys these are parc_mbr ids that need to
-      #be updated with the value, first remove the captures key
-      #Params returned with the form have name=mbr_id value=email from the
-      #first table and name=gio_id, value=mbr_id from the second table
-      params.reject!{|k,v| k == "captures"}
-      params.reject!{|k,v| v == "none"}
-      if params.length > 0
-        mbrs = []
-        params.each{|k,v|
-          if /\d+/.match(k)
-            #there is an id need to update a record in Members based on which
-            #id we're dealing with here Groups.io or this database
-            if k.to_i > 10000
-              #this is a groups.io id use value to get member from this db
-              mbr = Member[v.to_i]
-              mbr.gio_id = k.to_i
-              if mbr.save
-                mbrs << v.to_i
-              end
-            else #this is a parc-mbr database id use key to get member
-              mbr = Member[k.to_i]
-              mbr.email = v.upcase
-              if mbr.save
-                mbrs << k.to_i
-              end
-            end
-          end
-        }
-        #return successful updates
-        @mbrs = Member.select(:id, :fname, :lname, :callsign, :email).where(id: mbrs).all
-        erb :g_list, :layout => :layout_w_logout
-      else #nothing was sent
-        erb :home, :layout => :layout_w_logout
-      end
-    end
+
     get '/m/payment/new/:id' do
       @tmp_msg = session[:msg]
       session[:msg] = nil
@@ -2062,7 +2014,7 @@ module MemberTracker
       mbr_split_frm_fam_unit = false
       pay_amt = nil
       mbr_family_unit_id = nil
-      puts "augmented_notes are #{augmented_notes}"
+      #puts "augmented_notes are #{augmented_notes}"
       #look for jotform survey response in notes requesting a call from club members
       log_action = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id],
       ts: Time.now, action_id: Action.get_action_id("mbr_call_me"))

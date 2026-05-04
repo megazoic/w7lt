@@ -1,70 +1,79 @@
-<h3>Edit existing unit: 
-<span class="textColor">
-  <%="Unit Type: #{@unit.unit_type.type.capitalize}"%><%if !@unit_elmer.nil?%><%=" | Elmer Call: #{@unit_elmer}"%><%end%>
-</span>
+<h3 class="text-xl font-bold text-gray-800 mb-1">
+  Edit Unit &mdash;
+  <span class="text-blue-600"><%= "#{@unit.unit_type.type.capitalize}#{@unit_elmer.nil? ? '' : " | Elmer: #{@unit_elmer}"}" %></span>
 </h3>
-Created on <%=@unit.ts.strftime("%m-%d-%Y:%H")%> by <%=@unit_creator_callsign%>
-<form action='/m/unit/update' method='POST' name="unitVitals" onSubmit="return validateUnitEditForm()" >
-<input type="hidden" name="unit_id" value="<%=@unit.id%>">
-<input type="hidden" id="elmer" value=<%if !@unit_elmer.nil?%>"1"<%else%>"0"<%end%>>
-<input type="checkbox" name="active" value="1" id="active_cb"<%=@unit.active == 1  ? "checked='checked'" : nil%>>
-<label for="active_cb">Active</label>
-<br/><input type='text' name='name' id="unit_name" value="<%=@unit.name%>"/>
-<label for="unit_name">Name</label>
-<br/><input type='text' name='notes' id="unit_notes"/>
-<label for="unit_notes">Log Notes</label>
-<%if @unit.unit_type.type != 'family'%>
-  <div>
-  <h3>Members in this unit</h3>
-  	<table>
-  		<tr>
-  			<th>First Name</th>
-  			<th>Last Name</th>
-  			<th>call</th>
-        <%if !@unit_elmer.nil?%><th>elmer</th><%end%>
-  			<th>select</th>
-  		</tr>
-  		<% for member in @member%>
-        <%if !@unit_elmer.nil? && @unit_elmer == member[:callsign] %>
-          <% next %>
-        <%end%>
-  		<tr>
-  		<td><%=member[:fname]%></td>
-  		<td><%=member[:lname]%></td>
-  		<td><%=member[:callsign]%></td>
-  		<%if !@unit_elmer.nil?%><td><%=member[:elmer]%></td><%end%>
-  		<td><input type='checkbox' name='id:<%=member[:id]%><%if !@unit_elmer.nil?%>:<%=member[:elmer]%><%end%>' value='1'<%=member[:included] == '1'  ? "checked='checked'" : nil%>/></td>
-  		</tr>
-  		<% end %>
-  	</table>
+<p class="text-xs text-gray-500 mb-4">
+  Created <%= @unit.ts.strftime("%m-%d-%Y") %> by <%= @unit_creator_callsign %>
+</p>
+
+<form action="/m/unit/update" method="POST" name="unitVitals" onsubmit="return validateUnitEditForm();"
+      class="space-y-5">
+  <input type="hidden" name="unit_id" value="<%= @unit.id %>">
+  <input type="hidden" id="elmer" value="<%= @unit_elmer.nil? ? '0' : '1' %>">
+
+  <div class="max-w-md space-y-4">
+    <div>
+      <label class="flex items-center gap-2 text-sm">
+        <input type="checkbox" name="active" id="active_cb" value="1" class="w-auto"
+               <%= @unit.active == 1 ? "checked='checked'" : nil %> />
+        Active
+      </label>
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="unit_name">Name</label>
+      <input type="text" name="name" id="unit_name" value="<%= @unit.name %>"
+             class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="unit_notes">Log Notes</label>
+      <input type="text" name="notes" id="unit_notes"
+             class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    </div>
   </div>
-<%else%>
-  <!--To effect inclusion in unit need to work here-->
-<%end%>
-<div>
-<h3>Members in this unit</h3>
-	<table>
-		<tr>
-			<th>First Name</th>
-			<th>Last Name</th>
-			<th>call</th>
-      <%if !@unit_elmer.nil?%><th>elmer</th><%end%>
-			<th>select</th>
-		</tr>
-		<% for member in @member%>
-      <%if !@unit_elmer.nil? && @unit_elmer == member[:callsign] %>
-        <% next %>
-      <%end%>
-		<tr>
-		<td><%=member[:fname]%></td>
-		<td><%=member[:lname]%></td>
-		<td><%=member[:callsign]%></td>
-		<%if !@unit_elmer.nil?%><td><%=member[:elmer]%></td><%end%>
-		<td><input type='checkbox' name='id:<%=member[:id]%><%if !@unit_elmer.nil?%>:<%=member[:elmer]%><%end%>' value='1'<%=member[:included] == '1'  ? "checked='checked'" : nil%>/></td>
-		</tr>
-		<% end %>
-	</table>
-</div>
-<input type='submit' value='Submit'/> | <a href="/m/unit/list/all">Cancel</a>
-  
+
+  <% if @unit.unit_type.type != 'family' %>
+  <div>
+    <h4 class="text-base font-semibold text-gray-800 mb-2">Members in this Unit</h4>
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr class="bg-gray-100 text-left">
+            <th class="border border-gray-300 px-2 py-1">First</th>
+            <th class="border border-gray-300 px-2 py-1">Last</th>
+            <th class="border border-gray-300 px-2 py-1">Call</th>
+            <% if !@unit_elmer.nil? %>
+            <th class="border border-gray-300 px-2 py-1">Elmer</th>
+            <% end %>
+            <th class="border border-gray-300 px-2 py-1">Select</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @member.each do |member| %>
+          <% next if !@unit_elmer.nil? && @unit_elmer == member[:callsign] %>
+          <tr class="odd:bg-white even:bg-gray-50">
+            <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= member[:fname] %></td>
+            <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= member[:lname] %></td>
+            <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= member[:callsign] %></td>
+            <% if !@unit_elmer.nil? %>
+            <td class="border border-gray-200 px-2 py-0.5 text-center"><%= member[:elmer] %></td>
+            <% end %>
+            <td class="border border-gray-200 px-2 py-0.5 text-center">
+              <input type="checkbox" value="1" class="w-auto"
+                     name="id:<%= member[:id] %><%= @unit_elmer.nil? ? '' : ":#{member[:elmer]}" %>"
+                     <%= member[:included] == '1' ? "checked='checked'" : nil %> />
+            </td>
+          </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <% end %>
+
+  <div class="flex items-center gap-4">
+    <input type="submit" value="Submit"
+           class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer" />
+    <a href="/m/unit/list/all" class="text-sm text-gray-500 hover:underline">Cancel</a>
+  </div>
+
 </form>

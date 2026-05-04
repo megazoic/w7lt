@@ -34,50 +34,5 @@ module MemberTracker
         expect(auth_user.authenticate(bad_credentials).has_key?('error')).to be(true)
       end
     end
-    # AuthUser#create instance method was removed; user creation now goes through
-    # POST /a/auth_user/create. These tests need to be rewritten (Phase 1 task).
-    xdescribe '#create' do
-      it 'successfully saves a new auth_user with valid fields' do
-        #all fields except fname need to be present
-        #password must have one or more each of Caps, Lowercase, number and
-        #be between 8 and 24 characters
-        result = auth_user.create(valid_new_auth_user_data)
-        expect(result).to have_key('auth_user_id')
-      end
-      context 'is expected to fail because it' do
-        it 'has an empty string for a required field' do
-          invalid_data = valid_new_auth_user_data
-          invalid_data['email'] = ''
-          result = auth_user.create(invalid_data)
-          expect(result['error']).to eq('one or more required fields are empty')
-        end
-        it 'is missing a required field' do
-          invalid_data = valid_new_auth_user_data
-          invalid_data.delete('email')
-          result = auth_user.create(invalid_data)
-          expect(result['error']).to eq('all fields must be present')
-        end
-        it 'has a weak password' do
-          invalid_data = valid_new_auth_user_data
-          invalid_data['password'] = 'test'
-          result = auth_user.create(invalid_data)
-          expect(result['error']).to eq('password too weak')
-        end
-        it 'already has an auth_user with this email' do
-          #first, save an auth_user with this email
-          auth_user.create(valid_new_auth_user_data)
-          #then try to save on top of this but need to reset password first
-          valid_new_auth_user_data['password'] = 'ab*dEF4b'
-          result = auth_user.create(valid_new_auth_user_data)
-          expect(result['error']).to eq('this auth_user already exists')
-        end
-        it 'has an out of bounds authority value' do
-          invalid_data = valid_new_auth_user_data
-          invalid_data['authority'] = 5
-          result = auth_user.create(invalid_data)
-          expect(result['error']).to eq('authorization value out of range')
-        end
-      end
-    end
   end
 end

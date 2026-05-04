@@ -39,9 +39,29 @@ RSpec.configure do |c|
     # Seed the four standard roles that the rest of the app depends on.
     Factories.seed_roles
 
-    # Seed the action types used throughout the app for logging.
-    %w[login mbr_edit mbr_renew auth_u unit event donation volunteer_hrs general_log].each do |t|
+    # Seed all action types used throughout the app.
+    # mbr_renew_check must be present so GET /home can find the latest renewal check log.
+    # mbr_call_me, member_general_note, member_not_renew_followup are used by /m/* routes.
+    %w[login mbr_edit mbr_renew auth_u unit event donation volunteer_hrs general_log
+       mbr_renew_check mbr_call_me member_general_note member_not_renew_followup].each do |t|
       DB[:actions].insert(type: t) unless DB[:actions].where(type: t).count > 0
+    end
+
+    # Seed member_action_types. Migration 0044 seeds call_member and organize_event, but
+    # the truncation above wipes them. non_renew_followup and referral are never in migrations
+    # but are required by /m/followup/show and /m/member/create routes.
+    %w[call_member organize_event non_renew_followup referral].each do |n|
+      DB[:member_action_types].insert(name: n) unless DB[:member_action_types].where(name: n).count > 0
+    end
+
+    # Seed renewal_event_types (migration 0043 seeds these but truncation wipes them).
+    # "1st reminder sent" and "2nd reminder sent" are referenced by MbrRenewal.get2ndNotice
+    # but are absent from the migration — they exist only in production data.
+    # Without them, RenewalEventType.getID returns '' which causes a PG integer cast error.
+    ['unsubscribe', 'remind later', 'verbal assurance', 'bogus email',
+     'reminder sent', 'other', 'missing email', 'no response',
+     '1st reminder sent', '2nd reminder sent'].each do |n|
+      DB[:renewal_event_types].insert(name: n) unless DB[:renewal_event_types].where(name: n).count > 0
     end
 
     # The dev/test before-filter in api.rb hard-codes session[:auth_user_id] = 22.
@@ -54,5 +74,10 @@ RSpec.configure do |c|
                            password: BCrypt::Password.create('Dev@dmin1').to_s,
                            role_id: admin_role_id, new_login: 0,
                            last_login: Time.now, time_pwd_set: Time.now)
+
+    # Seed a renewal-check log so GET /home doesn't crash on nil[:ts].
+    renew_check_action_id = DB[:actions].where(type: 'mbr_renew_check').get(:id)
+    DB[:logs].insert(mbr_id: admin_mbr_id, a_user_id: 22, ts: Time.now,
+                     action_id: renew_check_action_id, notes: 'seed renewal check')
   end
 end

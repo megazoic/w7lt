@@ -1,38 +1,65 @@
-<h3>Build a new unit</h3>
-<form action='/m/unit/create' method='POST' name='new_unit' onSubmit="return validateUnitNewForm()">
-Unit Type:
-<select id="unit_type" name="unit_type_id">
-  <option value="none" selected>Select unit type</option>
-  <% for unit_type in @unit_type %>
-    <option value=<%=unit_type[:id]%>><%=unit_type[:type]%></option>
-  <%end%>
-</select>
-<div>
-<br/>
-<label for="unit_name">Name of Unit</label>
-<input type='text' name='unit_name' id="unit_name"/>
-<br/>
-<label for="unit_notes">Notes for this Unit</label>
-<input type='text' name='unit_notes' id="unit_notes"/>
-<h3>Pick members of this unit</h3>
-	<table>
-		<tr>
-			<th>First Name</th>
-			<th>Last Name</th>
-			<th>call</th>
-      <th>elmer</th>
-			<th>select</th>
-		</tr>
-		<% for member in @member %>
-		<tr>
-		<td><%=member[:fname]%></td>
-		<td><%=member[:lname]%></td>
-		<td><%=member[:callsign]%></td>
-		<td><%=member[:elmer]%></td>
-		<td><input type='checkbox' name='id:<%=member[:id]%>:<%=member[:elmer]%>' value='1'/></td>
-		</tr>
-		<% end %>
-	</table>
-</div>
-<input type='submit' value='Submit'\> | <a href="/m/unit/list/all">Cancel</a>
+<h3 class="text-xl font-bold text-gray-800 mb-4">Build New Unit</h3>
+
+<form action="/m/unit/create" method="POST" name="new_unit" onsubmit="return validateUnitNewForm();"
+      class="space-y-5">
+
+  <div class="max-w-md space-y-4">
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="unit_type">Unit Type <span class="text-red-500">*</span></label>
+      <select id="unit_type" name="unit_type_id"
+              class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="none" selected>Select unit type</option>
+        <% @unit_type.each do |unit_type| %>
+        <option value="<%= unit_type[:id] %>"><%= unit_type[:type] %></option>
+        <% end %>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="unit_name">Unit Name</label>
+      <input type="text" name="unit_name" id="unit_name"
+             class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="unit_notes">Notes</label>
+      <input type="text" name="unit_notes" id="unit_notes"
+             class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    </div>
+  </div>
+
+  <div>
+    <h4 class="text-base font-semibold text-gray-800 mb-2">Pick Members</h4>
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr class="bg-gray-100 text-left">
+            <th class="border border-gray-300 px-2 py-1">First</th>
+            <th class="border border-gray-300 px-2 py-1">Last</th>
+            <th class="border border-gray-300 px-2 py-1">Call</th>
+            <th class="border border-gray-300 px-2 py-1">Elmer</th>
+            <th class="border border-gray-300 px-2 py-1">Select</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @member.each do |member| %>
+          <tr class="odd:bg-white even:bg-gray-50">
+            <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= member[:fname] %></td>
+            <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= member[:lname] %></td>
+            <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= member[:callsign] %></td>
+            <td class="border border-gray-200 px-2 py-0.5 text-center"><%= member[:elmer] %></td>
+            <td class="border border-gray-200 px-2 py-0.5 text-center">
+              <input type="checkbox" name="id:<%= member[:id] %>:<%= member[:elmer] %>" value="1" class="w-auto" />
+            </td>
+          </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-4">
+    <input type="submit" value="Submit"
+           class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer" />
+    <a href="/m/unit/list/all" class="text-sm text-gray-500 hover:underline">Cancel</a>
+  </div>
+
 </form>

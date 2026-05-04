@@ -1,51 +1,72 @@
-<br /><h3>Referral Types currently available</h3>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Desc</th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<%for rt in @refer_types%>
-<tr>
-<td><%=rt[:name]%></td>
-<td><%=rt[:descr]%></td>
-<td><a href=<%=URI.escape("/m/member/refer/type/list/#{rt[:id]}")%>>List</a></td>
-</tr>
-<%end%>
-</tbody>
-</table>
-</br><h3>Edit Referral Types</h3>
-<%if @refer_types.length < 5%>
-  <%@refer_types.each do |rt|%>
-    <a href="/m/member/refer/type/create/<%=rt.id%>"><%=rt.name%></a></br>
-  <%end%>
-<%else%>
-  <table>
-    <%@refer_types.each_slice(2) do |rt|%>
-      <tr><td><a href="/m/member/refer/type/create/<%=rt[0].id%>"><%=rt[0].name%></a></td>
-      <%if rt.length == 2%>
-        <td><a href="/m/member/refer/type/create/<%=rt[1].id%>"><%=rt[1].name%></a></td></tr>
-      <%else%>
-        <td></td></tr>
-      <%end%>
-    <%end%>
-  </table>
-<%end%>
+<h3 class="text-xl font-bold text-gray-800 mb-4">Referral Types</h3>
 
-</br><h3>Create/Edit New Referral Type</h3>
-<form action='/m/member/refer/type/create/<% if !@edit_refer_type.nil?%><%=@edit_refer_type.id%><%end%>' method='POST' name='new_refer_type' onsubmit="return validateReferTypeForm()">
-<%if !@edit_refer_type.nil?%>
-<input type='hidden' name='old_type_descr' id='old_type_descr' value='<%=@edit_refer_type.descr%>'>
-<input type='hidden' name='old_type_name' id='old_type_name' value='<%=@edit_refer_type.name%>'>
-<%end%>
-<br/><input type='text' name='refer_type_name' id='new_type_name' <% if !@edit_refer_type.nil?%>value='<%=@edit_refer_type.name%>'<%end%>>
-<label for="refer_type_name">Short Name of Referral Type</label>
-<br/><input type='text' name='refer_type_descr' <% if !@edit_refer_type.nil?%>value='<%=@edit_refer_type.descr%>'<%end%>>
-<label for="refer_type_name">Description of type</label>
-<br /><textarea name='refer_type_notes' id='refer_type_notes'>Notes for this action</textarea>
-<br/>
-<input type='submit' value='Submit'/> | <a href="/home">Cancel</a>
-</form>    
+<!-- Existing types table -->
+<div class="overflow-x-auto mb-6">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-100 text-left">
+        <th class="border border-gray-300 px-2 py-1">Name</th>
+        <th class="border border-gray-300 px-2 py-1">Description</th>
+        <th class="border border-gray-300 px-2 py-1"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @refer_types.each do |rt| %>
+      <tr class="odd:bg-white even:bg-gray-50">
+        <td class="border border-gray-200 px-2 py-0.5"><%= rt[:name] %></td>
+        <td class="border border-gray-200 px-2 py-0.5"><%= rt[:descr] %></td>
+        <td class="border border-gray-200 px-2 py-0.5">
+          <a href="<%= URI::Parser.new.escape("/m/member/refer/type/list/#{rt[:id]}") %>" class="text-blue-600 hover:underline text-xs">List</a>
+        </td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<!-- Edit existing types -->
+<div class="mb-6">
+  <h4 class="text-base font-semibold text-gray-700 mb-2">Edit Existing Referral Types</h4>
+  <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+    <% @refer_types.each do |rt| %>
+    <a href="/m/member/refer/type/create/<%= rt.id %>" class="text-blue-600 hover:underline"><%= rt.name %></a>
+    <% end %>
+  </div>
+</div>
+
+<!-- Create / edit form -->
+<div class="max-w-md">
+  <h4 class="text-base font-semibold text-gray-700 mb-3">
+    <%= @edit_refer_type.nil? ? 'Create New Referral Type' : "Editing: #{@edit_refer_type.name}" %>
+  </h4>
+  <form action="/m/member/refer/type/create/<%= @edit_refer_type.nil? ? '' : @edit_refer_type.id %>"
+        method="POST" name="new_refer_type" onsubmit="return validateReferTypeForm();"
+        class="space-y-3">
+    <% if !@edit_refer_type.nil? %>
+    <input type="hidden" name="old_type_descr" id="old_type_descr" value="<%= @edit_refer_type.descr %>">
+    <input type="hidden" name="old_type_name" id="old_type_name" value="<%= @edit_refer_type.name %>">
+    <% end %>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="new_type_name">Short Name</label>
+      <input type="text" name="refer_type_name" id="new_type_name"
+             value="<%= @edit_refer_type.nil? ? '' : @edit_refer_type.name %>"
+             class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1">Description</label>
+      <input type="text" name="refer_type_descr"
+             value="<%= @edit_refer_type.nil? ? '' : @edit_refer_type.descr %>"
+             class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    </div>
+    <div>
+      <label class="block text-xs text-gray-600 mb-1" for="refer_type_notes">Notes</label>
+      <textarea name="refer_type_notes" id="refer_type_notes" rows="3"
+                class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+    </div>
+    <div class="flex items-center gap-4">
+      <input type="submit" value="Submit"
+             class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer" />
+      <a href="/home" class="text-sm text-gray-500 hover:underline">Cancel</a>
+    </div>
+  </form>
+</div>

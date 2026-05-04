@@ -1,48 +1,61 @@
 <%#
-:fname	:lname	:email	:city	:street
-:zip	:state	:callsign	:phm	:phm_pub
-:phh	:phh_pub	:phw	:phw_pub
-:license_class	:mbr_type	:paid_up	:arrl
-:arrl_expire	:ares	:net	:ve	:elmer :sota
+:fname  :lname  :email  :city   :street
+:zip    :state  :callsign :phm  :phm_pub
+:phh    :phh_pub :phw   :phw_pub
+:license_class :mbr_type :paid_up :arrl
+:arrl_expire :ares :net :ve :elmer :sota
 %>
-<div>
-  <h3>Members List: total number listed here: <%=@members.count%></h3>
-  <%if @qset%>
-  <p>Filters in place</p>
-	  <%@qset.each do |k,v|%>
-    	<p><%=k%> : value= <%=v%></p>
-  	  <%end%>
-  <%end%>
-</div>
-<br/><p>A Member Type of 'guest' means these have not yet been assigned or the member is a non-paying guest.
-<p>Types in red represent expired memberships
-<div>
-	<table>
-		<tr>
-			<th>First Name</th>
-			<th>Last Name</th>
-			<th>call</th>
-      <th>Member Type</th>
-      <% if @refer_type == 'all' %>
-        <th>Referral Type</th>
-      <% end %>
-			<th></th>
-		</tr>
-		<% @members.each do |m| %>
-		<tr>
-		<td><%=m[:fname]%></td>
-		<td><%=m[:lname]%></td>
-		<td><%=m[:callsign]%></td>
-    <%if (m[:mbrship_renewal_date].nil? == true) || (m[:mbrship_renewal_date].to_date + 365 > Date.today)%>
-      <td><%=m[:mbr_type] == 'none' ? 'guest' : m[:mbr_type]%></td>
-    <%else%>
-      <td class="renew"><%=m[:mbr_type] == 'none' ? 'guest' : m[:mbr_type]%></td>
-    <%end%>
-    <% if @refer_type == 'all' %>
-      <td><%=MemberTracker::ReferType[m[:refer_type_id]].name%></td>
+<div class="mb-4">
+  <h3 class="text-xl font-bold text-gray-800">Members List
+    <span class="text-base font-normal text-gray-500">&mdash; <%= @members.count %> shown</span>
+  </h3>
+  <% if @qset %>
+  <div class="mt-2 text-sm text-gray-600 space-y-0.5">
+    <p class="font-medium">Filters in place:</p>
+    <% @qset.each do |k, v| %>
+    <p><span class="font-medium"><%= k %></span> = <%= v %></p>
     <% end %>
-		<td><a href="/r/member/show/<%= m[:id]%>">view</a><%if session[:auth_user_roles].include?('mbr_mgr')%> | <a href="/m/payment/new/<%= m[:id]%>">payment</a> | <a href="/m/log/create/<%=m[:id]%>">note</a><%end%></td>
-		</tr>
-		<% end %>
-	</table>
+  </div>
+  <% end %>
+</div>
+<p class="text-xs text-gray-500 mb-1">A member type of <em>guest</em> means not yet assigned or a non-paying guest.</p>
+<p class="text-xs text-gray-500 mb-3">Types in <span class="renew">red</span> represent expired memberships.</p>
+<div class="overflow-x-auto">
+  <table class="w-full border-collapse text-sm">
+    <thead>
+      <tr class="bg-gray-200 text-left">
+        <th class="border border-gray-300 px-2 py-1">First Name</th>
+        <th class="border border-gray-300 px-2 py-1">Last Name</th>
+        <th class="border border-gray-300 px-2 py-1">Call</th>
+        <th class="border border-gray-300 px-2 py-1">Member Type</th>
+        <% if @refer_type == 'all' %>
+        <th class="border border-gray-300 px-2 py-1">Referral Type</th>
+        <% end %>
+        <th class="border border-gray-300 px-2 py-1"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @members.each do |m| %>
+      <tr class="odd:bg-white even:bg-gray-50 hover:bg-blue-50">
+        <td class="border border-gray-300 px-2 py-0.5"><%= m[:fname] %></td>
+        <td class="border border-gray-300 px-2 py-0.5"><%= m[:lname] %></td>
+        <td class="border border-gray-300 px-2 py-0.5"><%= m[:callsign] %></td>
+        <% expired = !m[:mbrship_renewal_date].nil? && m[:mbrship_renewal_date].to_date + 365 <= Date.today %>
+        <td class="border border-gray-300 px-2 py-0.5 <%= expired ? 'renew' : '' %>">
+          <%= m[:mbr_type] == 'none' ? 'guest' : m[:mbr_type] %>
+        </td>
+        <% if @refer_type == 'all' %>
+        <td class="border border-gray-300 px-2 py-0.5"><%= MemberTracker::ReferType[m[:refer_type_id]].name %></td>
+        <% end %>
+        <td class="border border-gray-300 px-2 py-0.5 whitespace-nowrap text-xs">
+          <a href="/r/member/show/<%= m[:id] %>" class="text-blue-600 hover:underline">view</a>
+          <% if session[:auth_user_roles].include?('mbr_mgr') %>
+          | <a href="/m/payment/new/<%= m[:id] %>" class="text-blue-600 hover:underline">payment</a>
+          | <a href="/m/log/create/<%= m[:id] %>" class="text-blue-600 hover:underline">note</a>
+          <% end %>
+        </td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
 </div>
