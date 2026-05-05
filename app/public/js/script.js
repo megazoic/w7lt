@@ -656,7 +656,7 @@ window.onload = function (){
 		  }
 
 		  // Validate length
-		  if(password.value.length >= 8) {
+		  if(password.value.length >= 10) {
 		    length.classList.remove("invalid");
 		    length.classList.add("valid");
 		  } else {

@@ -69,6 +69,8 @@ module MemberTracker
         if ro_test_route.pop == mbr_id
           allow = true
         end
+      elsif ro_action == 'auth_user' && ro_test_route.first == 'change_password'
+        allow = true
       end
       unless allow == true
         authorize!("mbr_mgr")
@@ -1914,6 +1916,21 @@ module MemberTracker
       session.clear
       session[:msg] = 'Password successfully reset, please login with your new password'
       redirect '/login'
+    end
+    get '/m/auth_user/change_password' do
+      @is_pwdreset = true
+      @tmp_msg = session[:msg]
+      session[:msg] = nil
+      erb :au_change_password, :layout => :layout_w_logout
+    end
+    post '/m/auth_user/change_password' do
+      if @auth_user.change_password(session[:auth_user_id], params[:current_password], params[:password])
+        session[:msg] = 'Password successfully changed'
+        redirect '/home'
+      else
+        session[:msg] = 'Current password is incorrect'
+        redirect '/m/auth_user/change_password'
+      end
     end
 
     get '/m/payment/new/:id' do

@@ -106,6 +106,12 @@ module MemberTracker
       encrypted_pwd = BCrypt::Password.create(au_password).to_s
       au = AuthUser.where(mbr_id: mbr_id).update(password: encrypted_pwd, new_login: 0)
     end
+    def change_password(auth_user_id, current_password, new_password)
+      au = AuthUser[auth_user_id]
+      return false unless BCrypt::Password.new(au.password) == current_password
+      AuthUser.where(id: auth_user_id).update(password: BCrypt::Password.create(new_password).to_s)
+      true
+    end
     def get_roles(type = "default")
       #returns an array [[role_id, role_description],[]]
       au_role = self.role

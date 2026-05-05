@@ -85,14 +85,36 @@ module MemberTracker
       it 'updates an existing referral type when id is supplied'
     end
 
-    # ── Groups.io ────────────────────────────────────────────────────────────
+    # ── Auth User Self-Service ────────────────────────────────────────────────
 
-    describe 'GET /m/member/groupsio' do
-      it 'renders the Groups.io sync form or an error page'
+    describe 'GET /m/auth_user/change_password' do
+      it 'renders the change-password form' do
+        get '/m/auth_user/change_password'
+        expect(last_response.status).to eq(200)
+      end
     end
 
-    describe 'POST /m/member/groupsio' do
-      it 'processes the Groups.io sync and reports results'
+    describe 'POST /m/auth_user/change_password' do
+      it 'redirects to /home on a correct current password' do
+        # dev session is auth_user id=22; update its password to a known value first
+        known_pwd = 'KnownPwd99'
+        DB[:auth_users].where(id: 22).update(password: BCrypt::Password.create(known_pwd).to_s)
+        post '/m/auth_user/change_password',
+             'current_password' => known_pwd,
+             'password'         => 'NewPwd1234',
+             'confirm_password' => 'NewPwd1234'
+        expect(last_response.status).to eq(302)
+        expect(last_response.location).to include('/home')
+      end
+
+      it 'redirects back with an error on an incorrect current password' do
+        post '/m/auth_user/change_password',
+             'current_password' => 'WrongPwd99',
+             'password'         => 'NewPwd1234',
+             'confirm_password' => 'NewPwd1234'
+        expect(last_response.status).to eq(302)
+        expect(last_response.location).to include('/m/auth_user/change_password')
+      end
     end
 
     # ── Events ───────────────────────────────────────────────────────────────
