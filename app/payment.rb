@@ -13,20 +13,13 @@ module MemberTracker
     end
     def Payment.findLatestDues(mbr_id, name)
       latest_dp = nil
-      if !Member[mbr_id].payments.nil?
-        Member[mbr_id].payments.each do |p|
-          if p.payment_type_id = PaymentTypeId.getID(name)
-            if p.ts > latest_dp
-              latest_dp = p.ts
-            end
-          end
+      type_id = PaymentType.getID(name)
+      Member[mbr_id].payments.each do |p|
+        if p.payment_type_id == type_id
+          latest_dp = p.ts if latest_dp.nil? || p.ts > latest_dp
         end
       end
-      if latest_dp.nil
-        return "no dues payment of type #{name} was found for mbr #{mbr_id}"
-      else
-        return ts
-      end
+      latest_dp
     end
   end
 end

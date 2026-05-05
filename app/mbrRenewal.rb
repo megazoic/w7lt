@@ -79,67 +79,52 @@ module MemberTracker
       renewal_date
     end
     def MbrRenewal.findAndPurgeFamily(mbrs2rnw_hash)
-      #from call to this method
-      #mbrs2renw_mbrRnwl << {mr[:id] => {:fname => mr[:fname], :lname => mr[:lname],
-      #:callsign => mr[:callsign], :email => mr[:email], :mbr_type => mr[:mbr_type]}}
       purged_hash = {}
-      mbrs2rnw_hash.each do |mbr_id_k,v|
-        #remove mbrs who do not have family mbr_type
+      mbrs2rnw_hash.each do |mbr_id_k, mbr_data|
         if Member[mbr_id_k].mbr_type != 'family'
-          purged_hash << {mbr_id_k => v}
-        else #need to find paying member of family unit and purge the others
-          if Member[mbr_id_k].units.nil?
+          purged_hash[mbr_id_k] = mbr_data
+        else
+          if Member[mbr_id_k].units.empty?
             return "error mbr #{mbr_id_k}, should have at least a family unit, no unit found"
           end
-          #find members in this family unit, mbrs2purge is array of hashes with unit_id as key and value array of mbr_ids
-          mbrs2purge = []
+          # Map of unit_id => [mbr_id, ...] for each family unit this member belongs to
+          mbrs2purge = {}
           Member[mbr_id_k].units.each do |u|
-            #which one of these is the family unit?
-            if u.unit_type_id == UnitType.getID("family")
-              #collect ids from all family members of this unit
-              #find which one made the most recent payment and check that was a dues payment for a family mbr type
-              #finally, add that member to the purged_hash, throw error if don't have a result here
-              #have we already discovered this family Unit?
-              if mbrs2purge.include?(u.id)
-                #will want to skip this mbr_id if it is already in the hash for this unit (which it should be!)
-                if !mbrs2purge[u].include?(mbr_id_k)
-                  #there is something wrong here this mbr_id should already be in the array of members of this unit
-                  return "error mbr #{mbr_id_k} missing from existing family unit #{u.id}"
-                end
-              else #we haven't encountered this family unit, let's get it's members
-                fam_mbr_array = []
-                u.members.each do |m|
-                  fam_mbr_array << m.id
-                end
-                mbrs2purge[u.id] = fam_mbr_array
+            next unless u.unit_type_id == UnitType.getID("family")
+            if mbrs2purge.key?(u.id)
+              unless mbrs2purge[u.id].include?(mbr_id_k)
+                return "error mbr #{mbr_id_k} missing from existing family unit #{u.id}"
               end
+            else
+              mbrs2purge[u.id] = u.members.map(&:id)
             end
-            if mbrs2purge.empty?
-              return "error mbr #{mbr_id_k} should have family unit, no family unit found"
-            end
-          end #now have array with hashes (key is unit_id) holding all members of a family unit, find paying member
-          mbrs2purge.each do |u_id,v|
+          end
+          if mbrs2purge.empty?
+            return "error mbr #{mbr_id_k} should have family unit, no family unit found"
+          end
+          mbrs2purge.each do |u_id, mbr_ids|
             mbr_with_latest_dues = nil
-            latest_dues_pmt_for_fam_unit = nil
-            v.each do |mbr_id|
-              dues_pmt_for_fam_unit = Payment.findLatestDues(mbr_id, "dues")
-              #did we find a dues payment?
-              if !dues_pmt_for_fam_unit.nil?
-                if latest_dues_pmt_for_fam_unit < dues_pmt_for_fam_unit
-                  latest_dues_pmt_for_fam_unit = dues_pmt_for_fam_unit
-                  mbr_with_latest_dues = mbr_id
-                end
+            latest_dues_ts = nil
+            mbr_ids.each do |mbr_id|
+              ts = Payment.findLatestDues(mbr_id, "Dues")
+              next if ts.nil?
+              if latest_dues_ts.nil? || ts > latest_dues_ts
+                latest_dues_ts = ts
+                mbr_with_latest_dues = mbr_id
               end
             end
-            #should have the mbr_id of the latest dues paying family mbr need to add that to purged_hash
             if mbr_with_latest_dues.nil?
               return "error could not find any dues payments for unit #{u_id}"
-            else
-              purged_hash << mbr_with_latest_dues
+            end
+            purged_hash[mbr_with_latest_dues] = mbrs2rnw_hash.fetch(mbr_with_latest_dues) do
+              m = Member[mbr_with_latest_dues]
+              { fname: m.fname, lname: m.lname, callsign: m.callsign,
+                email: m.email, mbr_type: m.mbr_type }
             end
           end
         end
       end
+      purged_hash
     end
   end
 end

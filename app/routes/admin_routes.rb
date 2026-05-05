@@ -34,8 +34,8 @@ module MemberTracker
             (Member[k].mbrship_renewal_halt == true) || (Member[k].mbrship_renewal_contacts >= 2)}
           mbrRenwls_in_range.each do |mr|
             if (mr[:mbrship_renewal_halt] == 0) && (mr[:mbrship_renewal_contacts] < 2)
-              mbrs2renw_mbrRnwl << {mr[:id] => {:fname => mr[:fname], :lname => mr[:lname],
-              :callsign => mr[:callsign], :email => mr[:email], :mbr_type => mr[:mbr_type]}}
+              mbrs2renw_mbrRnwl[mr[:id]] = { fname: mr[:fname], lname: mr[:lname],
+                callsign: mr[:callsign], email: mr[:email], mbr_type: mr[:mbr_type] }
             end
           end
           mbrs2renw_mbrRnwl = MbrRenewal.findAndPurgeFamily(mbrs2renw_mbrRnwl)
@@ -51,7 +51,7 @@ module MemberTracker
           all_latr_pmts.each {|lp|
             if diff_mbrRnwl_arry_ids.include?(lp[:mbr_id])
               update_mbrship_renewal_date << lp
-              diff_mbrRnwl_arry_ids.delete(lb[:mbr_id])
+              diff_mbrRnwl_arry_ids.delete(lp[:mbr_id])
             end
           }
           send_reminder.concat(diff_mbrRnwl_arry_ids)
