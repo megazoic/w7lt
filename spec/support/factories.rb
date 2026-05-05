@@ -57,4 +57,80 @@ module Factories
   def role_id(name)
     DB[:roles].where(name: name).get(:id)
   end
+
+  # Inserts a log row and returns the Sequel model instance.
+  def create_log(overrides = {})
+    defaults = {
+      mbr_id:    22,
+      a_user_id: 22,
+      ts:        Time.now,
+      action_id: DB[:actions].where(type: 'general_log').get(:id),
+      notes:     'test log entry'
+    }
+    id = DB[:logs].insert(defaults.merge(overrides))
+    MemberTracker::Log[id]
+  end
+
+  # Inserts an event_type row and returns the Sequel model instance.
+  def create_event_type(**overrides)
+    attrs = { a_user_id: 22, name: "Test Event Type #{SecureRandom.hex(4)}", descr: 'test' }.merge(overrides)
+    id = DB[:event_types].insert(attrs)
+    MemberTracker::EventType[id]
+  end
+
+  # Inserts an event row and returns the Sequel model instance.
+  def create_event(member:, event_type:, **overrides)
+    attrs = {
+      a_user_id:     22,
+      mbr_id:        member.id,
+      event_type_id: event_type.id,
+      ts:            Time.now
+    }.merge(overrides)
+    id = DB[:events].insert(attrs)
+    MemberTracker::Event[id]
+  end
+
+  # Inserts an mbr_renewals record and returns the Sequel model instance.
+  def create_mbr_renewal(member:, **overrides)
+    attrs = {
+      a_user_id:             22,
+      mbr_id:                member.id,
+      renewal_event_type_id: DB[:renewal_event_types].where(name: 'reminder sent').get(:id),
+      notes:                 'test renewal note',
+      ts:                    Time.now
+    }.merge(overrides)
+    id = DB[:mbr_renewals].insert(attrs)
+    MemberTracker::MbrRenewal[id]
+  end
+
+  # Inserts a member_actions record and returns the Sequel model instance.
+  def create_member_action(member:, **overrides)
+    type_id = DB[:member_action_types].where(name: 'non_renew_followup').get(:id)
+    attrs = {
+      a_user_id:             22,
+      member_target:         member.id,
+      member_action_type_id: type_id,
+      completed:             false,
+      notes:                 'test followup note',
+      ts:                    Time.now
+    }.merge(overrides)
+    id = DB[:member_actions].insert(attrs)
+    MemberTracker::MemberAction[id]
+  end
+
+  # Inserts a donation payment (with an associated log) and returns the model instance.
+  def create_payment(member:, **overrides)
+    log = create_log(mbr_id: member.id)
+    attrs = {
+      mbr_id:            member.id,
+      a_user_id:         22,
+      payment_type_id:   DB[:payment_types].where(type: 'Donation Other').get(:id),
+      payment_method_id: DB[:payment_methods].where(mode: 'Cash').get(:id),
+      payment_amount:    10.0,
+      ts:                Time.now,
+      log_id:            log.id
+    }.merge(overrides)
+    id = DB[:payments].insert(attrs)
+    MemberTracker::Payment[id]
+  end
 end

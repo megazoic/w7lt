@@ -14,8 +14,18 @@ module MemberTracker
       end
 
       app.post '/check/mbrship/status' do
-        #puts params
-        "good"
+        identifier = params[:mbrIdentifier].to_s.strip.upcase
+        parts = identifier.split(' ', 2)
+        member = Member.first(callsign: identifier) ||
+                 Member.first(email: identifier) ||
+                 (parts.length == 2 && Member.first(fname: parts[0], lname: parts[1]))
+        if !member
+          "Member not found"
+        elsif member.mbrship_renewal_date && member.mbrship_renewal_date.to_date >= Date.today.prev_year
+          "Your membership is active"
+        else
+          "Your membership has expired"
+        end
       end
 
       app.get '/login' do
@@ -79,6 +89,10 @@ module MemberTracker
         #use @is_pwdreset to load password script from script.js by setting <body id="PwdReset"> in layout
         @is_pwdreset = true
         @mbr = Member.select(:id, :fname, :lname, :callsign).where(id: params[:id]).first
+        if @mbr.nil?
+          session[:msg] = "Member not found"
+          redirect '/home'
+        end
         erb :reset_password, :layout => :layout
       end
 

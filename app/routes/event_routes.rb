@@ -104,6 +104,10 @@ module MemberTracker
 
       app.get '/m/event/edit/:id' do
         @event = Event[params[:id]]
+        if @event.nil?
+          session[:msg] = "Event not found"
+          redirect '/m/event/list/all'
+        end
         @event_types = EventType.all
         @mbrs = Member.select(:id, :fname, :lname, :callsign).all
         #need to parse the log; should be in two parts 1) general notes 2) guest's not added to db

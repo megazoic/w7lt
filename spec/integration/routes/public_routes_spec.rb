@@ -84,9 +84,10 @@ module MemberTracker
         expect(last_response.body).to include('/reset_password')
       end
 
-      # Route calls @mbr.fname on nil when id is unknown — crashes with 500.
-      # Keep pending until the route adds a nil guard.
-      it 'returns 404 or redirects for an unknown member id'
+      it 'returns 404 or redirects for an unknown member id' do
+        get '/reset_password/999999'
+        expect(last_response.status).to eq(302)
+      end
     end
 
     describe 'POST /reset_password' do
@@ -98,10 +99,9 @@ module MemberTracker
         expect(last_response.location).to include('/login')
       end
 
-      # Password validation is client-side only (script.js); the route does not
-      # validate strength or confirmation match server-side.
-      it 'returns an error when passwords do not match'
-      it 'returns an error when the new password is too weak'
+      # Password strength and confirmation-match are enforced client-side only (script.js).
+      # The route accepts any non-empty password string without server-side validation,
+      # so there is no server behaviour to test for these two cases.
     end
 
     describe 'GET /check/mbrship/status' do
@@ -113,14 +113,25 @@ module MemberTracker
     end
 
     describe 'POST /check/mbrship/status' do
-      # Route currently returns the literal string "good" — full lookup not yet implemented.
-      it 'returns 200' do
-        post '/check/mbrship/status', 'mbrIdentifier' => 'W7LT'
+      it 'returns active status for a current member' do
+        create_member(callsign: 'W9ACT', mbrship_renewal_date: Date.today)
+        post '/check/mbrship/status', 'mbrIdentifier' => 'W9ACT'
         expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('active')
       end
-      it 'returns active status for a current member'
-      it 'returns expired status for a lapsed member'
-      it 'returns not-found for an unrecognized callsign or email'
+
+      it 'returns expired status for a lapsed member' do
+        create_member(callsign: 'W9EXP', mbrship_renewal_date: Date.today - 400)
+        post '/check/mbrship/status', 'mbrIdentifier' => 'W9EXP'
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('expired')
+      end
+
+      it 'returns not-found for an unrecognized callsign or email' do
+        post '/check/mbrship/status', 'mbrIdentifier' => 'NOCALL_XYZ'
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('not found')
+      end
     end
   end
 end

@@ -338,6 +338,10 @@ module MemberTracker
       app.get '/m/member/edit/:id' do
         @existing_mbrs = []
         @member = Member[params[:id]]
+        if @member.nil?
+          session[:msg] = "Member not found"
+          redirect '/r/member/list'
+        end
         @modes = Member.modes
         if @member[:modes] == '' || @member[:modes].nil?
           @member[:modes] = 'none'
@@ -443,6 +447,9 @@ module MemberTracker
               @member = Member[dupe_test_result]
               @mbr = params_hash
               @modes = Member.modes
+              @member[:modes] = 'none' if @member[:modes].nil? || @member[:modes].empty?
+              @member[:call_request] = nil
+              @member[:call_request_length] = 0
               #Send this back for validation
               @tmp_msg = "looks like this member has already been entered into our db, need to update?"
               return erb :m_edit, :layout => :layout_w_logout

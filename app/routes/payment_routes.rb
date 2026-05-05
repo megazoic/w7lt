@@ -7,6 +7,10 @@ module MemberTracker
         session[:msg] = nil
         @mbr_pay = Member.select(:id, :fname, :lname, :callsign, :mbrship_renewal_date,
         :mbr_type, :mbrship_renewal_contacts, :mbrship_renewal_active, :mbrship_renewal_halt)[params[:id].to_i]
+        if @mbr_pay.nil?
+          session[:msg] = "Member not found"
+          redirect '/r/member/list'
+        end
         #want to get a date range over the last year from today then order dues payments, pick most recent
         today = DateTime.now
         yr_ago = DateTime.parse((Date.parse(today.to_s) -365).to_s)

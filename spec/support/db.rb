@@ -64,6 +64,18 @@ RSpec.configure do |c|
       DB[:renewal_event_types].insert(name: n) unless DB[:renewal_event_types].where(name: n).count > 0
     end
 
+    # Seed payment_types and payment_methods — not present in any migration seed, only in
+    # production data. Insertion order matches production ids (1-4 Donations, 5 Dues).
+    # GET /m/payment/new/:id hardcodes payment_type_id: 5 for the last-dues-payment query.
+    ['Donation ARRL Spectrum Defense Fund', 'Donation Tower Defense Fund',
+     'Donation Repeater Fund', 'Donation Other'].each do |t|
+      DB[:payment_types].insert(type: t) unless DB[:payment_types].where(type: t).count > 0
+    end
+    DB[:payment_types].insert(type: 'Dues') unless DB[:payment_types].where(type: 'Dues').count > 0
+    ['Cash', 'Personal Check', 'online'].each do |m|
+      DB[:payment_methods].insert(mode: m) unless DB[:payment_methods].where(mode: m).count > 0
+    end
+
     # The dev/test before-filter in api.rb hard-codes session[:auth_user_id] = 22.
     # Insert a committed admin auth_user with that id so route tests don't blow up
     # on Auth_user[22].mbr_id inside the /m/* before filter.
