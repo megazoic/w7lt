@@ -27,9 +27,11 @@ module MemberTracker
           redirect '/r/event/attendance'
         else
           #set up switch for selected type
+          combined_counts = nil
           case selected_type
           when '1' #general meeting
-            member_mtng_counts = @event.member_count()
+            member_mtng_counts = Event.new.member_count()
+            member_mtng_counts ||= []
             #combine hashes by event_date keeping counts separate for each event type
             #want data structure like:
             # {event_date1: {old_format: x, inperson: y, zoom: z}, event_date2: {...}, ...}
@@ -80,6 +82,7 @@ module MemberTracker
             puts "other event type selected"
           end
         end
+        @attendance_data ||= {}
         if combined_counts.nil?
           puts "no data found"
         else

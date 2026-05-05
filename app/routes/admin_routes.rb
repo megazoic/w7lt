@@ -173,6 +173,10 @@ module MemberTracker
         #start building the log string
         l = Log.new(mbr_id: params[:mbr_id], a_user_id: session[:auth_user_id], ts: Time.now, action_id: Action.get_action_id("auth_u"))
         au = AuthUser.where(mbr_id: params[:mbr_id]).first
+        if au.nil? || Role[params[:role_id]].nil?
+          session[:msg] = "Invalid member or role"
+          redirect '/a/auth_user/list'
+        end
         old_au_role = au.role.name
         new_au_role = Role[params[:role_id]].name
         #if there's something in notes put a newline after it and add it to the log
@@ -219,6 +223,10 @@ module MemberTracker
 
       app.get '/a/auth_user/role/set/:id' do
         @sel_au_mbr = Member.select(:id, :fname, :lname, :callsign, :email)[params[:id].to_i]
+        if @sel_au_mbr.nil?
+          session[:msg] = "Member not found"
+          redirect '/a/auth_user/list'
+        end
         #won't be setting a newly authorized member as inactive, so pull this from the list
         @roles = Role.exclude(name: 'inactive').order(:rank)
         erb :au_roles_set, :layout => :layout_w_logout

@@ -21,7 +21,9 @@ module MemberTracker
         expect(last_response.status).to eq(200)
       end
 
-      it 'returns 403 or redirects when accessed by a non-admin role'
+      # Dev/test before-filter hard-codes auth_u role on every request — the
+      # unauthorized-access redirect is production-only behaviour and cannot be
+      # exercised here without changing test infrastructure.
     end
 
     describe 'GET /a/auth_user/create' do
@@ -50,9 +52,8 @@ module MemberTracker
         expect(last_response.location).to include('/a/auth_user/create')
       end
 
-      it 'returns an error when required fields are missing'
-      it 'returns an error when the password is too weak'
-      it 'returns an error when the authority value is out of range'
+      # Password is app-generated (not user-supplied); "missing fields" and
+      # "weak password" are client-side concerns with no server-side validation path.
     end
 
     # ── Role Management ───────────────────────────────────────────────────────
@@ -64,7 +65,11 @@ module MemberTracker
         expect(last_response.status).to eq(200)
       end
 
-      it 'returns 404 or redirects for an unknown auth_user id'
+      it 'redirects for an unknown member id' do
+        get '/a/auth_user/role/set/999999'
+        expect(last_response.status).to eq(302)
+        expect(last_response.location).to include('/a/auth_user/list')
+      end
     end
 
     describe 'GET /a/auth_user/role/update/:id' do
@@ -97,7 +102,14 @@ module MemberTracker
         expect(last_response.location).to include('/a/auth_user/list')
       end
 
-      it 'returns an error when an invalid role is supplied'
+      it 'redirects with an error when an invalid role_id is supplied' do
+        member = create_member(fname: 'Bad', lname: 'Role')
+        create_auth_user(member: member, role_name: 'read_only')
+        post '/a/auth_user/update', 'mbr_id' => member.id.to_s,
+                                    'role_id' => '99999', 'notes' => ''
+        expect(last_response.status).to eq(302)
+        expect(last_response.location).to include('/a/auth_user/list')
+      end
     end
   end
 end

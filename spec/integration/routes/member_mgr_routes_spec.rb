@@ -303,7 +303,17 @@ module MemberTracker
         expect(last_response.location).to include('/m/log/view/auth_user')
       end
 
-      it 'saves a member note and redirects to the member show page'
+      it 'saves a member note and redirects to the member show page' do
+        member    = create_member
+        action_id = DB[:actions].where(type: 'member_general_note').get(:id)
+        post '/m/log/create', {
+          'mbr_id'     => member.id.to_s,
+          'notes'      => 'A member note',
+          'log_action' => action_id.to_s
+        }
+        expect(last_response.status).to eq(302)
+        expect(last_response.location).to include("/r/member/show/#{member.id}")
+      end
     end
 
     describe 'GET /m/log/view/:type' do
@@ -341,25 +351,73 @@ module MemberTracker
     end
 
     describe 'POST /m/unit/create' do
-      it 'creates a unit and redirects'
-      it 'returns an error when required unit fields are missing'
+      it 'creates a unit and redirects' do
+        unit_type = create_unit_type(type: 'elmer')
+        member    = create_member
+        post '/m/unit/create', {
+          'unit_type_id' => unit_type.id.to_s,
+          'unit_name'    => 'Test Unit',
+          'unit_notes'   => '',
+          "id:#{member.id}" => '1'
+        }
+        expect(last_response.status).to eq(302)
+        expect(last_response.location).to include('/m/unit/list/')
+      end
+
+      # No server-side validation for missing fields — unit_type and members are enforced
+      # client-side only (script.js + HTML5 required attributes).
     end
 
     describe 'GET /m/unit/edit/:id' do
-      it 'renders the unit edit form for a valid unit'
+      it 'renders the unit edit form for a valid unit' do
+        unit_type = create_unit_type
+        unit      = create_unit(unit_type: unit_type)
+        get "/m/unit/edit/#{unit.id}"
+        expect(last_response.status).to eq(200)
+      end
     end
 
     describe 'POST /m/unit/update' do
-      it 'updates a unit record and redirects'
+      it 'updates a unit record and redirects' do
+        unit_type = create_unit_type
+        unit      = create_unit(unit_type: unit_type, name: 'Old Name')
+        post '/m/unit/update', {
+          'unit_id' => unit.id.to_s,
+          'name'    => 'New Name',
+          'active'  => '1',
+          'notes'   => 'updating name'
+        }
+        expect(last_response.status).to eq(302)
+        expect(last_response.location).to include('/m/unit/list/')
+      end
     end
 
     describe 'GET /m/unit/type/create' do
-      it 'renders the unit-type form'
+      it 'renders the unit-type form' do
+        get '/m/unit/type/create/'
+        expect(last_response.status).to eq(200)
+      end
     end
 
     describe 'POST /m/unit/type/create/:id?' do
-      it 'creates a new unit type and redirects'
-      it 'updates an existing unit type when id is supplied'
+      it 'creates a new unit type and redirects' do
+        post '/m/unit/type/create/', {
+          'unit_type_name'  => 'NewUnitType',
+          'unit_type_descr' => 'A new unit type'
+        }
+        expect(last_response.status).to eq(302)
+        expect(last_response.location).to include('/m/unit/type/create')
+      end
+
+      it 'updates an existing unit type when id is supplied' do
+        unit_type = create_unit_type
+        post "/m/unit/type/create/#{unit_type.id}", {
+          'unit_type_name'  => 'UpdatedType',
+          'unit_type_descr' => 'Updated description'
+        }
+        expect(last_response.status).to eq(302)
+        expect(last_response.location).to include('/m/unit/type/create')
+      end
     end
 
     describe 'GET /m/unit/display/fam_unit/status' do
@@ -676,7 +734,13 @@ module MemberTracker
         expect(last_response.location).to include('/m/followup/show')
       end
 
-      it 'renders the add-note form for a valid member action'
+      it 'renders the add-note form for a valid member action' do
+        member    = create_member
+        call_type = DB[:member_action_types].where(name: 'call_member').get(:id)
+        action    = create_member_action(member: member, member_action_type_id: call_type)
+        get '/m/member_action/add_note', 'mbr_action_id' => action.id.to_s, 'type' => 'call_member'
+        expect(last_response.status).to eq(200)
+      end
     end
 
     describe 'POST /m/member_action/add_note' do
@@ -692,7 +756,16 @@ module MemberTracker
         expect(last_response.location).to include('/m/followup/show')
       end
 
-      it 'saves the note and redirects to the followup page'
+      it 'saves the note and redirects to the followup page' do
+        member = create_member
+        action = create_member_action(member: member)
+        post '/m/member_action/add_note', {
+          'mbr_action_id' => action.id.to_s,
+          'note'          => 'A followup note'
+        }
+        expect(last_response.status).to eq(302)
+        expect(last_response.location).to include('/m/followup/show')
+      end
     end
 
     # ── Call-Me Requests ──────────────────────────────────────────────────────
@@ -724,15 +797,42 @@ module MemberTracker
         expect(last_response.location).to include('/m/followup/show')
       end
 
-      it 'creates the call-me record and redirects to the followup page'
+      it 'creates the call-me record and redirects to the followup page' do
+        member = create_member
+        post '/m/mbr_callme/new', {
+          'target_mbr_id' => member.id.to_s,
+          'note'          => 'Please give this member a call',
+          'mbr_tasked_to' => 'NONE'
+        }
+        expect(last_response.status).to eq(302)
+        expect(last_response.location).to include('/m/followup/show')
+      end
     end
 
     describe 'GET /m/mbr_callme/edit/:id' do
-      it 'renders the call-me edit form for a valid record'
+      it 'renders the call-me edit form for a valid record' do
+        member    = create_member
+        call_type = DB[:member_action_types].where(name: 'call_member').get(:id)
+        action    = create_member_action(member: member, member_action_type_id: call_type)
+        get "/m/mbr_callme/edit/#{action.id}"
+        expect(last_response.status).to eq(200)
+      end
     end
 
     describe 'POST /m/mbr_callme/update/:id' do
-      it 'updates the call-me record and redirects'
+      it 'updates the call-me record and redirects' do
+        member    = create_member
+        call_type = DB[:member_action_types].where(name: 'call_member').get(:id)
+        action    = create_member_action(member: member, member_action_type_id: call_type)
+        post "/m/mbr_callme/update/#{action.id}", {
+          'id'               => action.id.to_s,
+          'tasked_to_mbr_id' => '',
+          'completed'        => '',
+          'notes'            => 'updated call-me note'
+        }
+        expect(last_response.status).to eq(302)
+        expect(last_response.location).to include('/m/followup/show')
+      end
     end
   end
 end

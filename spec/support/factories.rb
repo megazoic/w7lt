@@ -71,6 +71,20 @@ module Factories
     MemberTracker::Log[id]
   end
 
+  # Inserts a unit_type row and returns the Sequel model instance.
+  def create_unit_type(**overrides)
+    attrs = { a_user_id: 22, type: "test_#{SecureRandom.hex(4)}", descr: 'test unit type' }.merge(overrides)
+    id = DB[:unit_types].insert(attrs)
+    MemberTracker::UnitType[id]
+  end
+
+  # Inserts a unit row and returns the Sequel model instance.
+  def create_unit(unit_type:, **overrides)
+    attrs = { unit_type_id: unit_type.id, a_user_id: 22, active: 1, ts: Time.now }.merge(overrides)
+    id = DB[:units].insert(attrs)
+    MemberTracker::Unit[id]
+  end
+
   # Inserts an event_type row and returns the Sequel model instance.
   def create_event_type(**overrides)
     attrs = { a_user_id: 22, name: "Test Event Type #{SecureRandom.hex(4)}", descr: 'test' }.merge(overrides)

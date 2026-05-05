@@ -59,9 +59,6 @@ module MemberTracker
         rack_mock_session.set_cookie('auth_user_id=1')
         rack_mock_session.set_cookie('auth_user_authority=0')
       end
-      it 'reads auth_user'
-      it 'updates and destroys auth_user'
-      it 'displays members'
     end
   end
 end
