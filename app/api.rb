@@ -28,6 +28,7 @@ require_relative 'routes/payment_routes'
 require_relative 'routes/followup_routes'
 require_relative 'routes/admin_routes'
 require_relative 'routes/member_routes'
+require_relative 'services/payment_service'
 
 module MemberTracker
   #using modular (cf classical) approach (see https://www.toptal.com/ruby/api-with-sinatra-and-sequel-ruby-tutorial)
