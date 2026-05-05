@@ -44,6 +44,7 @@ module MemberTracker
       super()
     end
     enable :sessions
+    set :session_secret, ENV.fetch('SESSION_SECRET') { SecureRandom.hex(32) }
     if ENV["RACK_ENV"] == 'production'
       before do # need to comment this for RSpec
         next if ['/login', "/api/mbr_sync/SP2ejIsG/#{ENV['MBRSYNC_SECRET']}"].include?(request.path_info)

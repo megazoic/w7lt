@@ -14,4 +14,4 @@ gem 'pg', '1.6.3'
 gem 'bcrypt', '3.1.21'
 gem "rspec_sequel_matchers", '0.5.0', group: :test
 
-gem "rack", ">= 3.1.18"
+gem "rack", ">= 3.2.6"
