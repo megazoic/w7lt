@@ -9,6 +9,13 @@
 <div class="flex items-baseline justify-between flex-wrap gap-2 mb-4">
   <h1 class="text-2xl font-bold text-gray-800">
     <%= @member[:fname] %> <%= @member[:lname] %><% if @member[:callsign] %>, <%= @member[:callsign] %><% end %>
+    <% if @member[:mbrship_renewal_date] %>
+      <% if @member[:mbrship_renewal_date].to_date.next_year > Date.today %>
+        <span class="text-sm font-normal ml-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700">Current</span>
+      <% else %>
+        <span class="text-sm font-normal ml-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700">Not Current</span>
+      <% end %>
+    <% end %>
   </h1>
   <div class="flex gap-3 text-sm">
     <% if session[:auth_user_roles].include?('mbr_mgr') || MemberTracker::AuthUser[session[:auth_user_id]].member.id == @member[:id] %>
