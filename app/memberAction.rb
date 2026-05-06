@@ -34,10 +34,10 @@ module MemberTracker
 
       attended_ids = DB[:members_events]
         .join(:events, id: :event_id)
-        .where(Sequel[:members_events][:member_id] => target_ids)
+        .where(Sequel[:members_events][:mbr_id] => target_ids)
         .where(Sequel[:events][:ts] > (Date.today - 90).to_time)
         .distinct
-        .select_map(Sequel[:members_events][:member_id])
+        .select_map(Sequel[:members_events][:mbr_id])
         .to_set
 
       member_actions.each_with_object([]) do |ma, actions|
