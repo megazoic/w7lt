@@ -139,7 +139,8 @@ module MemberTracker
           session[:msg] = "The unit was successfully created"
           redirect "/m/unit/list/#{unit_type_name}"
         rescue StandardError => e
-          session[:msg] = "The unit could not be created\n#{e}"
+          log_error(e)
+          session[:msg] = "The unit could not be created"
           redirect '/home'
         end
       end
@@ -318,7 +319,8 @@ module MemberTracker
             redirect "/m/unit/list/#{unit.unit_type.type}"
           end
         rescue StandardError => e
-          session[:msg] = "The existing unit could not be updated\n#{e}"
+          log_error(e)
+          session[:msg] = "The existing unit could not be updated"
           redirect "/m/unit/list/all"
         end
       end
@@ -366,7 +368,8 @@ module MemberTracker
           session[:msg] = "The unit type was successfully created"
           l.save
         rescue StandardError => e
-          session[:msg] = "Error; the unit type could not be created\n#{e}"
+          log_error(e)
+          session[:msg] = "Error; the unit type could not be created"
         end
         redirect '/m/unit/type/create/'
       end

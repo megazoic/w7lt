@@ -112,7 +112,8 @@ module MemberTracker
           begin
              chk_date = Date.strptime(params[:newDate],'%D').prev_year
           rescue StandardError => e
-             session[:msg] = "The existing renewal could not be updated\n#{e}"
+             log_error(e)
+             session[:msg] = "The existing renewal could not be updated"
              redirect '/m/mbr_renewals/show'
           end
         else
@@ -506,7 +507,8 @@ module MemberTracker
             end
             session[:msg] = "The new member was successfully entered"
           rescue StandardError => e
-            session[:msg] = "The new member could not be created\n#{e}"
+            log_error(e)
+            session[:msg] = "The new member could not be created"
           end
         else
           #existing member
@@ -557,7 +559,8 @@ module MemberTracker
             end
             session[:msg] = "The existing member was successfully updated"
           rescue StandardError => e
-            session[:msg] = "The existing member could not be updated\n#{e}"
+            log_error(e)
+            session[:msg] = "The existing member could not be updated"
           end
         end
         if logPayment == "1"
@@ -630,7 +633,8 @@ module MemberTracker
           l.save
           rt.save
         rescue StandardError => e
-            session[:msg] = "The referal type could not be created/updated\n#{e}"
+            log_error(e)
+            session[:msg] = "The referal type could not be created/updated"
             redirect "/m/member/refer/type/list/all"
         end
         if params[:id].nil?

@@ -116,7 +116,8 @@ module MemberTracker
             session[:msg] = 'Note was successfully added to member action'
           end
         rescue StandardError => e
-          session[:msg] = "The note was not added to the member action\n#{e}"
+          log_error(e)
+          session[:msg] = "The note was not added to the member action"
         end
         redirect '/m/followup/show'
       end
@@ -166,7 +167,8 @@ module MemberTracker
             end
             session[:msg] = 'Member action was successfully updated'
           rescue StandardError => e
-            session[:msg] = "The member action was not updated\n#{e}"
+            log_error(e)
+            session[:msg] = "The member action was not updated"
           end
         end
         redirect '/m/followup/show'
@@ -228,7 +230,8 @@ module MemberTracker
             session[:msg] = 'Member action was successfully recorded'
           end
         rescue StandardError => e
-          session[:msg] = "The data was not entered successfully\n#{e}"
+          log_error(e)
+          session[:msg] = "The data was not entered successfully"
         end
         redirect '/m/followup/show'
       end

@@ -59,7 +59,8 @@ module MemberTracker
         return conflict if conflict
         Result.new(true, '/m/payments/show', 'Payment was successfully recorded')
       rescue StandardError => e
-        Result.new(false, '/m/payments/show', "The data was not entered successfully\n#{e}")
+        warn "PaymentService #{e.class}: #{e.message}\n#{e.backtrace&.first(3)&.join("\n")}"
+        Result.new(false, '/m/payments/show', "The data was not entered successfully")
       end
     end
 

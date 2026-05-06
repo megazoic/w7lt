@@ -10,52 +10,57 @@ module MemberTracker
     STALE_AFTER_MONTHS = 4
     #add method to get member actions
     def self.get_member_actions(action_type_id)
-      #action_type_id is an int from the member_action_types table
-      #returns an array of hashes with the member actions and notification if log notes exist for a given type
-      actions = []
-      member_actions = MemberAction.where(member_action_type_id: action_type_id, completed: false).select(:id, :member_target, :tasked_to_mbr_id,
-        :a_user_id, :notes, :ts).reverse_order(:ts).all
-      member_actions.each do |ma|
-        #get the member name from the member table
-        mbr = Member.where(id: ma.member_target).first
-        if mbr
-          #build auth user name
-          a_user_name = "#{AuthUser.where(id: ma.a_user_id).first.member.fname} #{AuthUser.where(id: ma.a_user_id).first.member.lname}"
-          #build the tasked to member name
-          tasked_to_mbr = Member.where(id: ma.tasked_to_mbr_id).select(:fname, :lname, :callsign).first
-          if tasked_to_mbr
-            ma_tasked_to_name = "#{tasked_to_mbr.fname} #{tasked_to_mbr.lname}"
-          else
-            ma_tasked_to_name = "Unassigned"
-          end
-          ma_hash = {
-            id: ma.id,
-            target_member_id: ma.member_target,
-            target_member_name: "#{mbr.fname} #{mbr.lname}",
-            tasked_to_mbr_id: ma.tasked_to_mbr_id,
-            tasked_to: ma_tasked_to_name,
-            a_user_name: a_user_name,
-            notes: ma.notes,
-            ts: ma.ts.strftime("%m-%d-%Y")
-          }
-          #check if there are any logs for this member action
-          ma_hash[:has_logs] = false
-          logs = DB[:logs].where(mbr_action_id: ma.id, mbr_id: ma.member_target).all
-          if logs && logs.length > 0
-            ma_hash[:has_logs] = true
-          end
-          #check if this member attended a meeting within the last 90 days
-          ma_hash[:attended_meeting] = false
-          mbr.events.each do |event|
-            if event[:ts].to_date > (Date.today - 90)
-              ma_hash[:attended_meeting] = true
-              break
-            end
-          end
-          actions << ma_hash
-        end
+      member_actions = MemberAction
+        .where(member_action_type_id: action_type_id, completed: false)
+        .select(:id, :member_target, :tasked_to_mbr_id, :a_user_id, :notes, :ts)
+        .reverse_order(:ts).all
+      return [] if member_actions.empty?
+
+      target_ids  = member_actions.map(&:member_target).uniq
+      a_user_ids  = member_actions.map(&:a_user_id).uniq
+      tasked_ids  = member_actions.map(&:tasked_to_mbr_id).compact.uniq
+      action_ids  = member_actions.map(&:id)
+
+      members_by_id  = Member.where(id: (target_ids + tasked_ids).uniq).all
+                             .each_with_object({}) { |m, h| h[m.id] = m }
+      auth_users_by_id = AuthUser.where(id: a_user_ids).all
+                                 .each_with_object({}) { |au, h| h[au.id] = au }
+      au_mbr_ids = auth_users_by_id.values.map(&:mbr_id).uniq
+      au_members_by_id = Member.where(id: au_mbr_ids).all
+                               .each_with_object({}) { |m, h| h[m.id] = m }
+
+      has_log_ids = DB[:logs].where(mbr_action_id: action_ids)
+                             .distinct.select_map(:mbr_action_id).to_set
+
+      attended_ids = DB[:members_events]
+        .join(:events, id: :event_id)
+        .where(Sequel[:members_events][:member_id] => target_ids)
+        .where(Sequel[:events][:ts] > (Date.today - 90).to_time)
+        .distinct
+        .select_map(Sequel[:members_events][:member_id])
+        .to_set
+
+      member_actions.each_with_object([]) do |ma, actions|
+        mbr = members_by_id[ma.member_target]
+        next unless mbr
+
+        au     = auth_users_by_id[ma.a_user_id]
+        au_mbr = au ? au_members_by_id[au.mbr_id] : nil
+        tasked = members_by_id[ma.tasked_to_mbr_id]
+
+        actions << {
+          id:                 ma.id,
+          target_member_id:   ma.member_target,
+          target_member_name: "#{mbr.fname} #{mbr.lname}",
+          tasked_to_mbr_id:   ma.tasked_to_mbr_id,
+          tasked_to:          tasked ? "#{tasked.fname} #{tasked.lname}" : "Unassigned",
+          a_user_name:        au_mbr ? "#{au_mbr.fname} #{au_mbr.lname}" : "Unknown",
+          notes:              ma.notes,
+          ts:                 ma.ts.strftime("%m-%d-%Y"),
+          has_logs:           has_log_ids.include?(ma.id),
+          attended_meeting:   attended_ids.include?(ma.member_target)
+        }
       end
-      return actions
     end
     # Returns completed call_member actions ordered most-recent first.
     def self.get_completed_call_actions

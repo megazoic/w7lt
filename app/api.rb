@@ -45,7 +45,15 @@ module MemberTracker
       super()
     end
     enable :sessions
+    enable :logging
     set :session_secret, ENV.fetch('SESSION_SECRET') { SecureRandom.hex(32) }
+    helpers do
+      def log_error(e, context = nil)
+        msg = context ? "[#{context}] #{e.class}: #{e.message}" : "#{e.class}: #{e.message}"
+        logger.error msg
+        logger.error e.backtrace.first(5).join("\n") if e.backtrace
+      end
+    end
     if ENV["RACK_ENV"] == 'production'
       before do # need to comment this for RSpec
         next if ['/login', "/api/mbr_sync/SP2ejIsG/#{ENV['MBRSYNC_SECRET']}"].include?(request.path_info)

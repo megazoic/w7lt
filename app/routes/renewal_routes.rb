@@ -26,23 +26,37 @@ module MemberTracker
         end
         #get data from table mbr_renewals and display
         mrs = DB[:mbr_renewals].where(ts: (Date.today - 365)..(Date.today)).order(:ts).all
+        mbr_dues_payments = DB[:payments].select(:id, :ts, :a_user_id, :mbr_id).where(payment_type_id: 5, ts: (Date.today - 365)..(Date.today)).order(:ts).all
+
+        # Preload all members and auth_users needed by both loops in one round-trip each
+        all_mbr_ids  = (mrs.map { |r| r[:mbr_id] } + mbr_dues_payments.map { |r| r[:mbr_id] }).uniq
+        all_au_ids   = (mrs.map { |r| r[:a_user_id] } + mbr_dues_payments.map { |r| r[:a_user_id] }).uniq
+        members_by_id  = Member.where(id: all_mbr_ids).all.each_with_object({}) { |m, h| h[m.id] = m }
+        auth_users_by_id = AuthUser.where(id: all_au_ids).all.each_with_object({}) { |au, h| h[au.id] = au }
+        au_mbr_ids = auth_users_by_id.values.map(&:mbr_id).uniq
+        au_members_by_id = Member.where(id: au_mbr_ids).all.each_with_object({}) { |m, h| h[m.id] = m }
+        ret_by_id = RenewalEventType.all.each_with_object({}) { |r, h| h[r.id] = r }
+
         @renewals = []
         mrs.each do |mr|
-          @renewals << {id: mr[:id], fname: Member[mr[:mbr_id]].fname, lname: Member[mr[:mbr_id]].lname,
-            callsign: Member[mr[:mbr_id]].callsign, recorded_by: AuthUser[mr[:a_user_id]].member.callsign,
-            event_type: RenewalEventType[mr[:renewal_event_type_id]].name, mbr_id: mr[:mbr_id],
-            notes: mr[:notes], ts: mr[:ts]}
+          m  = members_by_id[mr[:mbr_id]]
+          au = auth_users_by_id[mr[:a_user_id]]
+          au_mbr = au ? au_members_by_id[au.mbr_id] : nil
+          @renewals << { id: mr[:id], fname: m&.fname, lname: m&.lname,
+            callsign: m&.callsign, recorded_by: au_mbr&.callsign,
+            event_type: ret_by_id[mr[:renewal_event_type_id]]&.name, mbr_id: mr[:mbr_id],
+            notes: mr[:notes], ts: mr[:ts] }
         end
-        mbr_dues_payments = DB[:payments].select(:id, :ts, :a_user_id, :mbr_id).where(payment_type_id: 5, ts: (Date.today - 365)..(Date.today)).order(:ts).all
         #replace authorized user id, and add event type = renewal
-        if !mbr_dues_payments.empty?
-          mbr_dues_payments.each do |md|
-            md.store(:recorded_by, AuthUser[md[:a_user_id]].member.callsign)
-            md.store(:event_type, "dues payment")
-            md.store(:fname, Member[md[:mbr_id]].fname)
-            md.store(:lname, Member[md[:mbr_id]].lname)
-            md.store(:callsign, Member[md[:mbr_id]].callsign)
-          end
+        mbr_dues_payments.each do |md|
+          m  = members_by_id[md[:mbr_id]]
+          au = auth_users_by_id[md[:a_user_id]]
+          au_mbr = au ? au_members_by_id[au.mbr_id] : nil
+          md.store(:recorded_by, au_mbr&.callsign)
+          md.store(:event_type, "dues payment")
+          md.store(:fname, m&.fname)
+          md.store(:lname, m&.lname)
+          md.store(:callsign, m&.callsign)
         end
         @renewals.concat(mbr_dues_payments)
         @renewals.sort_by!{|r| r[:ts]}
@@ -68,7 +82,8 @@ module MemberTracker
         begin
            Date.strptime(params[:mbrship_renewal_date],'%D')
         rescue StandardError => e
-           session[:msg] = "The existing renewal could not be updated\n#{e}"
+           log_error(e)
+           session[:msg] = "The existing renewal could not be updated"
            redirect '/m/mbr_renewals/show'
         end
         rdate = Date.strptime(params[:mbrship_renewal_date],'%D')
@@ -138,7 +153,8 @@ module MemberTracker
           end
           session[:msg] = "The existing renewal record was successfully updated"
         rescue StandardError => e
-          session[:msg] = "The existing renewal could not be updated\n#{e}"
+          log_error(e)
+          session[:msg] = "The existing renewal could not be updated"
         end
         redirect '/m/mbr_renewals/show'
       end
@@ -159,7 +175,8 @@ module MemberTracker
         begin
            Date.strptime(params[:mbrship_renewal_date],'%D')
         rescue StandardError => e
-           session[:msg] = "The existing renewal could not be updated\n#{e}"
+           log_error(e)
+           session[:msg] = "The existing renewal could not be updated"
            redirect '/m/mbr_renewals/show'
         end
         rdate = Date.strptime(params[:mbrship_renewal_date],'%D')
@@ -216,7 +233,8 @@ module MemberTracker
           end
           session[:msg] = 'Renewal was successfully recorded'
         rescue StandardError => e
-          session[:msg] = "The data was not entered successfully\n#{e}"
+          log_error(e)
+          session[:msg] = "The data was not entered successfully"
         end
         redirect '/m/mbr_renewals/show'
       end
@@ -250,7 +268,8 @@ module MemberTracker
           l.save
           session[:msg] = 'Renewal record was SUCCESSFULLY deleted'
         rescue StandardError => e
-          session[:msg] = "The renewal record WAS NOT deleted\n#{e}"
+          log_error(e)
+          session[:msg] = "The renewal record WAS NOT deleted"
         end
         redirect '/m/mbr_renewals/show'
       end
@@ -300,7 +319,8 @@ module MemberTracker
             end
             session[:msg] = 'Member action was successfully updated'
           rescue StandardError => e
-            session[:msg] = "The member action was not updated\n#{e}"
+            log_error(e)
+            session[:msg] = "The member action was not updated"
           end
         else
           session[:msg] = 'No changes were made to the member action'
@@ -355,7 +375,8 @@ module MemberTracker
             session[:msg] = 'Member action was SUCCESSFULLY deleted'
           end
         rescue StandardError => e
-          session[:msg] = "The member action WAS NOT deleted\n#{e}"
+          log_error(e)
+          session[:msg] = "The member action WAS NOT deleted"
         end
         redirect '/m/mbr_non_renewals/show'
       end

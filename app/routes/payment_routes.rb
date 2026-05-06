@@ -132,7 +132,8 @@ module MemberTracker
           end
           session[:msg] = 'Edited payment was successfully recorded'
         rescue StandardError => e
-          session[:msg] = "The data was not entered successfully\n#{e}"
+          log_error(e)
+          session[:msg] = "The data was not entered successfully"
         end
         redirect "/m/payments/show"
       end
@@ -330,7 +331,8 @@ module MemberTracker
           end
           session[:msg] = 'Payment was SUCCESSFULLY deleted'
         rescue StandardError => e
-          session[:msg] = "The payment WAS NOT deleted\n#{e}"
+          log_error(e)
+          session[:msg] = "The payment WAS NOT deleted"
         end
         redirect '/m/payments/show'
       end

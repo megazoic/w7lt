@@ -312,8 +312,8 @@ module MemberTracker
             session[:msg] << ": However, #{out_msg}"
           end
         rescue StandardError => e
-          session[:msg] = "Error; the event could not be created\n#{e}"
-          #puts "error #{e.backtrace}"
+          log_error(e)
+          session[:msg] = "Error; the event could not be created"
         end
         redirect "/m/event/list/#{params[:event_type_id]}"
       end
@@ -361,7 +361,8 @@ module MemberTracker
           session[:msg] = "The event type was successfully created"
           l.save
         rescue StandardError => e
-          session[:msg] = "Error; the event type could not be created\n#{e}"
+          log_error(e)
+          session[:msg] = "Error; the event type could not be created"
         end
         redirect '/m/event/type/create/'
       end

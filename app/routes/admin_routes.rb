@@ -17,21 +17,21 @@ module MemberTracker
           mbrRenwls_in_range = Member.where(mbrship_renewal_date: start_date..end_date)
           mbrs2renw_pmt = {}
           mbrs2renw_mbrRnwl = {}
+          pmt_mbr_ids = pmts_in_range.map { |p| p[:mbr_id] }.uniq
+          pmt_members = Member.where(id: pmt_mbr_ids).all.each_with_object({}) { |m, h| h[m.id] = m }
+          dues_by_mbr = Payment.where(mbr_id: pmt_mbr_ids, payment_type_id: 5)
+                               .select(:mbr_id, :ts).all
+                               .group_by { |p| p[:mbr_id] }
           pmts_in_range.each do |p|
-            later_dues_pmt = false
-            Member[p[:mbr_id]].payments.each do |mp|
-              if (mp[:ts] > p[:ts] && mp[:payment_type_id] == 5)
-                later_dues_pmt = true
-                break
-              end
-            end
-            next if later_dues_pmt == true
-            mbrs2renw_pmt.update({Member[p[:mbr_id]].id => {:fname => Member[p[:mbr_id]].fname, :lname => Member[p[:mbr_id]].lname,
-            :callsign => Member[p[:mbr_id]].callsign, :email => Member[p[:mbr_id]].email,
-            :pay_date => p[:ts]}})
+            mbr_dues = dues_by_mbr[p[:mbr_id]] || []
+            next if mbr_dues.any? { |mp| mp[:ts] > p[:ts] }
+            m = pmt_members[p[:mbr_id]]
+            mbrs2renw_pmt[m.id] = { fname: m.fname, lname: m.lname,
+              callsign: m.callsign, email: m.email, pay_date: p[:ts] }
           end
-          mbrs2renw_pmt.delete_if{|k,v|
-            (Member[k].mbrship_renewal_halt == true) || (Member[k].mbrship_renewal_contacts >= 2)}
+          mbrs2renw_pmt.delete_if { |k, _|
+            m = pmt_members[k]
+            m.mbrship_renewal_halt == true || m.mbrship_renewal_contacts >= 2 }
           mbrRenwls_in_range.each do |mr|
             if (mr[:mbrship_renewal_halt] == 0) && (mr[:mbrship_renewal_contacts] < 2)
               mbrs2renw_mbrRnwl[mr[:id]] = { fname: mr[:fname], lname: mr[:lname],
@@ -216,7 +216,8 @@ module MemberTracker
             session[:msg] = out_msg
           end
         rescue StandardError => e
-          session[:msg] = "The data was not entered successfully\n#{e}"
+          log_error(e)
+          session[:msg] = "The data was not entered successfully"
         end
         redirect '/a/auth_user/list'
       end
@@ -280,7 +281,8 @@ module MemberTracker
           they have 48 hrs to reset their password"
           redirect "/a/auth_user/list"
         rescue StandardError => e
-          session[:msg] = "error: could not create authorized user.\n#{e}"
+          log_error(e)
+          session[:msg] = "error: could not create authorized user."
           redirect "/a/auth_user/create"
         end
       end
