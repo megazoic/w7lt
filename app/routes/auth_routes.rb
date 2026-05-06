@@ -3,7 +3,6 @@ module MemberTracker
     def self.registered(app)
 
       app.get '/', :provides => 'html' do
-        puts 'in get \'/\' and html'
       end
 
       app.get '/check/mbrship/status' do

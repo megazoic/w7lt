@@ -362,7 +362,7 @@ module MemberTracker
       @log_pay.save
       pay[:log_id] = @log_pay.values[:id]
       pay.save
-      @log_action.save if !@log_action.notes.nil? || @log_action.notes != ""
+      @log_action.save if !@log_action.notes.nil? && @log_action.notes != ""
       return unless @al_save
       @auditlog_hash.each do |_k, v|
         next if v.a_user_id.nil?

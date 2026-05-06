@@ -236,8 +236,6 @@ module MemberTracker
               qset[:ve] = 1
             when  :sota
               qset[:sota] = 1
-            else
-              puts "error"
             end
           end
         end

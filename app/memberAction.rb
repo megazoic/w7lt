@@ -53,8 +53,6 @@ module MemberTracker
             end
           end
           actions << ma_hash
-        else
-          puts "MemberAction.get_member_actions: no member found for id #{ma.member_target}"
         end
       end
       return actions

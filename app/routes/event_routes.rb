@@ -58,9 +58,6 @@ module MemberTracker
                     combined_counts[ed][:inperson] = mtng[:member_count]
                   when 11 #zoom meeting
                     combined_counts[ed][:zoom] = mtng[:member_count]
-                  else
-                    puts "unknown meeting type #{mtng[:event_type_id]}\n"
-                    #do nothing
                   end
                   #add :id, :name and :descr from mtng to @attendance_data
                   combined_counts[ed][:event_id] = mtng[:event_id]
@@ -71,20 +68,13 @@ module MemberTracker
               end
             end
           when '2' #POTA
-            puts "POTA selected"
           when '3' #field day
-            puts "field day selected"
           when '4' #holiday & bbq
-            puts "holiday & bbq selected"
           when '5' #board meeting
-            puts "board meeting selected"
-          else
-            puts "other event type selected"
           end
         end
         @attendance_data ||= {}
         if combined_counts.nil?
-          puts "no data found"
         else
           #summarize by event date
           event_date_sum = 0
