@@ -99,6 +99,51 @@ module MemberTracker
         end
       end
 
+      context 'non-renewal followup auto-completion on dues payment' do
+        it 'marks an open non_renew_followup action as completed' do
+          member = create_member
+          action = create_member_action(member: member)
+          expect(action.completed).to be false
+
+          PaymentService.call(dues_params(member), auth_uid)
+
+          expect(DB[:member_actions].where(id: action.id).get(:completed)).to be true
+        end
+
+        it 'creates a log entry linked to the closed action' do
+          member = create_member
+          action = create_member_action(member: member)
+          PaymentService.call(dues_params(member), auth_uid)
+          log = DB[:logs].where(mbr_action_id: action.id).first
+          expect(log).not_to be_nil
+          expect(log[:notes]).to include('dues payment')
+        end
+
+        it 'closes multiple open followup actions for the same member' do
+          member  = create_member
+          action1 = create_member_action(member: member)
+          action2 = create_member_action(member: member)
+          PaymentService.call(dues_params(member), auth_uid)
+          expect(DB[:member_actions].where(id: action1.id).get(:completed)).to be true
+          expect(DB[:member_actions].where(id: action2.id).get(:completed)).to be true
+        end
+
+        it 'does not affect followup actions belonging to a different member' do
+          payer   = create_member
+          other   = create_member
+          action  = create_member_action(member: other)
+          PaymentService.call(dues_params(payer), auth_uid)
+          expect(DB[:member_actions].where(id: action.id).get(:completed)).to be false
+        end
+
+        it 'does not close followup actions when the payment is a donation' do
+          member = create_member
+          action = create_member_action(member: member)
+          PaymentService.call(donation_params(member), auth_uid)
+          expect(DB[:member_actions].where(id: action.id).get(:completed)).to be false
+        end
+      end
+
       context 'callme note in jotform submission' do
         it 'creates a member_action when notes contain "leader? Yes"' do
           member = create_member

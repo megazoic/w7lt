@@ -257,6 +257,7 @@ module MemberTracker
     # ── Inside DB.transaction ────────────────────────────────────────────────
 
     def persist_dues
+      close_open_non_renewal_followups
       if ['honorary', 'lifetime', 'family'].include?(@p["mbr_type"])
         update_family_members
       end
@@ -372,6 +373,29 @@ module MemberTracker
     end
 
     # ── Helpers ──────────────────────────────────────────────────────────────
+
+    def close_open_non_renewal_followups
+      nrf_type_id = MemberActionType[name: 'non_renew_followup'].id
+      open_actions = MemberAction.where(
+        member_target:         @p["mbr_id"],
+        member_action_type_id: nrf_type_id,
+        completed:             false
+      ).all
+      return if open_actions.empty?
+
+      log_action_id = Action.get_action_id('member_not_renew_followup')
+      open_actions.each do |ma|
+        DB[:member_actions].where(id: ma.id).update(completed: true)
+        Log.new(
+          mbr_id:        @p["mbr_id"],
+          a_user_id:     @uid,
+          ts:            Time.now,
+          action_id:     log_action_id,
+          mbr_action_id: ma.id,
+          notes:         "Non-renewal followup auto-completed: member recorded a dues payment"
+        ).save
+      end
+    end
 
     def dues?
       PaymentType[@p["payment_type"]].type == 'Dues'
