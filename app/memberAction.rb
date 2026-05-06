@@ -6,6 +6,8 @@ module MemberTracker
     many_to_one :auth_user
     many_to_one :member_action_type
     many_to_one :member
+
+    STALE_AFTER_MONTHS = 4
     #add method to get member actions
     def self.get_member_actions(action_type_id)
       #action_type_id is an int from the member_action_types table
@@ -57,6 +59,58 @@ module MemberTracker
       end
       return actions
     end
+    # Returns completed call_member actions ordered most-recent first.
+    def self.get_completed_call_actions
+      call_type_id = MemberActionType[name: 'call_member'].id
+      actions = []
+      MemberAction.where(member_action_type_id: call_type_id, completed: true)
+                  .reverse_order(:ts).each do |ma|
+        mbr = Member.where(id: ma.member_target).first
+        next unless mbr
+        au = AuthUser.where(id: ma.a_user_id).first
+        a_user_name = au ? "#{au.member.fname} #{au.member.lname}" : "Unknown"
+        tasked_to_mbr = Member.where(id: ma.tasked_to_mbr_id).select(:fname, :lname).first
+        actions << {
+          id:                 ma.id,
+          target_member_id:   ma.member_target,
+          target_member_name: "#{mbr.fname} #{mbr.lname}",
+          a_user_name:        a_user_name,
+          tasked_to:          tasked_to_mbr ? "#{tasked_to_mbr.fname} #{tasked_to_mbr.lname}" : "Unassigned",
+          notes:              ma.notes,
+          ts:                 ma.ts.strftime("%m-%d-%Y"),
+          has_logs:           DB[:logs].where(mbr_action_id: ma.id, mbr_id: ma.member_target).count > 0
+        }
+      end
+      actions
+    end
+
+    # Marks call_member actions older than STALE_AFTER_MONTHS as completed and
+    # writes a log entry for each, linked via mbr_action_id.
+    # Returns the count of actions expired.
+    def self.expire_stale_call_actions(auth_user_id)
+      call_type_id = MemberActionType[name: 'call_member'].id
+      cutoff       = DateTime.now << STALE_AFTER_MONTHS
+      stale = MemberAction.where(member_action_type_id: call_type_id, completed: false)
+                          .where(Sequel[:ts] < cutoff).all
+      return 0 if stale.empty?
+
+      log_action_id = Action.get_action_id('mbr_call_me')
+      stale.each do |ma|
+        DB.transaction do
+          DB[:member_actions].where(id: ma.id).update(completed: true)
+          Log.new(
+            mbr_id:        ma.member_target,
+            a_user_id:     auth_user_id,
+            ts:            Time.now,
+            action_id:     log_action_id,
+            mbr_action_id: ma.id,
+            notes:         "Call-member action auto-completed: no resolution recorded after #{STALE_AFTER_MONTHS} months"
+          ).save
+        end
+      end
+      stale.size
+    end
+
     def self.build_log_notes(mbr_action, params)
       #build log notes for the member action
       log_notes = "making changes to mbr_action record id: #{mbr_action[:id]}\n"

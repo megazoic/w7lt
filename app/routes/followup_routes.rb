@@ -3,6 +3,8 @@ module MemberTracker
     def self.registered(app)
 
       app.get '/m/followup/show' do
+        expired = MemberAction.expire_stale_call_actions(session[:auth_user_id])
+        session[:msg] = "#{expired} stale call-me action(s) were automatically completed." if expired > 0
         @tmp_msg = session[:msg]
         session[:msg] = nil
         # first, get call member actions and test if logs exist
@@ -14,6 +16,7 @@ module MemberTracker
         @action_type[:nonrenewal] = DB[:member_action_types].where(name: 'non_renew_followup').first
         ma_type_id = MemberActionType[name: 'non_renew_followup'].id
         @mbr_non_renewal_actions = MemberAction.get_member_actions(ma_type_id)
+        @completed_call_me_actions = MemberAction.get_completed_call_actions
 
         erb :m_followup_show, :layout => :layout_w_logout
       end
@@ -157,7 +160,8 @@ module MemberTracker
               DB[:member_actions].where(id: params[:id]).update(updated_mbr_action)
               #add log entry for this action
               l = Log.new(mbr_id: mbr_action[:member_target], a_user_id: session[:auth_user_id], ts: Time.now,
-                notes: log_notes, action_id: Action.get_action_id("mbr_call_me"))
+                notes: log_notes, action_id: Action.get_action_id("mbr_call_me"),
+                mbr_action_id: params[:id].to_i)
               l.save
             end
             session[:msg] = 'Member action was successfully updated'

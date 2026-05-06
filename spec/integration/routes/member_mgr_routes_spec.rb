@@ -833,6 +833,21 @@ module MemberTracker
         expect(last_response.status).to eq(302)
         expect(last_response.location).to include('/m/followup/show')
       end
+
+      it 'creates a log entry linked to the action via mbr_action_id when completing' do
+        member    = create_member
+        call_type = DB[:member_action_types].where(name: 'call_member').get(:id)
+        action    = create_member_action(member: member, member_action_type_id: call_type)
+        post "/m/mbr_callme/update/#{action.id}", {
+          'id'               => action.id.to_s,
+          'tasked_to_mbr_id' => '',
+          'completed'        => 'true',
+          'notes'            => 'called and spoke with member'
+        }
+        log = DB[:logs].where(mbr_action_id: action.id).first
+        expect(log).not_to be_nil
+        expect(log[:notes]).to include('completed')
+      end
     end
   end
 end
