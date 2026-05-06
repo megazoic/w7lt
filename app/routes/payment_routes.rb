@@ -264,8 +264,6 @@ module MemberTracker
           DB.transaction do
             log_pay.save
             if payment.payment_type_id == paymentTypes["Dues"]
-              #roll back member status on paid_up and possibly, mbr_type (if not a family)
-              #if current member type is family need to rollback paid_up for all family members
               array_of_audit_log_hashes.each do |alh|
                 case alh["column"]
                   #**************start of working on member table here **************

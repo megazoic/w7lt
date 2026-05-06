@@ -220,7 +220,6 @@ module MemberTracker
         l = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, notes: augmented_notes, action_id: Action.get_action_id("unit"))
         ################get ready for update#####################
         have_payment = false
-        paid_up_status = 0
         unit_pay_date_latest = Time.new(1999,01,01)
         unit_pay_id_latest = 0
         if unit.unit_type.type == 'family'
@@ -228,7 +227,6 @@ module MemberTracker
           unit.log.each do |ul|
             if !ul.payment.nil?
               have_payment = true
-              paid_up_status = ul.payment.member.paid_up
               if ul.payment.ts > unit_pay_date_latest
                 unit_pay_date_latest = ul.payment.ts
                 unit_pay_id_latest = ul.payment.id
@@ -268,18 +266,11 @@ module MemberTracker
               while a = array_of_sorted_auditlogs.pop
                 if a[0] >= unit.ts
                   case a[1][2]
-                  when "paid_up"
-                    m.paid_up = a[1][3]
-                    augmented_notes << "\nsetting paid_up for #{m.callsign} to #{m.paid_up}"
-                    #remove audit log
-                    AuditLog[a[1][0]].delete
                   when "mbr_type"
                     m.mbr_type = a[1][3]
                     augmented_notes << "\nsetting mbr_type for #{m.callsign} to #{m.mbr_type}"
                     #remove audit log
                     AuditLog[a[1][0]].delete
-                  else
-                    #shouldn't be here
                   end
                   m.save
                 end
@@ -297,13 +288,11 @@ module MemberTracker
               if unit.unit_type.type == 'family'
                 #look for payments
                 have_payment = false
-                paid_up_status = 0
                 unit_pay_date_latest = Time.new(1999,01,01)
                 unit_pay_id_latest = 0
                 unit.log.each do |ul|
                   if !ul.payment.nil?
                     have_payment = true
-                    paid_up_status = ul.payment.member.paid_up
                     if ul.payment.ts > unit_pay_date_latest
                       unit_pay_date_latest = ul.payment.ts
                       unit_pay_id_latest = ul.payment.id
@@ -311,22 +300,11 @@ module MemberTracker
                   end
                 end
                 if have_payment == true #if not, then this mbr has already been added no other changes need to be made
-                  #do we need to record paid_up audit log?
-                  if m.paid_up != paid_up_status
-                    al = AuditLog.new("a_user_id" => session[:auth_user_id], "column" => "paid_up",
-                            "changed_date" => Time.now, "old_value" => m.paid_up, "new_value" => paid_up_status,
-                            "mbr_id" => m.id, "pay_id" => unit_pay_id_latest, "unit_id" => unit.id)
-                    al.save
-                  end
                   al = AuditLog.new("a_user_id" => session[:auth_user_id], "column" => "mbr_type",
                           "changed_date" => Time.now, "old_value" => m.mbr_type, "new_value" => "family",
                           "mbr_id" => m.id, "pay_id" => unit_pay_id_latest, "unit_id" => unit.id)
                   al.save
-                    #we have a prior payment for this unit go ahead and set this member.mbr_type to family
                   m.mbr_type = 'family'
-                  m.paid_up = paid_up_status
-                  #need to create audit log so this action will be rolled back if the payments that established the
-                  #paid_up status of the other family units are rolled back
                   m.save
                 end
               end

@@ -246,7 +246,6 @@ function validateMbrCountForm(){
 }
 function validateMbrPayForm(){
 	var halfpmt = $("half_pmt").checked
-	var paid_up = $("paid_up_field").value;
 	var old_mbr_type = $("old_mbr_type").value;
 	var pay_mthd = $("payment_method_field");
 	var pmText = pay_mthd.options[pay_mthd.selectedIndex].text;
@@ -291,10 +290,10 @@ function validateMbrPayForm(){
 				alert("must place note why using other payment");
 				return false;
 			}
-			yes = confirm("Is this correct?\n\n" + "Member type: " + pay_amt_name + "\nPaid through: " + paid_up +
+			yes = confirm("Is this correct?\n\n" + "Member type: " + pay_amt_name +
 			"\nPay Amount: $" + other_pay_amt + "\nPayment Method: " + pmText);
 	        }else if (other_pay == false && other_pay_amt == ""){
-			var outline = "Is this correct?\n\n" + "Member type: " + pay_amt_name + "\nPaid through: " + paid_up +
+			var outline = "Is this correct?\n\n" + "Member type: " + pay_amt_name +
 			"\nPay Amount: $" + pay_amt + "\nPayment Method: " + pmText
 			if (old_mbr_type == 'family' && pay_amt_name != 'family'){
 				outline = outline + "\n***Member type will no longer be family***";
