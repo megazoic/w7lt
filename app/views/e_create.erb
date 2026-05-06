@@ -48,6 +48,24 @@
         </span>
       </div>
     </div>
+
+    <!-- Event contact search -->
+    <div class="sm:col-span-2">
+      <label class="block text-xs text-gray-600 mb-1" for="contact_search">
+        Event Contact / Organizer <span class="text-red-500">*</span>
+        <span class="text-gray-400 font-normal">&mdash; type last name or callsign</span>
+      </label>
+      <div class="relative max-w-sm">
+        <input type="text" id="contact_search"
+               autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+               placeholder="e.g. Smith or KD7ABC"
+               class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <div id="contact_suggestions"
+             class="hidden absolute z-10 w-full mt-0.5 bg-white border border-gray-300 rounded shadow-lg max-h-48 overflow-y-auto text-sm">
+        </div>
+      </div>
+      <input type="hidden" name="mbr_id" id="mbr_id" />
+    </div>
   </div>
 
   <div class="max-w-2xl">
@@ -102,33 +120,27 @@
 
   <!-- Member attendance table -->
   <div>
-    <h3 class="text-base font-semibold text-gray-800 mb-1">
-      Pick One Organizer <span class="text-red-500">*</span> and All Attendees
-    </h3>
-    <p class="text-xs text-gray-500 mb-2">Other organizers go in the description field.</p>
+    <h3 class="text-base font-semibold text-gray-800 mb-1">Attendees</h3>
+    <p class="text-xs text-gray-500 mb-2">Use browser search (Ctrl+F / ⌘+F) to find a member quickly.</p>
     <div class="overflow-x-auto">
       <table class="w-full border-collapse text-sm">
         <thead>
           <tr class="bg-gray-100 text-left">
-            <th class="border border-gray-300 px-2 py-1 whitespace-nowrap">Organizer <span class="text-red-500">*</span></th>
+            <th class="border border-gray-300 px-2 py-1">Attendee</th>
             <th class="border border-gray-300 px-2 py-1">First</th>
             <th class="border border-gray-300 px-2 py-1">Last</th>
             <th class="border border-gray-300 px-2 py-1">Call</th>
-            <th class="border border-gray-300 px-2 py-1">Attendee</th>
           </tr>
         </thead>
         <tbody>
           <% @mbrs.each do |member| %>
           <tr class="odd:bg-white even:bg-gray-50">
             <td class="border border-gray-200 px-2 py-0.5 text-center">
-              <input type="radio" name="mbr_id" value="<%= member[:id] %>" class="w-auto" />
+              <input type="checkbox" name="id:<%= member[:id] %>" value="1" class="w-auto" />
             </td>
             <td class="border border-gray-200 px-2 py-0.5"><%= member[:fname] %></td>
             <td class="border border-gray-200 px-2 py-0.5"><%= member[:lname] %></td>
             <td class="border border-gray-200 px-2 py-0.5"><%= member[:callsign] %></td>
-            <td class="border border-gray-200 px-2 py-0.5 text-center">
-              <input type="checkbox" name="id:<%= member[:id] %>" value="1" class="w-auto" />
-            </td>
           </tr>
           <% end %>
         </tbody>
@@ -143,3 +155,59 @@
   </div>
 
 </form>
+
+<script>
+(function () {
+  var data = <%= @mbrs.map { |m|
+    { id: m[:id].to_s, text: "#{m[:lname]}, #{m[:fname]} (#{m[:callsign]})" }
+  }.to_json %>;
+  var search    = document.getElementById('contact_search');
+  var hidden    = document.getElementById('mbr_id');
+  var box       = document.getElementById('contact_suggestions');
+  var selecting = false;
+
+  function selectContact(item) {
+    selecting = true;
+    hidden.value = item.dataset.id;
+    search.value = item.dataset.text;
+    selecting = false;
+    box.classList.add('hidden');
+  }
+
+  search.addEventListener('input', function () {
+    if (selecting) return;
+    var q = this.value.trim().toLowerCase();
+    hidden.value = '';
+    box.innerHTML = '';
+    if (!q) { box.classList.add('hidden'); return; }
+    var hits = data.filter(function (m) { return m.text.toLowerCase().indexOf(q) !== -1; }).slice(0, 12);
+    if (!hits.length) { box.classList.add('hidden'); return; }
+    hits.forEach(function (m) {
+      var div = document.createElement('div');
+      div.className = 'px-3 py-1.5 hover:bg-blue-50 cursor-pointer border-b border-gray-100';
+      div.textContent = m.text;
+      div.dataset.id   = m.id;
+      div.dataset.text = m.text;
+      box.appendChild(div);
+    });
+    box.classList.remove('hidden');
+  });
+
+  box.addEventListener('pointerdown', function (e) {
+    var item = e.target.closest('[data-id]');
+    if (!item) return;
+    e.preventDefault();
+    selectContact(item);
+  });
+
+  box.addEventListener('click', function (e) {
+    var item = e.target.closest('[data-id]');
+    if (!item || hidden.value) return;
+    selectContact(item);
+  });
+
+  search.addEventListener('blur', function () {
+    setTimeout(function () { box.classList.add('hidden'); }, 150);
+  });
+})();
+</script>

@@ -538,14 +538,8 @@ function validateCreateEventForm(){
 		alert("please select an event type");
 		return false;
 	}
-	var mbr_selected = false;
-        var chx = document.getElementsByName('mbr_id');
-        for (var i = 0; i < chx.length; i++) {
-		if (chx[i].checked) {
-            mbr_selected = true;
-          }
-        }
-	if (mbr_selected == false){
+	var mbr_id = document.getElementById('mbr_id');
+	if (!mbr_id || !mbr_id.value) {
 		alert("please select an event contact");
 		return false;
 	}

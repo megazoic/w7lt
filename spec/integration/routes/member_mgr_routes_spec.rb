@@ -707,7 +707,14 @@ module MemberTracker
     # ── Followup ──────────────────────────────────────────────────────────────
 
     describe 'GET /m/followup/show' do
-      it 'renders the followup dashboard' do
+      it 'renders the followup dashboard with no actions' do
+        get '/m/followup/show'
+        expect(last_response.status).to eq(200)
+      end
+
+      it 'renders when member actions exist (exercises attended_ids query)' do
+        member = create_member
+        create_member_action(member: member)
         get '/m/followup/show'
         expect(last_response.status).to eq(200)
       end
