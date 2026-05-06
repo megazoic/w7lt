@@ -1,3 +1,42 @@
+namespace :mbr do
+  desc "Close open non-renewal followup actions for members whose membership is currently paid up"
+  task :close_stale_non_renewal_followups, [:auth_user_id] do |_t, args|
+    require "sequel"
+    require "./app/api.rb"
+    auth_user_id = (args[:auth_user_id] || 22).to_i
+    nrf_type_id   = MemberTracker::MemberActionType[name: 'non_renew_followup'].id
+    log_action_id = MemberTracker::Action.get_action_id('member_not_renew_followup')
+    open_actions  = DB[:member_actions]
+                      .where(member_action_type_id: nrf_type_id, completed: false)
+                      .all
+    if open_actions.empty?
+      puts "No open non-renewal followup actions found."
+      next
+    end
+    closed = 0
+    open_actions.each do |ma|
+      mbr = MemberTracker::Member[ma[:member_target]]
+      next if mbr.nil?
+      next if mbr.mbrship_renewal_date.nil?
+      next unless mbr.mbrship_renewal_date.to_date.next_year > Date.today
+      puts "Closing action id=#{ma[:id]} for member #{mbr.fname} #{mbr.lname} (id=#{mbr.id})"
+      DB.transaction do
+        DB[:member_actions].where(id: ma[:id]).update(completed: true)
+        MemberTracker::Log.new(
+          mbr_id:        ma[:member_target],
+          a_user_id:     auth_user_id,
+          ts:            Time.now,
+          action_id:     log_action_id,
+          mbr_action_id: ma[:id],
+          notes:         "Non-renewal followup auto-completed: member is currently paid up (retroactive cleanup)"
+        ).save
+      end
+      closed += 1
+    end
+    puts "Done. Closed #{closed} action(s)."
+  end
+end
+
 namespace :db do
   desc "Run migrations"
   task :migrate, [:version] do |t, args|
