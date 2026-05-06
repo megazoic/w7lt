@@ -55,14 +55,19 @@ module MemberTracker
         logger.error e.backtrace.first(5).join("\n") if e.backtrace
       end
 
-      def pagination_links(page, total_pages, base_path)
+      def pagination_links(page, total_pages, base_path, extra_params = {})
         return '' if total_pages <= 1
         btn = 'px-3 py-1 border border-gray-300 rounded text-sm'
+        build_url = ->(p) {
+          parts = extra_params.map { |k, v| "#{k}=#{Rack::Utils.escape(v.to_s)}" }
+          parts << "page=#{p}"
+          "#{base_path}?#{parts.join('&')}"
+        }
         prev_link = page > 1 ?
-          "<a href=\"#{base_path}?page=#{page - 1}\" class=\"#{btn} hover:bg-gray-100 text-blue-600\">&larr; Prev</a>" :
+          "<a href=\"#{build_url.(page - 1)}\" class=\"#{btn} hover:bg-gray-100 text-blue-600\">&larr; Prev</a>" :
           "<span class=\"#{btn} text-gray-300 cursor-not-allowed\">&larr; Prev</span>"
         next_link = page < total_pages ?
-          "<a href=\"#{base_path}?page=#{page + 1}\" class=\"#{btn} hover:bg-gray-100 text-blue-600\">Next &rarr;</a>" :
+          "<a href=\"#{build_url.(page + 1)}\" class=\"#{btn} hover:bg-gray-100 text-blue-600\">Next &rarr;</a>" :
           "<span class=\"#{btn} text-gray-300 cursor-not-allowed\">Next &rarr;</span>"
         "<div class=\"flex items-center gap-3 mt-4\">" \
           "#{prev_link}" \

@@ -73,14 +73,21 @@ module MemberTracker
       end
 
       app.get '/home' do
-        @member_lnames = Member.select(:id, :lname).order(:lname).all
         @tmp_msg = session[:msg]
         session[:msg] = nil
-        #display last time system checked members up for renewal
         if @tmp_msg.nil?
           latest_renew_check = DB.from(:logs).where(action_id: Action.get_action_id("mbr_renew_check")).reverse_order(:ts).first
           @tmp_msg = latest_renew_check[:ts].strftime("Renewals last checked on %m/%d/%Y")
         end
+        @q = (params[:q] || '').strip
+        ds = Member.select(:id, :lname).order(:lname)
+        unless @q.empty?
+          ds = ds.where(Sequel.ilike(:lname, "%#{@q}%"))
+        end
+        @total_count = ds.count
+        @total_pages = [(@total_count / PER_PAGE.to_f).ceil, 1].max
+        @page = [[params[:page].to_i, 1].max, @total_pages].min
+        @member_lnames = ds.limit(PER_PAGE).offset((@page - 1) * PER_PAGE).all
         erb :home, :layout => :layout_w_logout
       end
 

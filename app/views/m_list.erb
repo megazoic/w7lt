@@ -5,10 +5,21 @@
 :license_class :mbr_type :arrl
 :arrl_expire :ares :net :ve :elmer :sota
 %>
+<% @q ||= ''; @total_count ||= @members.count %>
 <div class="mb-4">
   <h3 class="text-xl font-bold text-gray-800">Members List
-    <span class="text-base font-normal text-gray-500">&mdash; <%= @members.count %> shown</span>
+    <span class="text-base font-normal text-gray-500">&mdash; <%= @total_count %> shown</span>
   </h3>
+  <% if @base_path %>
+  <form method="get" action="<%= @base_path %>" class="mt-2 flex gap-2 items-center">
+    <input type="text" name="q" value="<%= @q %>" placeholder="Search name or callsign&hellip;"
+      class="border border-gray-300 rounded px-2 py-1 text-sm w-56">
+    <button type="submit" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Search</button>
+    <% unless @q.empty? %>
+    <a href="<%= @base_path %>" class="text-sm text-gray-500 hover:underline">Clear</a>
+    <% end %>
+  </form>
+  <% end %>
   <% if @qset %>
   <div class="mt-2 text-sm text-gray-600 space-y-0.5">
     <p class="font-medium">Filters in place:</p>
@@ -59,3 +70,6 @@
     </tbody>
   </table>
 </div>
+<% if @base_path %>
+<%= pagination_links(@page, @total_pages, @base_path, q: @q) %>
+<% end %>

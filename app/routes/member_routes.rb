@@ -269,14 +269,20 @@ module MemberTracker
       end
 
       app.get '/r/member/list/?:event?' do
-        @members = DB[:members].select(:id, :lname, :fname, :callsign, :mbrship_renewal_date, :mbr_type).order(:lname, :fname).all
         @tmp_msg = session[:msg]
         session[:msg] = nil
-        #if looking for an event contact
-        @event = false
-        if !params[:event].nil?
-          @event = true
+        @event = !params[:event].nil?
+        @q = (params[:q] || '').strip
+        @base_path = @event ? '/r/member/list/event' : '/r/member/list'
+        ds = DB[:members].select(:id, :lname, :fname, :callsign, :mbrship_renewal_date, :mbr_type).order(:lname, :fname)
+        unless @q.empty?
+          term = "%#{@q}%"
+          ds = ds.where(Sequel.ilike(:lname, term) | Sequel.ilike(:fname, term) | Sequel.ilike(:callsign, term))
         end
+        @total_count = ds.count
+        @total_pages = [(@total_count / PER_PAGE.to_f).ceil, 1].max
+        @page = [[params[:page].to_i, 1].max, @total_pages].min
+        @members = ds.limit(PER_PAGE).offset((@page - 1) * PER_PAGE).all
         erb :m_list, :layout => :layout_w_logout
       end
 
