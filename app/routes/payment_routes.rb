@@ -155,24 +155,19 @@ module MemberTracker
       app.get '/m/payments/show' do
         @tmp_msg = session[:msg]
         session[:msg] = nil
-        #build array of hashes to load payment data
-        @pay = []
-        pay = Payment.reverse_order(:ts, :a_user_id).all
-        pay.each do |pmt|
-          out = Hash.new
-          out[:id] = pmt.id
-          out[:mbr_name] = "#{pmt.member.fname} #{pmt.member.lname}"
-          out[:auth_name] = "#{pmt.auth_user.member.fname} #{pmt.auth_user.member.lname}"
-          out[:type] = pmt.paymentType.type
-          out[:mode] = pmt.paymentMethod[:mode]
-          out[:amount] = pmt.payment_amount
-          if !pmt.log_id.nil?
-            out[:notes] = pmt.log.notes
-          else
-            out[:notes] = "none"
-          end
-          out[:ts] = pmt.ts.strftime("%m-%d-%Y")
-          @pay << out
+        total = Payment.count
+        @total_pages = [[(total / PER_PAGE.to_f).ceil, 1].max, 1].max
+        @page = [[params[:page].to_i, 1].max, @total_pages].min
+        @pay = Payment.reverse_order(:ts, :a_user_id)
+                      .limit(PER_PAGE).offset((@page - 1) * PER_PAGE).map do |pmt|
+          { id: pmt.id,
+            mbr_name:  "#{pmt.member.fname} #{pmt.member.lname}",
+            auth_name: "#{pmt.auth_user.member.fname} #{pmt.auth_user.member.lname}",
+            type:   pmt.paymentType.type,
+            mode:   pmt.paymentMethod[:mode],
+            amount: pmt.payment_amount,
+            notes:  pmt.log_id ? pmt.log.notes : "none",
+            ts:     pmt.ts.strftime("%m-%d-%Y") }
         end
         erb :p_show, :layout => :layout_w_logout
       end

@@ -31,13 +31,13 @@
         </td>
         <% end %>
         <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= log[:time] %></td>
-        <% if @logs[0].key?(:action) %>
+        <% if @logs.first&.key?(:action) %>
         <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= log[:action] %></td>
         <% end %>
         <td class="border border-gray-200 px-2 py-0.5 max-w-xs">
           <%= log[:notes].to_s.length > 80 ? "#{log[:notes].to_s[0, 80]}…" : log[:notes] %>
         </td>
-        <% if @logs[0].key?(:au_name) %>
+        <% if @logs.first&.key?(:au_name) %>
         <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= log[:au_name] %></td>
         <% end %>
       </tr>
@@ -45,3 +45,4 @@
     </tbody>
   </table>
 </div>
+<%= pagination_links(@page, @total_pages, request.path_info) %>

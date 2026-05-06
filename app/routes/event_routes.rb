@@ -370,14 +370,18 @@ module MemberTracker
       app.get '/m/event/list/:id' do
         @tmp_msg = session[:msg]
         session[:msg] = nil
-        @events = nil
         @event_type = 'all'
-        if params[:id] == 'all'
-          @events = Event.order(:ts, :event_type_id).all
+        ds = if params[:id] == 'all'
+          Event.reverse_order(:ts, :event_type_id)
         else
-          @events = Event.where(:event_type_id => EventType.where(:id => params[:id]).first.id)
-          @event_type = EventType.where(:id => params[:id]).first.name
+          et = EventType.where(id: params[:id]).first
+          @event_type = et.name
+          Event.where(event_type_id: et.id).reverse_order(:ts)
         end
+        total = ds.count
+        @total_pages = [(total / PER_PAGE.to_f).ceil, 1].max
+        @page = [[params[:page].to_i, 1].max, @total_pages].min
+        @events = ds.limit(PER_PAGE).offset((@page - 1) * PER_PAGE).all
         erb :e_list, :layout => :layout_w_logout
       end
 

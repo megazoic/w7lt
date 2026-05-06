@@ -31,6 +31,7 @@ require_relative 'routes/member_routes'
 require_relative 'services/payment_service'
 
 module MemberTracker
+  PER_PAGE = 25
   #using modular (cf classical) approach (see https://www.toptal.com/ruby/api-with-sinatra-and-sequel-ruby-tutorial)
   Paid_up = Struct.new(:active, :condition)
   class API < Sinatra::Base
@@ -52,6 +53,22 @@ module MemberTracker
         msg = context ? "[#{context}] #{e.class}: #{e.message}" : "#{e.class}: #{e.message}"
         logger.error msg
         logger.error e.backtrace.first(5).join("\n") if e.backtrace
+      end
+
+      def pagination_links(page, total_pages, base_path)
+        return '' if total_pages <= 1
+        btn = 'px-3 py-1 border border-gray-300 rounded text-sm'
+        prev_link = page > 1 ?
+          "<a href=\"#{base_path}?page=#{page - 1}\" class=\"#{btn} hover:bg-gray-100 text-blue-600\">&larr; Prev</a>" :
+          "<span class=\"#{btn} text-gray-300 cursor-not-allowed\">&larr; Prev</span>"
+        next_link = page < total_pages ?
+          "<a href=\"#{base_path}?page=#{page + 1}\" class=\"#{btn} hover:bg-gray-100 text-blue-600\">Next &rarr;</a>" :
+          "<span class=\"#{btn} text-gray-300 cursor-not-allowed\">Next &rarr;</span>"
+        "<div class=\"flex items-center gap-3 mt-4\">" \
+          "#{prev_link}" \
+          "<span class=\"text-sm text-gray-600\">Page #{page} of #{total_pages}</span>" \
+          "#{next_link}" \
+        "</div>"
       end
     end
     if ENV["RACK_ENV"] == 'production'
