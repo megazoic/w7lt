@@ -1,0 +1,70 @@
+<h3 class="text-xl font-bold text-gray-800 mb-2">View Events</h3>
+<p class="text-sm text-gray-600 mb-4">Select one or more event types, then click Show Events.</p>
+
+<form method="get" action="/m/event/filter" id="event-filter-form" class="space-y-4 max-w-lg">
+  <input type="hidden" name="types" id="types_hidden" value="">
+
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse text-sm">
+      <thead>
+        <tr class="bg-gray-100 text-left">
+          <th class="border border-gray-300 px-2 py-1 w-10"></th>
+          <th class="border border-gray-300 px-2 py-1">Event Type</th>
+          <th class="border border-gray-300 px-2 py-1">Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @event_types.each do |et| %>
+        <tr class="odd:bg-white even:bg-gray-50">
+          <td class="border border-gray-200 px-2 py-1 text-center">
+            <input type="checkbox" class="event-type-cb w-auto" value="<%= et.id %>">
+          </td>
+          <td class="border border-gray-200 px-2 py-1 whitespace-nowrap"><%= et.name %></td>
+          <td class="border border-gray-200 px-2 py-1"><%= et.descr %></td>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <input type="submit" value="Show Events"
+           class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2 rounded cursor-pointer">
+    <button type="button" id="select-all-btn"
+            class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-100">Select All</button>
+    <button type="button" id="clear-btn"
+            class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-100">Clear</button>
+  </div>
+</form>
+
+<script>
+(function () {
+  var cbs     = document.querySelectorAll('.event-type-cb');
+  var hidden  = document.getElementById('types_hidden');
+  var form    = document.getElementById('event-filter-form');
+
+  function sync() {
+    hidden.value = Array.from(cbs).filter(function (cb) { return cb.checked; })
+                                  .map(function (cb) { return cb.value; }).join(',');
+  }
+
+  cbs.forEach(function (cb) { cb.addEventListener('change', sync); });
+
+  document.getElementById('select-all-btn').addEventListener('click', function () {
+    cbs.forEach(function (cb) { cb.checked = true; });
+    sync();
+  });
+
+  document.getElementById('clear-btn').addEventListener('click', function () {
+    cbs.forEach(function (cb) { cb.checked = false; });
+    sync();
+  });
+
+  form.addEventListener('submit', function (e) {
+    if (!hidden.value) {
+      e.preventDefault();
+      alert('Please select at least one event type.');
+    }
+  });
+})();
+</script>

@@ -30,10 +30,15 @@
         <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap text-xs">
           <a href="/m/event/attendees/show/<%= event.id %>" class="text-blue-600 hover:underline">attendees</a> |
           <a href="/m/event/edit/<%= event.id %>" class="text-blue-600 hover:underline">edit</a>
+          <% if session[:auth_user_roles].include?('mbr_mgr') %>
+          | <a href="/m/event/destroy/<%= event.id %>"
+               onclick="return confirm('Delete this event and all attendance records? This cannot be undone.')"
+               class="text-red-600 hover:underline">delete</a>
+          <% end %>
         </td>
       </tr>
       <% end %>
     </tbody>
   </table>
 </div>
-<%= pagination_links(@page, @total_pages, request.path_info) %>
+<%= pagination_links(@page, @total_pages, request.path_info, @extra_params || {}) %>

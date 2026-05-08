@@ -367,6 +367,63 @@ module MemberTracker
         redirect '/m/event/type/create/'
       end
 
+      app.get '/m/event/filter' do
+        @tmp_msg = session[:msg]
+        session[:msg] = nil
+        if params[:types].to_s.empty?
+          @event_types = EventType.order(:name).all
+          erb :e_filter, layout: :layout_w_logout
+        else
+          type_ids = params[:types].split(',').map(&:to_i).select { |id| id > 0 }
+          if type_ids.empty?
+            session[:msg] = "Please select at least one event type"
+            redirect '/m/event/filter'
+          end
+          @event_type = type_ids.length == 1 ? EventType[type_ids.first]&.name || 'all' : 'all'
+          ds = Event.where(event_type_id: type_ids).reverse_order(:ts, :event_type_id)
+          total = ds.count
+          @total_pages = [(total / PER_PAGE.to_f).ceil, 1].max
+          @page = [[params[:page].to_i, 1].max, @total_pages].min
+          @events = ds.limit(PER_PAGE).offset((@page - 1) * PER_PAGE).all
+          @extra_params = {types: params[:types]}
+          erb :e_list, layout: :layout_w_logout
+        end
+      end
+
+      app.get '/m/event/destroy/:id' do
+        event = Event[params[:id]]
+        if event.nil?
+          session[:msg] = "Event not found"
+          redirect '/m/event/filter'
+        end
+        begin
+          DB.transaction do
+            et_name  = event.event_type&.name || 'unknown'
+            contact  = Member[event.mbr_id]
+            notes    = "EVENT DELETED by #{AuthUser[session[:auth_user_id]].member.callsign}" \
+                       "\nType: #{et_name}" \
+                       "\nDate: #{event.ts.strftime('%m/%d/%Y')}" \
+                       "\nName: #{event.name}" \
+                       "\nDescription: #{event.descr}"
+            DB[:logs].insert(
+              mbr_id:    contact&.id || event.mbr_id,
+              a_user_id: session[:auth_user_id],
+              ts:        Time.now,
+              action_id: Action.get_action_id("event"),
+              notes:     notes
+            )
+            DB[:members_events].where(event_id: event.id).delete
+            DB[:logs].where(event_id: event.id).update(event_id: nil)
+            event.destroy
+          end
+          session[:msg] = "Event deleted"
+        rescue => e
+          log_error(e, 'event destroy')
+          session[:msg] = "Event could not be deleted"
+        end
+        redirect '/m/event/filter'
+      end
+
       app.get '/m/event/list/:id' do
         @tmp_msg = session[:msg]
         session[:msg] = nil
