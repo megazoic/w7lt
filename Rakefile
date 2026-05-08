@@ -1,4 +1,33 @@
 namespace :mbr do
+  desc "Backfill mbr_since from earliest dues payment for members where mbr_since is NULL"
+  task :backfill_mbr_since do
+    require "sequel"
+    require "./app/api.rb"
+    dues_type = DB[:payment_types].first(type: 'Dues')
+    abort "ERROR: 'Dues' payment type not found in payment_types table" if dues_type.nil?
+    dues_type_id = dues_type[:id]
+    members = DB[:members].where(mbr_since: nil).select(:id, :fname, :lname, :callsign).all
+    puts "Found #{members.count} member(s) with mbr_since = NULL"
+    updated = 0
+    skipped = 0
+    members.each do |m|
+      first_payment = DB[:payments]
+        .where(mbr_id: m[:id], payment_type_id: dues_type_id)
+        .order(:ts)
+        .first
+      if first_payment.nil?
+        puts "  SKIP  id=#{m[:id]} #{m[:lname]}, #{m[:fname]} (#{m[:callsign]}) — no dues payment found"
+        skipped += 1
+      else
+        since_date = first_payment[:ts].to_date
+        DB[:members].where(id: m[:id]).update(mbr_since: since_date)
+        puts "  SET   id=#{m[:id]} #{m[:lname]}, #{m[:fname]} (#{m[:callsign]}) — mbr_since = #{since_date}"
+        updated += 1
+      end
+    end
+    puts "\nDone. Updated: #{updated}, Skipped (no dues payment): #{skipped}"
+  end
+
   desc "Close open non-renewal followup actions for members whose membership is currently paid up"
   task :close_stale_non_renewal_followups, [:auth_user_id] do |_t, args|
     require "sequel"

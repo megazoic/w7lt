@@ -1,24 +1,51 @@
 <script>
   window.onload = function() {
     document.getElementById('newDate').style.display = 'none';
+    updateDateLabel();
   };
+  function updateDateLabel() {
+    var rtype = document.querySelector('input[name="report_type"]:checked');
+    var lbl = document.getElementById('date_label_text');
+    if (rtype && rtype.value === 'new_members') {
+      lbl.textContent = 'Show new members since';
+    } else {
+      lbl.textContent = 'Active as of';
+    }
+  }
 </script>
 
 <h3 class="text-xl font-bold text-gray-800 mb-1">Member Count Report</h3>
-<p class="text-sm text-gray-500 mb-4">Active members are those whose membership is current as of the date chosen.</p>
 
 <form action="/r/member/mbr_rpt" method="POST" name="rptYear" onsubmit="return validateMbrCountForm();"
-      class="space-y-4 max-w-sm">
-  <div class="space-y-2 text-sm">
+      class="space-y-5 max-w-sm">
+
+  <fieldset class="space-y-2 text-sm">
+    <legend class="text-xs font-semibold text-gray-600 uppercase mb-1">Report Type</legend>
+    <label class="flex items-center gap-2">
+      <input type="radio" name="report_type" value="active_members" checked class="w-auto"
+             onchange="updateDateLabel()" />
+      Active members
+    </label>
+    <p class="text-xs text-gray-500 ml-6">Members whose dues are current as of the chosen date.</p>
+    <label class="flex items-center gap-2">
+      <input type="radio" name="report_type" value="new_members" class="w-auto"
+             onchange="updateDateLabel()" />
+      New members
+    </label>
+    <p class="text-xs text-gray-500 ml-6">Members who joined on or after the chosen date (requires <em>mbr_since</em> to be set).</p>
+  </fieldset>
+
+  <fieldset class="space-y-2 text-sm">
+    <legend class="text-xs font-semibold text-gray-600 uppercase mb-1">Date</legend>
     <label class="flex items-center gap-2">
       <input type="radio" name="date" id="date_today" value="date_today" checked class="w-auto" />
-      Today's date
+      <span id="date_label_text">Active as of</span> today
     </label>
     <label class="flex items-center gap-2">
       <input type="radio" name="date" id="date_other" value="date_other" onclick="mbrRptDateSet(this)" class="w-auto" />
       Choose another date
     </label>
-  </div>
+  </fieldset>
 
   <div id="newDate">
     <label class="block text-xs text-gray-600 mb-1" for="date_field">

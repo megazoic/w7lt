@@ -104,8 +104,9 @@ module MemberTracker
     def prepare_dues
       @al_save = true
       m = Member[@p["mbr_id"]]
+      @is_new_member = m.mbrship_renewal_date.nil?
 
-      if m.mbrship_renewal_date.nil?
+      if @is_new_member
         setup_new_member_ach
       else
         setup_returning_member_ach(m)
@@ -120,13 +121,15 @@ module MemberTracker
         return early if early
       end
 
-      m.update(
+      update_attrs = {
         mbr_type:                 @ach["mbr_type"][1],
         mbrship_renewal_date:     @ach["mbrship_renewal_date"][1],
         mbrship_renewal_halt:     @ach["mbrship_renewal_halt"][1],
         mbrship_renewal_contacts: @ach["mbrship_renewal_contacts"][1],
         mbrship_renewal_active:   @ach["mbrship_renewal_active"][1]
-      )
+      }
+      update_attrs[:mbr_since] = Date.today if @is_new_member && m.mbr_since.nil?
+      m.update(update_attrs)
 
       @pay_amt = if @p.key?("other_pmt")
         @p["other_pmt"].to_i

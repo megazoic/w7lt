@@ -104,31 +104,33 @@ module MemberTracker
       end
 
       app.post '/r/member/mbr_rpt' do
-        #params: {"date"=>"date_other", "newDate"=>"10/02/22"}
-        #{"date"=>"date_today", "newDate"=>""}
-        #validate date
+        report_type = params[:report_type] == 'new_members' ? 'new_members' : 'active_members'
         chk_date = nil
         if params[:date] == "date_other"
           begin
-             chk_date = Date.strptime(params[:newDate],'%D').prev_year
+            chk_date = Date.strptime(params[:newDate], '%D')
           rescue StandardError => e
-             log_error(e)
-             session[:msg] = "The existing renewal could not be updated"
-             redirect '/m/mbr_renewals/show'
+            log_error(e)
+            session[:msg] = "Invalid date"
+            redirect '/r/member/mbr_rpt'
           end
         else
-          chk_date = Date.today.prev_year
+          chk_date = Date.today
         end
-        #members with mbrship_renewal_date > chk_date will be current
-        m = DB[:members]
-        active_mbrs = m.where{mbrship_renewal_date > chk_date}
+
+        if report_type == 'new_members'
+          @report_label = "New Members since #{chk_date.strftime('%m/%d/%Y')}"
+          mbrs_ds = DB[:members].where{mbr_since >= chk_date}
+        else
+          cutoff = chk_date.prev_year
+          @report_label = "Active Members as of #{chk_date.strftime('%m/%d/%Y')}"
+          mbrs_ds = DB[:members].where{mbrship_renewal_date > cutoff}
+        end
+
         @voting_email = []
         @voting_other = []
-        #get contact info for voting purposes
-        active_mbrs.each do |am|
-          if am[:mbr_type] == 'honorary'
-            next
-          end
+        mbrs_ds.each do |am|
+          next if am[:mbr_type] == 'honorary'
           if am[:email].to_s.empty?
             contact_phone = "#{am[:fname]},#{am[:lname]}"
             [:phw, :phh, :phm].each do |phone|
@@ -139,24 +141,23 @@ module MemberTracker
             end
             @voting_other << contact_phone
           else
-            contact_email =  "#{am[:fname]},#{am[:lname]},#{am[:email].strip}"
-            @voting_email << contact_email
+            @voting_email << "#{am[:fname]},#{am[:lname]},#{am[:email].strip}"
           end
         end
-        @rpt = Hash.new
-        @rpt[:not_arrl] = active_mbrs.where(arrl: 0).count
-        @rpt[:arrl] = active_mbrs.where(arrl: 1).count
-        @rpt[:lic_none] = active_mbrs.where(license_class: "none").count
-        @rpt[:lic_tech] = active_mbrs.where(license_class: "tech").count
-        @rpt[:lic_gen] = active_mbrs.where(license_class: "general").count
-        @rpt[:lic_extra] = active_mbrs.where(license_class: "extra").count
-        @rpt[:lic_GMRS] = active_mbrs.where(license_class: "GMRS").count
-        @rpt[:type_honorary] = active_mbrs.where(mbr_type: "honorary").count
-        @rpt[:type_lifetime] = active_mbrs.where(mbr_type: "lifetime").count
-        @rpt[:type_family] = active_mbrs.where(mbr_type: "family").count
-        @rpt[:type_full] = active_mbrs.where(mbr_type: "full").count
-        @rpt[:type_student] = active_mbrs.where(mbr_type: "student").count
-        @rpt[:total] = active_mbrs.count
+        @rpt = {}
+        @rpt[:not_arrl]       = mbrs_ds.where(arrl: 0).count
+        @rpt[:arrl]           = mbrs_ds.where(arrl: 1).count
+        @rpt[:lic_none]       = mbrs_ds.where(license_class: "none").count
+        @rpt[:lic_tech]       = mbrs_ds.where(license_class: "tech").count
+        @rpt[:lic_gen]        = mbrs_ds.where(license_class: "general").count
+        @rpt[:lic_extra]      = mbrs_ds.where(license_class: "extra").count
+        @rpt[:lic_GMRS]       = mbrs_ds.where(license_class: "GMRS").count
+        @rpt[:type_honorary]  = mbrs_ds.where(mbr_type: "honorary").count
+        @rpt[:type_lifetime]  = mbrs_ds.where(mbr_type: "lifetime").count
+        @rpt[:type_family]    = mbrs_ds.where(mbr_type: "family").count
+        @rpt[:type_full]      = mbrs_ds.where(mbr_type: "full").count
+        @rpt[:type_student]   = mbrs_ds.where(mbr_type: "student").count
+        @rpt[:total]          = mbrs_ds.count
         erb :m_rpt, :layout => :layout_w_logout
       end
 

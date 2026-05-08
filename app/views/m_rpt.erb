@@ -1,4 +1,7 @@
-<h3 class="text-xl font-bold text-gray-800 mb-4">Membership Report</h3>
+<h3 class="text-xl font-bold text-gray-800 mb-1">Membership Report</h3>
+<% if @report_label %>
+<p class="text-sm text-gray-500 mb-4"><%= @report_label %></p>
+<% end %>
 
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 max-w-2xl">
   <div class="border border-gray-200 rounded p-4">

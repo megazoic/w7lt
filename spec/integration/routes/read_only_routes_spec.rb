@@ -85,7 +85,7 @@ module MemberTracker
       it 'redirects with an error message when the custom date is unparseable' do
         post '/r/member/mbr_rpt', 'date' => 'date_other', 'newDate' => 'not-a-date'
         expect(last_response.status).to eq(302)
-        expect(last_response.location).to include('/m/mbr_renewals/show')
+        expect(last_response.location).to include('/r/member/mbr_rpt')
       end
     end
 
