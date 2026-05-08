@@ -276,8 +276,12 @@ module MemberTracker
         @base_path = @event ? '/r/member/list/event' : '/r/member/list'
         ds = DB[:members].select(:id, :lname, :fname, :callsign, :mbrship_renewal_date, :mbr_type).order(:lname, :fname)
         unless @q.empty?
-          term = "%#{@q}%"
-          ds = ds.where(Sequel.ilike(:lname, term) | Sequel.ilike(:fname, term) | Sequel.ilike(:callsign, term))
+          parts = @q.split(' ', 2)
+          if parts.length == 2
+            ds = ds.where(Sequel.ilike(:fname, "%#{parts[0]}%") & Sequel.ilike(:lname, "%#{parts[1]}%"))
+          else
+            ds = ds.where(Sequel.ilike(:lname, "%#{@q}%") | Sequel.ilike(:callsign, "%#{@q}%"))
+          end
         end
         @total_count = ds.count
         @total_pages = [(@total_count / PER_PAGE.to_f).ceil, 1].max

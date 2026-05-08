@@ -80,9 +80,14 @@ module MemberTracker
           @tmp_msg = latest_renew_check[:ts].strftime("Renewals last checked on %m/%d/%Y")
         end
         @q = (params[:q] || '').strip
-        ds = Member.select(:id, :lname).order(:lname)
+        ds = Member.select(:id, :fname, :lname).order(:lname, :fname)
         unless @q.empty?
-          ds = ds.where(Sequel.ilike(:lname, "%#{@q}%"))
+          parts = @q.split(' ', 2)
+          if parts.length == 2
+            ds = ds.where(Sequel.ilike(:fname, "%#{parts[0]}%") & Sequel.ilike(:lname, "%#{parts[1]}%"))
+          else
+            ds = ds.where(Sequel.ilike(:lname, "%#{@q}%"))
+          end
         end
         @total_count = ds.count
         @total_pages = [(@total_count / PER_PAGE.to_f).ceil, 1].max

@@ -1,7 +1,7 @@
 <h1 class="text-2xl font-bold text-gray-800 mb-1">PARC Home</h1>
 <p class="text-sm text-gray-600 mb-3">Select a route from the links above or choose a member below.</p>
 <form method="get" action="/home" class="mb-3 flex gap-2 items-center">
-  <input type="text" name="q" value="<%= @q %>" placeholder="Search by last name&hellip;"
+  <input type="text" name="q" value="<%= @q %>" placeholder="Search for a member"
     class="border border-gray-300 rounded px-2 py-1 text-sm w-48">
   <button type="submit" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Search</button>
   <% unless @q.empty? %>
@@ -11,7 +11,7 @@
 <div class="grid grid-cols-3 gap-x-4 gap-y-0.5 text-sm mb-2">
   <% @member_lnames.each do |member| %>
   <a href="/r/member/show/<%= member.id %>" class="text-blue-600 hover:underline truncate py-0.5">
-    <%= member.lname %>
+    <%= member.lname %>, <%= member.fname %>
   </a>
   <% end %>
 </div>

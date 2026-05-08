@@ -12,7 +12,7 @@
   </h3>
   <% if @base_path %>
   <form method="get" action="<%= @base_path %>" class="mt-2 flex gap-2 items-center">
-    <input type="text" name="q" value="<%= @q %>" placeholder="Search name or callsign&hellip;"
+    <input type="text" name="q" value="<%= @q %>" placeholder="Search for a member"
       class="border border-gray-300 rounded px-2 py-1 text-sm w-56">
     <button type="submit" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Search</button>
     <% unless @q.empty? %>
