@@ -9,90 +9,109 @@ module MemberTracker
       end
 
       app.post '/r/event/attendance' do
-        #temporary warning for unavailable data
-        @no_data = nil
-        #for now only building attendance report for general meetings
-        @attendance_data = nil
-        event_type_options = EventType::EVENT_TYPE_OPTIONS
-        #which option was selected?
-        selected_type = nil
-        event_type_options.each do |key, value|
-          if params["event_type_id"] == key
-            selected_type = key
-            break
+        if params["query_type"] == 'frequent'
+          cutoff = Date.today << 6
+          attendees = DB[:members_events]
+            .join(:events, id: :event_id)
+            .join(:members, id: Sequel[:members_events][:mbr_id])
+            .where(Sequel[:events][:ts] >= cutoff.to_time)
+            .group(
+              Sequel[:members_events][:mbr_id],
+              Sequel[:members][:fname],
+              Sequel[:members][:lname],
+              Sequel[:members][:callsign]
+            )
+            .select(
+              Sequel[:members_events][:mbr_id],
+              Sequel[:members][:fname],
+              Sequel[:members][:lname],
+              Sequel[:members][:callsign],
+              Sequel.function(:count, Sequel[:members_events][:event_id]).as(:event_count)
+            )
+            .order(Sequel.desc(Sequel.function(:count, Sequel[:members_events][:event_id])))
+            .all
+          @frequent_attendees = attendees.map do |a|
+            latest = DB[:members_events]
+              .join(:events, id: :event_id)
+              .join(:event_types, id: Sequel[:events][:event_type_id])
+              .where(Sequel[:members_events][:mbr_id] => a[:mbr_id])
+              .where(Sequel[:events][:ts] >= cutoff.to_time)
+              .order(Sequel.desc(Sequel[:events][:ts]))
+              .select(
+                Sequel[:events][:id].as(:event_id),
+                Sequel[:event_types][:name].as(:event_type_name)
+              )
+              .first
+            a.merge(
+              latest_event_id:   latest ? latest[:event_id] : nil,
+              latest_event_type: latest ? latest[:event_type_name] : nil
+            )
           end
-        end
-        if selected_type.nil?
-          session[:msg] = "Invalid event type selection"
-          redirect '/r/event/attendance'
+          @cutoff_date = cutoff
+          erb :e_frequent_attendees, layout: :layout_w_logout
         else
-          #set up switch for selected type
-          combined_counts = nil
-          case selected_type
-          when '1' #general meeting
-            member_mtng_counts = Event.new.member_count()
-            member_mtng_counts ||= []
-            #combine hashes by event_date keeping counts separate for each event type
-            #want data structure like:
-            # {event_date1: {old_format: x, inperson: y, zoom: z}, event_date2: {...}, ...}
-            # first get list of all event dates
-            event_dates = []
-            member_mtng_counts.each do |mtng|
-              if !event_dates.include?(mtng[:event_date])
-                event_dates << mtng[:event_date]
-              end
+          @no_data = nil
+          @attendance_data = nil
+          event_type_options = EventType::EVENT_TYPE_OPTIONS
+          selected_type = nil
+          @event_type_name = nil
+          event_type_options.each do |key, value|
+            if params["event_type_id"] == key
+              selected_type = key
+              @event_type_name = value
+              break
             end
-            #now build out the combined hash
-            #for now (monthly-inperson => 10, monthly-on_zoom => 11 and monthly meeting OLD => 2)
-            #obtaind from EventType::EVENT_TYPE_OPTIONS
-            combined_counts = Hash.new
-            event_dates.each do |ed|
-              combined_counts[ed] = {old_format: 0, inperson: 0, zoom: 0}
+          end
+          if selected_type.nil?
+            session[:msg] = "Invalid event type selection"
+            redirect '/r/event/attendance'
+          else
+            combined_counts = nil
+            case selected_type
+            when '1' #general meeting
+              member_mtng_counts = Event.new.member_count()
+              member_mtng_counts ||= []
+              event_dates = []
               member_mtng_counts.each do |mtng|
-                if mtng[:event_date] == ed
-                  case mtng[:event_type_id]
-                  when 2 #old format meeting
-                    combined_counts[ed][:old_format] = mtng[:member_count]
-                  when 10 #inperson meeting
-                    #puts "found inperson meeting for date #{ed} and count #{mtng[event_type_id: 10][:member_count]}\n"
-                    combined_counts[ed][:inperson] = mtng[:member_count]
-                  when 11 #zoom meeting
-                    combined_counts[ed][:zoom] = mtng[:member_count]
+                event_dates << mtng[:event_date] unless event_dates.include?(mtng[:event_date])
+              end
+              combined_counts = Hash.new
+              event_dates.each do |ed|
+                combined_counts[ed] = {old_format: 0, inperson: 0, zoom: 0}
+                member_mtng_counts.each do |mtng|
+                  if mtng[:event_date] == ed
+                    case mtng[:event_type_id]
+                    when 2  then combined_counts[ed][:old_format] = mtng[:member_count]
+                    when 10 then combined_counts[ed][:inperson]   = mtng[:member_count]
+                    when 11 then combined_counts[ed][:zoom]       = mtng[:member_count]
+                    end
+                    combined_counts[ed][:event_id] = mtng[:event_id]
+                    combined_counts[ed][:name]     = mtng[:event_name]
+                    combined_counts[ed][:descr]    = mtng[:description]
                   end
-                  #add :id, :name and :descr from mtng to @attendance_data
-                  combined_counts[ed][:event_id] = mtng[:event_id]
-                  combined_counts[ed][:name] = mtng[:event_name]
-                  combined_counts[ed][:descr] = mtng[:description]
+                  @attendance_data = combined_counts
                 end
-                @attendance_data = combined_counts
               end
+            when '2' #POTA
+            when '3' #field day
+            when '4' #holiday & bbq
+            when '5' #board meeting
             end
-          when '2' #POTA
-          when '3' #field day
-          when '4' #holiday & bbq
-          when '5' #board meeting
           end
-        end
-        @attendance_data ||= {}
-        if combined_counts.nil?
-        else
-          #summarize by event date
-          event_date_sum = 0
-          #select only member count keys
-          @attendance_data.each do |k,v|
-            v.each do |type, count|
-              if [:old_format, :inperson, :zoom].include?(type)
-                event_date_sum += count
+          @attendance_data ||= {}
+          unless combined_counts.nil?
+            event_date_sum = 0
+            @attendance_data.each do |k, v|
+              v.each do |type, count|
+                event_date_sum += count if [:old_format, :inperson, :zoom].include?(type)
               end
+              v[:event_date_total] = event_date_sum
+              event_date_sum = 0
             end
-            #add event date total to hash
-            v[:event_date_total] = event_date_sum
-            event_date_sum = 0 #reset for next date
           end
+          @attendance_data = @attendance_data.sort_by { |k, v| k }.reverse.to_h
+          erb :e_attendance, layout: :layout_w_logout
         end
-        #finally, sort by event date descending
-        @attendance_data = @attendance_data.sort_by{|k,v| k}.reverse.to_h
-        erb :e_attendance, :layout => :layout_w_logout
       end
 
       app.get '/m/event/edit/:id' do
