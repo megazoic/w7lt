@@ -20,6 +20,7 @@ design/*
 *.csv*
 *.xlsx
 CLAUDE.md
+Claude_running_text.rtf
 #config file
 .bundle
 
