@@ -1,4 +1,4 @@
-<h2 class="text-xl font-bold text-gray-800 mb-4">Attendance Report</h2>
+<h2 class="text-xl font-bold text-gray-800 mb-4">Attendance Report<% if @event_type_name %> &mdash; <%= @event_type_name %><% end %></h2>
 <% if @attendance_data && !@attendance_data.empty? %>
 <div class="overflow-x-auto">
   <table class="w-full border-collapse text-sm">
