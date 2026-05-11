@@ -7,7 +7,7 @@
     <div>
       <label class="block text-xs text-gray-600 mb-1" for="event_date">Date &amp; Time <span class="text-gray-400">(YYYY-MM-DD HH:MM)</span></label>
       <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-             type="text" name="event_date" id="event_date" value="<%= Time.now.strftime("%Y-%m-%d %H:%M") %>" />
+             type="text" name="event_date" id="event_date" value="<%= Time.now.getlocal.strftime("%Y-%m-%d %H:%M") %>" />
     </div>
     <div>
       <label class="block text-xs text-gray-600 mb-1" for="type">Event Type <span class="text-red-500">*</span></label>
