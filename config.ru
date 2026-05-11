@@ -1,8 +1,9 @@
+ENV['TZ'] = 'America/Los_Angeles'
 require_relative 'app/api'
 run MemberTracker::API.new
 =begin
 use Rack::Session::Cookie,
-        :key          => 'rack.session', 
+        :key          => 'rack.session',
         :httponly     => true,
         :same_site    => :strict,
         :path         => '/',
