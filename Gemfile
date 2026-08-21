@@ -3,7 +3,7 @@ source 'https://rubygems.org'
 ruby '3.3.12'
 
 
-gem "puma", "7.0.3"
+gem "puma", "8.0.2"
 gem 'rake', '13.4.2'
 gem 'rspec', '3.13.2'
 gem 'coderay', '1.1.3'
