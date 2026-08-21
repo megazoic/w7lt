@@ -27,6 +27,9 @@ Claude_running_text.rtf
 #ignore folder
 ignore/*
 
+#db backups/dumps
+db/backups/
+
 #to get data into db
 load_units.rb
 script_units.rb
