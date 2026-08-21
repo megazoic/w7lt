@@ -21,6 +21,7 @@ design/*
 *.xlsx
 CLAUDE.md
 Claude_running_text.rtf
+app_maintenance.txt
 #config file
 .bundle
 
@@ -47,7 +48,6 @@ dumpfile
 examples.txt
 loadsequel.rb
 [0-9]
-.rspec
 .rvmrc
 
 #vi
