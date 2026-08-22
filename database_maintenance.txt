@@ -76,13 +76,35 @@ to collect any number of them via Rake's `args.extras`, so
 `[id1,id2,id3,...]` works for as many ids as you have. Still quote the
 whole thing per the bracket-quoting note above regardless of shell.
 
-Consolidating what it shows you is intentionally a manual psql job --
-reassign the mbr_id / member_target / tasked_to_mbr_id columns it
-lists to whichever id you're keeping, then `DELETE FROM members WHERE
-id = <retired id>` once every table it reports shows 0 rows for that
-id. auth_users is worth extra care: mbr_id is NOT NULL there, so a
-member with a login (the report flags this explicitly) needs that row
-reassigned or deleted first, before the member row itself can go.
+Consolidating what it shows you is intentionally a manual psql job.
+Each table section is labeled [NOT NULL -- must reassign] or
+[nullable -- reassign or set NULL], reflecting the real schema
+constraints -- 7 of the 9 related tables are NOT NULL, not just
+auth_users: payments, mbr_renewals, member_actions.member_target,
+events.mbr_id, members_events.mbr_id, members_units.mbr_id, and
+auth_users.mbr_id. logs, audit_logs, and
+member_actions.tasked_to_mbr_id are nullable -- your choice whether to
+preserve attribution or null them out.
+
+The report also runs an overlap check across the ids you pass:
+members_events and members_units both use a composite primary key
+(event_id/unit_id, mbr_id), so if two ids you're merging both attended
+the same event or belong to the same unit, reassigning that row with
+UPDATE will hit a primary-key conflict -- delete the retiring id's row
+for that specific event/unit instead. The report tells you exactly
+which event_id/unit_id pairs this applies to, if any.
+
+Suggested order (printed by the task itself, and safe to deviate from
+since every FK here is defined ON DELETE NO ACTION -- Postgres will
+simply refuse the final DELETE with a clear error if anything's
+missed, not silently corrupt anything):
+  1. members_events / members_units -- handle any overlaps flagged
+     above first (delete the redundant row), then reassign the rest.
+  2. The other NOT NULL tables -- reassign mbr_id/member_target to the
+     keeper. auth_users is a judgment call: reassign the login, or
+     delete it outright if it's a duplicate account.
+  3. The nullable tables -- reassign or null out, your call.
+  4. DELETE FROM members WHERE id = <retiring id>.
 
 Real example from the dev DB (2026-08-22): ids 951 and 891 were both
 "ANTHONY JEFFRIES"/"ANTHONY JEFFERIES". The report made the call

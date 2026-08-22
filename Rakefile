@@ -137,6 +137,21 @@ namespace :mbr do
       abort "Usage: rake mbr:itemize_records[id1,id2,id3]  (or quote it: \"rake mbr:itemize_records[id1,id2,id3]\")"
     end
 
+    # NOT NULL means that table's FK column can never be left pointing at a
+    # deleted member -- it must be reassigned to the id you're keeping (or
+    # that row deleted/handled) before `DELETE FROM members` will succeed.
+    # nullable columns give you a choice: reassign to preserve attribution,
+    # or set NULL if it doesn't matter. All ten of these FKs are defined
+    # ON DELETE NO ACTION, so Postgres itself will refuse the final member
+    # delete (naming the exact constraint) if anything's still missed --
+    # there's no silent-corruption risk from doing this out of order, just
+    # a blocked DELETE with a clear error.
+    NOT_NULL = " [NOT NULL -- must reassign]".freeze
+    NULLABLE = " [nullable -- reassign or set NULL]".freeze
+
+    events_by_id = {}
+    units_by_id  = {}
+
     ids.each do |id|
       puts "=" * 70
       m = DB[:members].where(id: id).first
@@ -149,48 +164,83 @@ namespace :mbr do
       puts "-" * 70
 
       au = DB[:auth_users].where(mbr_id: id).all
-      puts "  auth_users (#{au.size})#{au.empty? ? '' : ' -- NOTE: mbr_id is NOT NULL here; reassign or delete these before deleting this member'}:"
+      puts "  auth_users (#{au.size})#{NOT_NULL}:"
       au.each { |r| puts "    id=#{r[:id]}  role_id=#{r[:role_id]}  last_login=#{r[:last_login]}" }
 
       pay = DB[:payments].where(mbr_id: id).order(:ts).all
-      puts "  payments (#{pay.size}):"
+      puts "  payments (#{pay.size})#{NOT_NULL}:"
       pay.each { |r| puts "    id=#{r[:id]}  ts=#{r[:ts]}  payment_type_id=#{r[:payment_type_id]}  amount=#{r[:payment_amount]}" }
 
       logs = DB[:logs].where(mbr_id: id).order(:ts).all
-      puts "  logs (#{logs.size}):"
+      puts "  logs (#{logs.size})#{NULLABLE}:"
       logs.each { |r| puts "    id=#{r[:id]}  ts=#{r[:ts]}  action_id=#{r[:action_id]}  notes=#{r[:notes].to_s[0,60].inspect}" }
 
       renewals = DB[:mbr_renewals].where(mbr_id: id).order(:ts).all
-      puts "  mbr_renewals (#{renewals.size}):"
+      puts "  mbr_renewals (#{renewals.size})#{NOT_NULL}:"
       renewals.each { |r| puts "    id=#{r[:id]}  ts=#{r[:ts]}  renewal_event_type_id=#{r[:renewal_event_type_id]}" }
 
       targeted = DB[:member_actions].where(member_target: id).all
-      puts "  member_actions as target (#{targeted.size}):"
+      puts "  member_actions as target (#{targeted.size})#{NOT_NULL}:"
       targeted.each { |r| puts "    id=#{r[:id]}  type_id=#{r[:member_action_type_id]}  completed=#{r[:completed]}  ts=#{r[:ts]}" }
 
       tasked = DB[:member_actions].where(tasked_to_mbr_id: id).all
-      puts "  member_actions tasked to this member (#{tasked.size}):"
+      puts "  member_actions tasked to this member (#{tasked.size})#{NULLABLE}:"
       tasked.each { |r| puts "    id=#{r[:id]}  target_member=#{r[:member_target]}  type_id=#{r[:member_action_type_id]}  completed=#{r[:completed]}" }
 
       events = DB[:events].where(mbr_id: id).all
-      puts "  events (organized/contact) (#{events.size}):"
+      puts "  events (organized/contact) (#{events.size})#{NOT_NULL}:"
       events.each { |r| puts "    id=#{r[:id]}  name=#{r[:name]}  ts=#{r[:ts]}" }
 
       attended = DB[:members_events].where(mbr_id: id).all.map { |r| r[:event_id] }
-      puts "  members_events (attendee of #{attended.size} event(s)): #{attended}"
+      events_by_id[id] = attended
+      puts "  members_events (attendee of #{attended.size} event(s))#{NOT_NULL}, part of a composite primary key -- see overlap check below: #{attended}"
 
       units = DB[:members_units].where(mbr_id: id).all.map { |r| r[:unit_id] }
-      puts "  members_units (member of #{units.size} unit(s)): #{units}"
+      units_by_id[id] = units
+      puts "  members_units (member of #{units.size} unit(s))#{NOT_NULL}, part of a composite primary key -- see overlap check below: #{units}"
 
       audit = DB[:audit_logs].where(mbr_id: id).order(:changed_date).all
-      puts "  audit_logs (#{audit.size}):"
+      puts "  audit_logs (#{audit.size})#{NULLABLE}:"
       audit.each { |r| puts "    id=#{r[:id]}  changed_date=#{r[:changed_date]}  column=#{r[:column]}  #{r[:old_value].inspect} -> #{r[:new_value].inspect}" }
     end
+
+    puts "=" * 70
+    puts "Overlap check (members_events / members_units) -- these two tables use a"
+    puts "composite primary key of (event_id/unit_id, mbr_id), so reassigning a row"
+    puts "to an id that already has the same event/unit will violate that key. If"
+    puts "any pairs are listed below, DELETE the redundant row for the id you're"
+    puts "retiring instead of UPDATE-ing it for that specific event/unit id."
+    found = ids.select { |i| events_by_id[i] }
+    overlap_found = false
+    found.combination(2).each do |a, b|
+      shared_events = (events_by_id[a] & events_by_id[b])
+      shared_units  = (units_by_id[a] & units_by_id[b])
+      if !shared_events.empty?
+        overlap_found = true
+        puts "  members_events: ids #{a} and #{b} both attended event_id(s) #{shared_events}"
+      end
+      if !shared_units.empty?
+        overlap_found = true
+        puts "  members_units: ids #{a} and #{b} are both in unit_id(s) #{shared_units}"
+      end
+    end
+    puts "  none found" unless overlap_found
+
     puts "=" * 70
     puts "This is a read-only report -- no records were changed."
-    puts "Consolidate manually via psql: reassign the mbr_id/member_target/tasked_to_mbr_id"
-    puts "columns listed above to the member id you're keeping, then DELETE FROM members"
-    puts "WHERE id = <the id(s) you're retiring> once every table above shows 0 rows."
+    puts "Suggested order once you've decided which id to keep:"
+    puts "  1. members_events / members_units -- delete the retiring id's row for"
+    puts "     any event/unit flagged in the overlap check above, then reassign"
+    puts "     mbr_id -> keeper for the rest."
+    puts "  2. The other NOT NULL tables (payments, mbr_renewals,"
+    puts "     member_actions.member_target, events.mbr_id, auth_users.mbr_id) --"
+    puts "     reassign mbr_id/member_target to the keeper. auth_users is a judgment"
+    puts "     call: decide whether to reassign the login or delete it outright."
+    puts "  3. The nullable tables (logs, audit_logs, member_actions.tasked_to_mbr_id)"
+    puts "     -- reassign to preserve attribution, or set NULL if it doesn't matter."
+    puts "  4. DELETE FROM members WHERE id = <retiring id>. Every FK here is"
+    puts "     ON DELETE NO ACTION, so this will simply fail with a clear error"
+    puts "     naming the constraint if anything above was missed."
   end
 end
 
