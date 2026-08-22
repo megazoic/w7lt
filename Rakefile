@@ -123,6 +123,75 @@ namespace :mbr do
     end
     puts "Done. Updated #{email_target_ids.size} email(s) and #{callsign_target_ids.size} callsign(s)."
   end
+
+  desc "READ-ONLY: itemize every DB record tied to a set of member ids, to inform manual duplicate consolidation via psql"
+  task :itemize_records, [:id1] do |t, args|
+    require "sequel"
+    require "./app/api.rb"
+
+    # Rake splits comma-separated bracket args into positional args, not a
+    # single string -- args[:id1] catches the first, args.extras catches the
+    # rest, so `rake mbr:itemize_records[951,891,646]` works as expected.
+    ids = ([args[:id1]] + args.extras).compact.reject(&:empty?).map(&:to_i)
+    if ids.empty?
+      abort "Usage: rake mbr:itemize_records[id1,id2,id3]  (or quote it: \"rake mbr:itemize_records[id1,id2,id3]\")"
+    end
+
+    ids.each do |id|
+      puts "=" * 70
+      m = DB[:members].where(id: id).first
+      if m.nil?
+        puts "Member id=#{id}: NOT FOUND"
+        next
+      end
+      puts "Member id=#{id}  #{m[:fname]} #{m[:lname]}  callsign=#{m[:callsign].inspect}  email=#{m[:email].inspect}"
+      puts "  mbr_type=#{m[:mbr_type]}  mbr_since=#{m[:mbr_since]}  renewal_date=#{m[:mbrship_renewal_date]}  email_bogus=#{m[:email_bogus]}"
+      puts "-" * 70
+
+      au = DB[:auth_users].where(mbr_id: id).all
+      puts "  auth_users (#{au.size})#{au.empty? ? '' : ' -- NOTE: mbr_id is NOT NULL here; reassign or delete these before deleting this member'}:"
+      au.each { |r| puts "    id=#{r[:id]}  role_id=#{r[:role_id]}  last_login=#{r[:last_login]}" }
+
+      pay = DB[:payments].where(mbr_id: id).order(:ts).all
+      puts "  payments (#{pay.size}):"
+      pay.each { |r| puts "    id=#{r[:id]}  ts=#{r[:ts]}  payment_type_id=#{r[:payment_type_id]}  amount=#{r[:payment_amount]}" }
+
+      logs = DB[:logs].where(mbr_id: id).order(:ts).all
+      puts "  logs (#{logs.size}):"
+      logs.each { |r| puts "    id=#{r[:id]}  ts=#{r[:ts]}  action_id=#{r[:action_id]}  notes=#{r[:notes].to_s[0,60].inspect}" }
+
+      renewals = DB[:mbr_renewals].where(mbr_id: id).order(:ts).all
+      puts "  mbr_renewals (#{renewals.size}):"
+      renewals.each { |r| puts "    id=#{r[:id]}  ts=#{r[:ts]}  renewal_event_type_id=#{r[:renewal_event_type_id]}" }
+
+      targeted = DB[:member_actions].where(member_target: id).all
+      puts "  member_actions as target (#{targeted.size}):"
+      targeted.each { |r| puts "    id=#{r[:id]}  type_id=#{r[:member_action_type_id]}  completed=#{r[:completed]}  ts=#{r[:ts]}" }
+
+      tasked = DB[:member_actions].where(tasked_to_mbr_id: id).all
+      puts "  member_actions tasked to this member (#{tasked.size}):"
+      tasked.each { |r| puts "    id=#{r[:id]}  target_member=#{r[:member_target]}  type_id=#{r[:member_action_type_id]}  completed=#{r[:completed]}" }
+
+      events = DB[:events].where(mbr_id: id).all
+      puts "  events (organized/contact) (#{events.size}):"
+      events.each { |r| puts "    id=#{r[:id]}  name=#{r[:name]}  ts=#{r[:ts]}" }
+
+      attended = DB[:members_events].where(mbr_id: id).all.map { |r| r[:event_id] }
+      puts "  members_events (attendee of #{attended.size} event(s)): #{attended}"
+
+      units = DB[:members_units].where(mbr_id: id).all.map { |r| r[:unit_id] }
+      puts "  members_units (member of #{units.size} unit(s)): #{units}"
+
+      audit = DB[:audit_logs].where(mbr_id: id).order(:changed_date).all
+      puts "  audit_logs (#{audit.size}):"
+      audit.each { |r| puts "    id=#{r[:id]}  changed_date=#{r[:changed_date]}  column=#{r[:column]}  #{r[:old_value].inspect} -> #{r[:new_value].inspect}" }
+    end
+    puts "=" * 70
+    puts "This is a read-only report -- no records were changed."
+    puts "Consolidate manually via psql: reassign the mbr_id/member_target/tasked_to_mbr_id"
+    puts "columns listed above to the member id you're keeping, then DELETE FROM members"
+    puts "WHERE id = <the id(s) you're retiring> once every table above shows 0 rows."
+  end
 end
 
 namespace :db do

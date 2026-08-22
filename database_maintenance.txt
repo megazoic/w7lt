@@ -1,0 +1,220 @@
+w7lt database maintenance recipes
+===================================
+
+Reference for the rake tasks that operate on the members/logs/renewals
+data, and how to run each one against Heroku production. Local form
+first, Heroku form second. Update this file whenever a task's behavior
+or name changes.
+
+Heroku app: w7lt (remote name "heroku"). All commands below can use
+either `-a w7lt` or `--remote heroku` -- they're equivalent.
+
+IMPORTANT -- rake task args use square brackets (e.g. task[arg]), which
+your shell may try to glob-expand (zsh in particular). Always quote the
+whole rake invocation when a task takes an argument:
+    heroku run "rake mbr:some_task[value]" -a w7lt
+Unquoted, this can silently fail or behave unexpectedly -- same class of
+issue documented in app_maintenance.txt for the [::] Puma bind syntax.
+
+Tasks that prompt for input (marked INTERACTIVE below) work fine over
+`heroku run` -- it allocates a real interactive terminal by default, so
+you'll see the prompt and can type your answer normally.
+
+
+1. mbr:find_duplicates -- READ-ONLY, safe anytime
+------------------------------------------------------
+
+Scans all members using the same fuzzy-match validator as member
+create/update (name similarity + exact email/callsign, with known
+placeholder values excluded) and reports possible duplicate pairs.
+Makes no changes. Good to run periodically, or any time you want a
+gut-check on data quality (e.g. before/after a bulk import).
+
+    bundle exec rake mbr:find_duplicates
+    heroku run rake mbr:find_duplicates -a w7lt
+
+
+2. mbr:normalize_identity_placeholders -- MUTATING, one-time, interactive
+--------------------------------------------------------------------------
+
+Finds every member with a blank or known-historical-placeholder email
+(bogus@bogus.com, bogus@nomail.com, guest@w7lt.org) and rewrites it to
+the canonical NO-EMAIL@W7LT.ORG + email_bogus=true; finds every member
+with a blank callsign and rewrites it to NO CALL. Prints the counts,
+prompts "Proceed? (y/n)", and only writes (in a single transaction) if
+you answer y. Re-running it after it's already been applied is safe --
+it'll report 0 and 0, since normalize_email/normalize_callsign at the
+application layer prevent new placeholder variants going forward.
+
+    bundle exec rake mbr:normalize_identity_placeholders
+    heroku run rake mbr:normalize_identity_placeholders -a w7lt
+
+Run mbr:find_duplicates before and after to see the effect -- see the
+2026-08-22 session notes: this took the dev DB from 1,201 possible-
+duplicate pairs down to 19 by clearing out placeholder-driven noise.
+
+
+3. mbr:itemize_records[id1,id2,...] -- READ-ONLY, safe anytime
+------------------------------------------------------------------
+
+Once mbr:find_duplicates has flagged a candidate pair (or more), run
+this against the specific member ids to see everything tied to each
+one -- their own fname/lname/callsign/email/mbr_type, plus every row
+in every table with a foreign key to members: auth_users, payments,
+logs, mbr_renewals, member_actions (both as the target and as who a
+followup is tasked to), events (as organizer/contact), members_events
+(attendance), members_units, and audit_logs. Makes no changes -- it's
+purely there to give you the full picture before deciding, by hand,
+which member id to keep and how to reassign or drop the rest.
+
+    bundle exec rake "mbr:itemize_records[951,891]"
+    heroku run "rake mbr:itemize_records[951,891]" -a w7lt
+
+Quoting note: rake's [a,b,c] bracket syntax splits on commas into
+separate positional arguments, not one string -- this task is written
+to collect any number of them via Rake's `args.extras`, so
+`[id1,id2,id3,...]` works for as many ids as you have. Still quote the
+whole thing per the bracket-quoting note above regardless of shell.
+
+Consolidating what it shows you is intentionally a manual psql job --
+reassign the mbr_id / member_target / tasked_to_mbr_id columns it
+lists to whichever id you're keeping, then `DELETE FROM members WHERE
+id = <retired id>` once every table it reports shows 0 rows for that
+id. auth_users is worth extra care: mbr_id is NOT NULL there, so a
+member with a login (the report flags this explicitly) needs that row
+reassigned or deleted first, before the member row itself can go.
+
+Real example from the dev DB (2026-08-22): ids 951 and 891 were both
+"ANTHONY JEFFRIES"/"ANTHONY JEFFERIES". The report made the call
+obvious without needing to guess -- 891 had 2 payments, 6 logs, 4
+renewals, a real callsign and email, and 4 audit_log entries; 951 had
+a single log entry, no payments, no renewals, and the auto-generated
+NO CALL / NO-EMAIL@W7LT.ORG placeholders. 891 is clearly the record to
+keep.
+
+
+4. mbr:backfill_mbr_since -- MUTATING, deterministic, no prompt
+-------------------------------------------------------------------
+
+For every member with mbr_since = NULL, sets it to the date of their
+earliest "Dues" payment. Skips (and reports) members with no dues
+payment on record at all -- those are left NULL. Deterministic (no
+judgment calls), so it doesn't prompt before writing.
+
+    bundle exec rake mbr:backfill_mbr_since
+    heroku run rake mbr:backfill_mbr_since -a w7lt
+
+
+5. mbr:close_stale_non_renewal_followups[auth_user_id] -- MUTATING, no prompt
+----------------------------------------------------------------------------------
+
+Closes any open "non_renew_followup" member_action whose member is
+currently paid up (mbrship_renewal_date + 1 year is still in the
+future) -- i.e. retroactive cleanup for followups that were never
+marked complete after the member actually renewed. Logs each closure
+against the given auth_user_id (defaults to 22 if omitted). No prompt;
+it's a well-defined "is this still relevant" check per record.
+
+    bundle exec rake mbr:close_stale_non_renewal_followups
+    bundle exec rake mbr:close_stale_non_renewal_followups[22]
+    heroku run "rake mbr:close_stale_non_renewal_followups[22]" -a w7lt
+    (remember the quotes -- see the bracket-quoting note above)
+
+
+6. db:migrate[version] -- schema migrations
+------------------------------------------------
+
+Standard Sequel migration runner. Omit the version to migrate to
+latest (the normal case); pass a specific migration number to target
+an exact version (rarely needed -- e.g. rolling back).
+
+    bundle exec rake db:migrate
+    bundle exec rake db:migrate[45]
+    heroku run rake db:migrate -a w7lt
+    heroku run "rake db:migrate[45]" -a w7lt
+
+Note: this only needs to be run manually against local/scratch
+databases you set up yourself (see app_maintenance.txt section 1).
+Heroku's own release process does not currently auto-run migrations on
+deploy -- if a deploy includes new migration files, run this
+afterward.
+
+
+7. db:mbrship_email_clean -- MUTATING, deterministic, no prompt
+----------------------------------------------------------------------
+
+Strips leading whitespace from every member's email (a narrower,
+older cleanup than mbr:normalize_identity_placeholders -- this one
+just fixes stray leading spaces on otherwise-real addresses, it
+doesn't touch placeholder values). Still occasionally worth running
+since normalize_email only fixes whitespace at the point of new
+entry/edit, not on existing untouched rows.
+
+    bundle exec rake db:mbrship_email_clean
+    heroku run rake db:mbrship_email_clean -a w7lt
+
+
+8. db:update_mbrship_renewal_date -- MUTATING, INTERACTIVE (per-record y/n/q)
+------------------------------------------------------------------------------------
+
+Walks every member, computes their latest "Dues" payment date, and
+prompts y/n/q per member before setting mbrship_renewal_date to it.
+Can be a long session for a large membership -- q quits the loop at
+any point without touching remaining records already skipped.
+
+    bundle exec rake db:update_mbrship_renewal_date
+    heroku run rake db:update_mbrship_renewal_date -a w7lt
+
+
+9. db:find_call_requests -- READ-ONLY, safe anytime
+---------------------------------------------------------
+
+Scans dues-payment log notes for JotForm callback requests and prints
+the matching log ids to the console. Informational only -- doesn't
+create member_actions or write anything (compare to
+db:find_non_renewing_mbrs below, which does write). Useful for a
+manual spot-check; the app's own /m/followup/show page and the
+member_action-based call-request workflow are the actual day-to-day
+tool for this now.
+
+    bundle exec rake db:find_call_requests
+    heroku run rake db:find_call_requests -a w7lt
+
+
+10. db:find_non_renewing_mbrs -- MUTATING, INTERACTIVE (per-record y/n/q)
+--------------------------------------------------------------------------------
+
+Finds members whose most recent mbr_renewals entry is a "did not
+renew" event within the last year, and -- if no non_renew_followup
+action already exists for them -- prompts y/n/q to create one. Same
+interaction pattern as db:update_mbrship_renewal_date.
+
+    bundle exec rake db:find_non_renewing_mbrs
+    heroku run rake db:find_non_renewing_mbrs -a w7lt
+
+
+11. db:get_jf_data -- READ-ONLY report, not really "maintenance"
+-----------------------------------------------------------------------
+
+Reads JotForm survey text embedded in dues-payment log notes from the
+last 365 days and prints categorized topic/frequency/mode codes per
+log entry to the console. A reporting/debug utility rather than a
+maintenance task -- included here for completeness since it's a rake
+task that touches the same tables, but you're unlikely to need it
+day-to-day.
+
+    bundle exec rake db:get_jf_data
+    heroku run rake db:get_jf_data -a w7lt
+
+
+NOT for Heroku / production -- local dev-only tasks
+-------------------------------------------------------
+
+db:repopulate_db and db:teardown_db insert/delete a fixed set of
+"tester" dummy members for local testing. db:teardown_db in particular
+has a hardcoded assumption baked into its own comment ("assumes that
+member id 205 is ME and auth user 22 is member 205, keep password and
+mbr 205 intact to login") that only makes sense against a specific
+local dev database's state -- running either of these against
+production would be destructive and is never appropriate. Do not run
+them via `heroku run`.
