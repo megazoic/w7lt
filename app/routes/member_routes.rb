@@ -452,6 +452,15 @@ module MemberTracker
           params_hash[:callsign] = Member.normalize_callsign(
             params_hash[:callsign], no_callsign_requested: params_hash['no_callsign'] == '1'
           )
+          if Member.license_class_callsign_mismatch?(params_hash[:license_class], params_hash[:callsign])
+            @member = coerce_member_hash_for_display(params_hash)
+            @modes = Member.modes
+            @member[:modes] = 'none' if @member[:modes].nil? || @member[:modes].empty?
+            @tmp_msg = params_hash[:license_class] == 'none' ?
+              "Please remove the callsign, or choose a License Class." :
+              "Please enter a callsign, or set License Class to None."
+            return erb :m_edit, :layout => :layout_w_logout
+          end
           #if coming back with override = 1, let this go through, else...
           if !params_hash.has_key?("override")
             #need to validate that this member is not already in the db
@@ -527,6 +536,15 @@ module MemberTracker
           params_hash["callsign"] = Member.normalize_callsign(
             params_hash["callsign"], no_callsign_requested: params_hash["no_callsign"] == '1'
           )
+          if Member.license_class_callsign_mismatch?(params_hash["license_class"], params_hash["callsign"])
+            @member = coerce_member_hash_for_display(params_hash.merge("id" => mbr_record.id))
+            @modes = Member.modes
+            @member[:modes] = 'none' if @member[:modes].nil? || @member[:modes].empty?
+            @tmp_msg = params_hash["license_class"] == 'none' ?
+              "Please remove the callsign, or choose a License Class." :
+              "Please enter a callsign, or set License Class to None."
+            return erb :m_edit, :layout => :layout_w_logout
+          end
           if !params_hash.has_key?("override")
             @existing_mbrs = Member.find_possible_duplicates(
               { fname: params_hash["fname"], lname: params_hash["lname"],

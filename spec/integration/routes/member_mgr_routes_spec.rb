@@ -121,8 +121,9 @@ module MemberTracker
         expect(member.email_bogus).to eq(true)
       end
 
-      it 'defaults callsign to NO CALL when left blank' do
-        post '/m/member/create', new_member_params.merge('callsign' => '')
+      it 'defaults callsign to NO CALL when left blank and License Class is None' do
+        post '/m/member/create', new_member_params.merge('callsign' => '', 'license_class' => 'none')
+        expect(last_response.status).to eq(302)
         member = Member.order(:id).last
         expect(member.callsign).to eq('NO CALL')
       end
@@ -132,6 +133,34 @@ module MemberTracker
         member = Member.order(:id).last
         expect(member.email).to eq('NO-EMAIL@W7LT.ORG')
         expect(member.email_bogus).to eq(true)
+      end
+
+      it 'rejects a licensed class with a blank callsign' do
+        post '/m/member/create', new_member_params.merge('callsign' => '', 'license_class' => 'tech')
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('Please enter a callsign')
+      end
+
+      it 'rejects a licensed class when "No callsign" is checked' do
+        post '/m/member/create', new_member_params.merge('no_callsign' => '1', 'license_class' => 'general')
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('Please enter a callsign')
+      end
+
+      it 'rejects License Class None with a real callsign present' do
+        post '/m/member/create', new_member_params.merge('license_class' => 'none')
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('Please remove the callsign')
+      end
+
+      it 'rejects clearing an existing member\'s callsign without also setting License Class to None' do
+        editing = create_member(fname: 'ORIGINAL', lname: 'NAME', callsign: 'W1ORIG')
+        post '/m/member/create', new_member_params.merge(
+          'id' => editing.id.to_s, 'callsign' => '', 'license_class' => 'tech'
+        )
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('Please enter a callsign')
+        expect(Member[editing.id].callsign).to eq('W1ORIG') # update did not proceed
       end
     end
 

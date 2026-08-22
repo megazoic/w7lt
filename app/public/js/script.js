@@ -410,14 +410,15 @@ function validateMbrForm(){
 	
 	//check that license class and callsign match
 	var licenseClass = $("license_class").value
-	var callSign = $("callsign").value
+	var callSign = $("callsign").value.trim()
+	var noCallsign = $("no_callsign").checked || callSign == "" || callSign.toUpperCase() == "NO CALL"
 	if (licenseClass != "none"){
-		if (callSign == ""){
-			alert("Please enter a callsign or choose license class as none");
+		if (noCallsign){
+			alert("Please enter a callsign, or set License Class to None.");
 			return false;
 		}
-	}else if (callSign != ""){
-		alert("Please remove callsign or choose a license class");
+	}else if (!noCallsign){
+		alert("Please remove the callsign, or choose a License Class.");
 		return false;
 	}
 	//check that email hasn't been changed while email_bogus checkbox is checked

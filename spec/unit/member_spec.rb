@@ -39,5 +39,23 @@ module MemberTracker
           .to eq(Member::NO_CALLSIGN_PLACEHOLDER)
       end
     end
+
+    describe '.license_class_callsign_mismatch?' do
+      it 'is not a mismatch for a valid licensed member' do
+        expect(Member.license_class_callsign_mismatch?('tech', 'KD7VDG')).to eq(false)
+      end
+
+      it 'is not a mismatch for a valid unlicensed member' do
+        expect(Member.license_class_callsign_mismatch?('none', Member::NO_CALLSIGN_PLACEHOLDER)).to eq(false)
+      end
+
+      it 'is a mismatch when licensed but callsign is the placeholder' do
+        expect(Member.license_class_callsign_mismatch?('general', Member::NO_CALLSIGN_PLACEHOLDER)).to eq(true)
+      end
+
+      it 'is a mismatch when License Class is none but a real callsign is present' do
+        expect(Member.license_class_callsign_mismatch?('none', 'KD7VDG')).to eq(true)
+      end
+    end
   end
 end

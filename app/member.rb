@@ -148,6 +148,14 @@ module MemberTracker
       end
     end
 
+    # True if license_class and callsign violate the invariant that License
+    # Class is 'none' if and only if callsign is the NO_CALLSIGN_PLACEHOLDER --
+    # i.e. a licensed class needs a real callsign, and NO_CALLSIGN_PLACEHOLDER
+    # only makes sense when there's no license class.
+    def self.license_class_callsign_mismatch?(license_class, callsign)
+      (license_class == 'none') != (callsign == NO_CALLSIGN_PLACEHOLDER)
+    end
+
     def get_jf_data
       JotformParser.call
     end
