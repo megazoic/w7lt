@@ -44,12 +44,15 @@ function other_pmtSet(){
 	$("other_pmt_field").disabled = false;
 }
 function toggleNoEmail(inputElement){
-	//grey out the email textbox in m_edit.erb when "No Email" is checked
+	//clear and grey out the email textbox in m_edit.erb when "No Email" is checked
 	var emailField = $("email");
 	if (inputElement.checked){
+		emailField.value = "";
 		emailField.readOnly = true;
 		emailField.style.backgroundColor = "#f3f4f6";
 		emailField.style.color = "#9ca3af";
+		emailField.setAttribute('isInValid','');
+		emailField.style.borderColor = 'black';
 	}else{
 		emailField.readOnly = false;
 		emailField.style.backgroundColor = "";
@@ -204,9 +207,9 @@ function validateMbrSince(textbox){
 }
 function validateEmail(textbox){
 	//need to see if the email has changed, if it has the email_bogus checkbox shld be unchecked
+	var email = textbox.value.trim();
 	if ($('email_bogus').checked == true){
 		var old_email = $('old_email').value
-		var email = textbox.value.trim();
 		if (old_email != email){
 			$('email_bogus').setAttribute('isInvalid','invalid');
 		} else {
