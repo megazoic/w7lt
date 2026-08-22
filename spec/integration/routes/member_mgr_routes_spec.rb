@@ -79,7 +79,39 @@ module MemberTracker
         create_member(fname: 'JOHN', lname: 'NEWTESTER')
         post '/m/member/create', new_member_params
         expect(last_response.status).to eq(200)
-        expect(last_response.body).to include('already been entered')
+        expect(last_response.body).to include('may already be in the db')
+      end
+
+      it 'flags a fuzzy near-match name as a possible duplicate on create' do
+        create_member(fname: 'JOHN', lname: 'NEWTESTOR') # one letter off from NEWTESTER
+        post '/m/member/create', new_member_params
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('may already be in the db')
+      end
+
+      it 'flags an exact email match as a possible duplicate on create' do
+        create_member(fname: 'ANOTHER', lname: 'PERSON', email: 'DUP@EXAMPLE.COM')
+        post '/m/member/create', new_member_params.merge('email' => 'dup@example.com')
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('may already be in the db')
+      end
+
+      it 'flags a collision caused by renaming an existing member into another' do
+        create_member(fname: 'TARGET', lname: 'PERSON')
+        editing = create_member(fname: 'ORIGINAL', lname: 'NAME')
+        post '/m/member/create', new_member_params.merge(
+          'id' => editing.id.to_s, 'fname' => 'TARGET', 'lname' => 'PERSON'
+        )
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('collide with another existing member')
+        expect(Member[editing.id].fname).to eq('ORIGINAL') # update did not proceed
+      end
+
+      it 'allows override to bypass the duplicate check' do
+        create_member(fname: 'JOHN', lname: 'NEWTESTER')
+        post '/m/member/create', new_member_params.merge('override' => '1')
+        expect(last_response.status).to eq(302)
+        expect(last_response.location).to include('/r/member/show/')
       end
     end
 
@@ -217,6 +249,28 @@ module MemberTracker
         }
         expect(last_response.status).to eq(302)
         expect(last_response.location).to include('/m/event/list/')
+      end
+
+      it 'skips a new guest that duplicates an existing member and reports it' do
+        contact = create_member(fname: 'CONTACT', lname: 'PERSON')
+        create_member(fname: 'EXISTING', lname: 'GUEST', callsign: 'W1DUP')
+        event_type = create_event_type
+        post '/m/event/create', {
+          'mbr_id'        => contact.id.to_s,
+          'event_type_id' => event_type.id.to_s,
+          'event_date'    => '2026-01-15 10:00',
+          'duration'      => 'none',
+          'name'          => 'Test Event',
+          'descr'         => 'A test event',
+          'general_notes' => 'test notes',
+          'has_guests'    => 'on',
+          'g0:fname'      => 'Existing',
+          'g0:lname'      => 'Guest',
+          'g0:callsign'   => 'W1DUP'
+        }
+        expect(last_response.status).to eq(302)
+        follow_redirect!
+        expect(last_response.body).to include('duplicates were not entered')
       end
     end
 

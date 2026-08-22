@@ -296,8 +296,8 @@ module MemberTracker
                   guest.msng_values = "This guest has too few fields entered #{ng}; enter as new member and add to event attendee list"
                   next
                 end
-                #test for duplicates. expecting 0 not a dupe, any mbr_id is a dupe
-                if @member.validate_dupes(ng) > 0
+                #test for duplicates against the members table
+                if Member.find_possible_duplicates(ng).any?
                   #Houston, we have a problem
                   guest.duplicate << ng
                   guest.msng_values = "A guest with same credentials as a member was found. #{ng}"

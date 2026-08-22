@@ -410,9 +410,8 @@ module MemberTracker
         params_hash.reject!{|k,v| k == "callme"}
         call_why = params_hash["callwhy"]
         params_hash.reject!{|k,v| k == "callwhy"}
-        #these will be used to avoid dups when creating a new member
+        #possible-duplicate candidates get populated by find_possible_duplicates below
         @existing_mbrs = []
-        @mbr = {}
         #this action is also logged
         mbr_id = params_hash[:id]
         #save notes for log
@@ -450,21 +449,20 @@ module MemberTracker
           #if coming back with override = 1, let this go through, else...
           if !params_hash.has_key?("override")
             #need to validate that this member is not already in the db
-            #@existing_mbrs = Member.where(fname: params[:fname], lname: params[:lname]).all
-            dupe_test_result = @member.validate_dupes({fname: params_hash[:fname], lname: params_hash[:lname]})
-            if dupe_test_result > 0
-              #we have a possible existing member here
-              @member = Member[dupe_test_result]
-              @mbr = params_hash
+            @existing_mbrs = Member.find_possible_duplicates(
+              { fname: params_hash[:fname], lname: params_hash[:lname],
+                email: params_hash[:email], callsign: params_hash[:callsign] }
+            )
+            if !@existing_mbrs.empty?
+              @member = coerce_member_hash_for_display(params_hash)
               @modes = Member.modes
               @member[:modes] = 'none' if @member[:modes].nil? || @member[:modes].empty?
-              @member[:call_request] = nil
-              @member[:call_request_length] = 0
               #Send this back for validation
-              @tmp_msg = "looks like this member has already been entered into our db, need to update?"
+              @tmp_msg = "looks like this member may already be in the db, need to update instead?"
               return erb :m_edit, :layout => :layout_w_logout
             end
           end
+          params_hash.reject!{|k,v| k == "override"}
           #set the default mbr_type until a payment is made (this is also done on mbrs table)
           #note, none is also used to describe a 'guest'
           params_hash[:mbr_type] = 'none'
@@ -537,6 +535,21 @@ module MemberTracker
             params_hash.delete("mbrship_renewal_date")
           end
           params_hash["callsign"].empty? ? nil : params_hash["callsign"] = params_hash["callsign"].upcase
+          if !params_hash.has_key?("override")
+            @existing_mbrs = Member.find_possible_duplicates(
+              { fname: params_hash["fname"], lname: params_hash["lname"],
+                email: params_hash["email"], callsign: params_hash["callsign"] },
+              exclude_id: mbr_record.id
+            )
+            if !@existing_mbrs.empty?
+              @member = coerce_member_hash_for_display(params_hash.merge("id" => mbr_record.id))
+              @modes = Member.modes
+              @member[:modes] = 'none' if @member[:modes].nil? || @member[:modes].empty?
+              @tmp_msg = "looks like this update may collide with another existing member, need to review?"
+              return erb :m_edit, :layout => :layout_w_logout
+            end
+          end
+          params_hash.reject!{|k,v| k == "override"}
           #log a change in callsign
           if !mbr_record["callsign"].nil?
             if params_hash["callsign"] != mbr_record["callsign"].upcase

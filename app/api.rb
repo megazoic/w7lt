@@ -75,6 +75,27 @@ module MemberTracker
           "#{next_link}" \
         "</div>"
       end
+
+      # Coerces raw form-submitted strings into the types m_edit.erb expects when
+      # redisplaying unsaved input as @member (mirrors Sequel's typecasting on
+      # Model.new/#update, which we're intentionally bypassing since @member stays
+      # a plain Hash here so the erb's `@member.is_a?(Hash)` guard correctly skips
+      # the call-request section for unsaved candidate data).
+      def coerce_member_hash_for_display(hash)
+        h = hash.dup
+        [:arrl, :ares, :net, :ve, :elmer, :sota, :phh_pub, :phw_pub, :phm_pub].each do |k|
+          h[k] = h[k].to_s.empty? ? 0 : h[k].to_i
+        end
+        [:ok_to_email, :email_bogus].each do |k|
+          h[k] = h[k].to_s == 'true'
+        end
+        if h[:mbrship_renewal_date].to_s.strip.empty?
+          h[:mbrship_renewal_date] = nil
+        elsif !h[:mbrship_renewal_date].is_a?(Date)
+          h[:mbrship_renewal_date] = Date.strptime(h[:mbrship_renewal_date], '%D')
+        end
+        h
+      end
     end
     if ENV["RACK_ENV"] == 'production'
       before do # need to comment this for RSpec
