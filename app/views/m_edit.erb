@@ -77,10 +77,12 @@
       <label class="flex items-center gap-1 text-sm whitespace-nowrap">
         <input type="hidden" name="email_bogus" value="false">
         <input type="checkbox" name="email_bogus" id="email_bogus" value="true" class="w-auto"
+               onchange="toggleNoEmail(this)"
                <%= @member[:email_bogus] == true ? "checked='checked'" : nil %> />
-        Mark as bogus
+        No Email
       </label>
     </div>
+    <script>toggleNoEmail(document.getElementById('email_bogus'));</script>
     <label class="flex items-center gap-2 text-sm">
       OK to email about club activities?
       <select id="ok_to_email" name="ok_to_email"

@@ -43,6 +43,19 @@ function other_pmtSet(){
 	//enable textbox for other payment amount
 	$("other_pmt_field").disabled = false;
 }
+function toggleNoEmail(inputElement){
+	//grey out the email textbox in m_edit.erb when "No Email" is checked
+	var emailField = $("email");
+	if (inputElement.checked){
+		emailField.readOnly = true;
+		emailField.style.backgroundColor = "#f3f4f6";
+		emailField.style.color = "#9ca3af";
+	}else{
+		emailField.readOnly = false;
+		emailField.style.backgroundColor = "";
+		emailField.style.color = "";
+	}
+}
 function guestsSet(inputElement){
 	//set visibility of new guests table in e_create.erb
 	if (inputElement.checked){
