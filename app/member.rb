@@ -7,7 +7,21 @@ module MemberTracker
 
   class Member < Sequel::Model
     NAME_SIMILARITY_THRESHOLD = 0.88
-    GUEST_PLACEHOLDER_EMAIL = 'GUEST@W7LT.ORG'.freeze
+    NO_EMAIL_PLACEHOLDER = 'NO-EMAIL@W7LT.ORG'.freeze
+    NO_CALLSIGN_PLACEHOLDER = 'NO CALL'.freeze
+
+    # Known placeholder/dummy emails used across many unrelated members (guest
+    # sign-ins, unknown/bogus addresses) -- excluded from email-match checks so
+    # they don't mass-flag every member who shares one as a "duplicate" of
+    # every other, and treated as equivalent to "bogus" by normalize_email.
+    # Historical values (GUEST@W7LT.ORG, BOGUS@BOGUS.COM, BOGUS@NOMAIL.COM) are
+    # kept even after the one-time mbr:normalize_identity_placeholders cleanup
+    # as defense-in-depth for any environment that hasn't been normalized yet.
+    # Confirmed against real data via
+    # `select lower(email), count(*) from members group by lower(email) having count(*) > 3`.
+    EXCLUDED_PLACEHOLDER_EMAILS = [
+      NO_EMAIL_PLACEHOLDER, 'GUEST@W7LT.ORG', 'BOGUS@BOGUS.COM', 'BOGUS@NOMAIL.COM'
+    ].freeze
 
     one_to_one :auth_user, :class=>"MemberTracker::AuthUser", key: :mbr_id
     one_to_many :logs, :class=>"MemberTracker::Log", key: :mbr_id
@@ -80,14 +94,14 @@ module MemberTracker
         m_fname    = m.fname.to_s.strip.upcase
         m_lname    = m.lname.to_s.strip.upcase
 
-        if !cand_email.empty? && cand_email != GUEST_PLACEHOLDER_EMAIL &&
-           !m_email.empty? && m_email != GUEST_PLACEHOLDER_EMAIL &&
+        if !cand_email.empty? && !EXCLUDED_PLACEHOLDER_EMAILS.include?(cand_email) &&
+           !m_email.empty? && !EXCLUDED_PLACEHOLDER_EMAILS.include?(m_email) &&
            cand_email == m_email
           email_matches << m
         end
 
-        if !cand_callsign.empty? && cand_callsign != 'NO CALL' &&
-           !m_callsign.empty? && m_callsign != 'NO CALL' &&
+        if !cand_callsign.empty? && cand_callsign != NO_CALLSIGN_PLACEHOLDER &&
+           !m_callsign.empty? && m_callsign != NO_CALLSIGN_PLACEHOLDER &&
            cand_callsign == m_callsign
           callsign_matches << m
         end
@@ -105,6 +119,35 @@ module MemberTracker
 
       (email_matches + callsign_matches + name_matches).uniq(&:id)
     end
+
+    # Returns [normalized_email, bogus_flag]. Forces the canonical placeholder
+    # (and bogus=true) whenever: the email is blank, bogus was explicitly
+    # requested, OR the typed value exactly matches a known historical
+    # placeholder (someone typing the old familiar "bogus@bogus.com" out of
+    # habit instead of using the checkbox) -- closes the loop for old habits
+    # without guessing at fuzzy patterns, which would risk false-positiving on
+    # real but unusual-looking addresses.
+    def self.normalize_email(raw_email, bogus_requested: false)
+      cleaned = raw_email.to_s.strip
+      known_placeholder = EXCLUDED_PLACEHOLDER_EMAILS.include?(cleaned.upcase)
+      if bogus_requested || cleaned.empty? || known_placeholder
+        [NO_EMAIL_PLACEHOLDER, true]
+      else
+        [cleaned.upcase, false]
+      end
+    end
+
+    # Returns the normalized callsign: the canonical placeholder if blank or
+    # explicitly requested, otherwise the upcased input.
+    def self.normalize_callsign(raw_callsign, no_callsign_requested: false)
+      cleaned = raw_callsign.to_s.strip
+      if no_callsign_requested || cleaned.empty?
+        NO_CALLSIGN_PLACEHOLDER
+      else
+        cleaned.upcase
+      end
+    end
+
     def get_jf_data
       JotformParser.call
     end

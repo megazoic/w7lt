@@ -113,6 +113,26 @@ module MemberTracker
         expect(last_response.status).to eq(302)
         expect(last_response.location).to include('/r/member/show/')
       end
+
+      it 'forces the canonical placeholder email when marked bogus, regardless of typed text' do
+        post '/m/member/create', new_member_params.merge('email' => 'whatever@example.com', 'email_bogus' => 'true')
+        member = Member.order(:id).last
+        expect(member.email).to eq('NO-EMAIL@W7LT.ORG')
+        expect(member.email_bogus).to eq(true)
+      end
+
+      it 'defaults callsign to NO CALL when left blank' do
+        post '/m/member/create', new_member_params.merge('callsign' => '')
+        member = Member.order(:id).last
+        expect(member.callsign).to eq('NO CALL')
+      end
+
+      it 'normalizes a known historical placeholder email even without checking bogus' do
+        post '/m/member/create', new_member_params.merge('email' => 'bogus@bogus.com')
+        member = Member.order(:id).last
+        expect(member.email).to eq('NO-EMAIL@W7LT.ORG')
+        expect(member.email_bogus).to eq(true)
+      end
     end
 
     describe 'GET /m/member/edit/:id' do

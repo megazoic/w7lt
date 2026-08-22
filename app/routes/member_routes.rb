@@ -445,7 +445,13 @@ module MemberTracker
           #set the character case to upper for name and email
           params_hash[:fname] = params_hash[:fname].upcase
           params_hash[:lname] = params_hash[:lname].upcase
-          params_hash[:email] = params_hash[:email].upcase.lstrip
+          params_hash[:email], bogus = Member.normalize_email(
+            params_hash[:email], bogus_requested: params_hash['email_bogus'] == 'true'
+          )
+          params_hash[:email_bogus] = bogus
+          params_hash[:callsign] = Member.normalize_callsign(
+            params_hash[:callsign], no_callsign_requested: params_hash['no_callsign'] == '1'
+          )
           #if coming back with override = 1, let this go through, else...
           if !params_hash.has_key?("override")
             #need to validate that this member is not already in the db
@@ -462,29 +468,10 @@ module MemberTracker
               return erb :m_edit, :layout => :layout_w_logout
             end
           end
-          params_hash.reject!{|k,v| k == "override"}
+          params_hash.reject!{|k,v| k == "override" || k == "no_callsign"}
           #set the default mbr_type until a payment is made (this is also done on mbrs table)
           #note, none is also used to describe a 'guest'
           params_hash[:mbr_type] = 'none'
-          #check callsign and license class TODO also, this should be an associate member if paying
-          if params_hash[:license_class] == 'none'
-            if params_hash[:callsign] == ''
-              #need to put a standardized non-callsign if empty
-              params_hash[:callsign] = 'NO CALL'
-            else
-              #TODO reject this as there has to be a license class with a callsign
-              #still need to pass existing params_hash back to new/edit member form
-              #session[:msg] = "The new member could not be created\nneed a license class"
-              #redirect "/r/member/show/#{mbr_id}"
-            end
-          else
-            if params_hash[:callsign] == ''
-              #TODO reject this need a callsign if license class is other than none
-              #still need to pass existing params back to new/edit member form
-              #session[:msg] = "The new member could not be created\nneed a callsign"
-              #redirect "/r/member/show/#{mbr_id}"
-            end
-          end
           mbr_record = Member.new(params_hash)
           begin
             DB.transaction do
@@ -527,14 +514,19 @@ module MemberTracker
           #set the character case to upper for name, email and callsign
           params_hash["fname"] = params_hash["fname"].upcase
           params_hash["lname"] = params_hash["lname"].upcase
-          params_hash["email"] = params_hash["email"].upcase.lstrip
+          params_hash["email"], bogus = Member.normalize_email(
+            params_hash["email"], bogus_requested: params_hash["email_bogus"] == 'true'
+          )
+          params_hash["email_bogus"] = bogus
           #fix renewal date if there is one
           if params_hash["mbrship_renewal_date"] != ""
             params_hash["mbrship_renewal_date"] = Date.strptime(params_hash["mbrship_renewal_date"],'%D')
           else #remove this key
             params_hash.delete("mbrship_renewal_date")
           end
-          params_hash["callsign"].empty? ? nil : params_hash["callsign"] = params_hash["callsign"].upcase
+          params_hash["callsign"] = Member.normalize_callsign(
+            params_hash["callsign"], no_callsign_requested: params_hash["no_callsign"] == '1'
+          )
           if !params_hash.has_key?("override")
             @existing_mbrs = Member.find_possible_duplicates(
               { fname: params_hash["fname"], lname: params_hash["lname"],
@@ -549,7 +541,7 @@ module MemberTracker
               return erb :m_edit, :layout => :layout_w_logout
             end
           end
-          params_hash.reject!{|k,v| k == "override"}
+          params_hash.reject!{|k,v| k == "override" || k == "no_callsign"}
           #log a change in callsign
           if !mbr_record["callsign"].nil?
             if params_hash["callsign"] != mbr_record["callsign"].upcase

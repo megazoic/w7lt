@@ -64,6 +64,65 @@ namespace :mbr do
     end
     puts "Done. Closed #{closed} action(s)."
   end
+
+  desc "One-time scan of existing members for possible duplicates, using the same fuzzy-match validator as member create/update"
+  task :find_duplicates do
+    require "sequel"
+    require "./app/api.rb"
+    members = MemberTracker::Member.select(:id, :fname, :lname, :email, :callsign).order(:id).all
+    puts "Scanning #{members.count} members for possible duplicates..."
+    pairs_found = 0
+    members.each do |m|
+      matches = MemberTracker::Member.find_possible_duplicates(
+        { fname: m.fname, lname: m.lname, email: m.email, callsign: m.callsign },
+        exclude_id: m.id
+      )
+      matches.each do |match|
+        next unless match.id > m.id # report each pair once, regardless of which side found it
+        pairs_found += 1
+        puts "-" * 60
+        puts "  id=#{m.id}\t#{m.fname} #{m.lname}\tcallsign=#{m.callsign.inspect}\temail=#{m.email.inspect}"
+        puts "  id=#{match.id}\t#{match.fname} #{match.lname}\tcallsign=#{match.callsign.inspect}\temail=#{match.email.inspect}"
+      end
+    end
+    puts "-" * 60
+    puts "Done. Found #{pairs_found} possible duplicate pair(s) among #{members.count} members."
+    puts "This is a read-only report -- no records were changed. Review each pair and merge/correct manually via /m/member/edit/:id."
+  end
+
+  desc "One-time: normalize existing members' email/callsign to the canonical placeholder values"
+  task :normalize_identity_placeholders do
+    require "sequel"
+    require "./app/api.rb"
+
+    historical_emails = MemberTracker::Member::EXCLUDED_PLACEHOLDER_EMAILS -
+      [MemberTracker::Member::NO_EMAIL_PLACEHOLDER]
+    all_members = DB[:members].select(:id, :email, :callsign).all
+
+    email_target_ids = all_members.select { |m|
+      m[:email].to_s.strip.empty? || historical_emails.include?(m[:email].to_s.strip.upcase)
+    }.map { |m| m[:id] }
+    callsign_target_ids = all_members.select { |m| m[:callsign].to_s.strip.empty? }.map { |m| m[:id] }
+
+    puts "#{email_target_ids.size} member(s) will have email set to #{MemberTracker::Member::NO_EMAIL_PLACEHOLDER} (email_bogus=true)"
+    puts "#{callsign_target_ids.size} member(s) will have callsign set to #{MemberTracker::Member::NO_CALLSIGN_PLACEHOLDER}"
+    print "Proceed? (y/n) "
+    answer = $stdin.gets
+    unless answer && answer.strip.downcase == 'y'
+      puts "Aborted, no changes made."
+      next
+    end
+
+    DB.transaction do
+      unless email_target_ids.empty?
+        DB[:members].where(id: email_target_ids).update(email: MemberTracker::Member::NO_EMAIL_PLACEHOLDER, email_bogus: true)
+      end
+      unless callsign_target_ids.empty?
+        DB[:members].where(id: callsign_target_ids).update(callsign: MemberTracker::Member::NO_CALLSIGN_PLACEHOLDER)
+      end
+    end
+    puts "Done. Updated #{email_target_ids.size} email(s) and #{callsign_target_ids.size} callsign(s)."
+  end
 end
 
 namespace :db do

@@ -306,10 +306,11 @@ module MemberTracker
                 #need to add guests to database before adding them to this event
                 log_guest = Log.new(a_user_id: session[:auth_user_id], ts: Time.now, action_id: Action.get_action_id("mbr_edit"), event_id: event.id)
                 #need to check for which keys are present, the members table only needs an email
-                #and need to use dummy email if other fields are present
-                if !ng.has_key?("email")
-                  ng["email"] = "guest@w7lt.org"
-                end
+                #and need to use the canonical placeholder if other fields are present
+                email, bogus = Member.normalize_email(ng["email"])
+                ng["email"] = email
+                ng["email_bogus"] = bogus
+                ng["callsign"] = Member.normalize_callsign(ng["callsign"])
                 new_guest_mbr = Member.new(ng)
                 new_guest_mbr.save
                 event.add_member(new_guest_mbr.id)

@@ -56,6 +56,12 @@
         <label class="block text-xs text-gray-600 mb-1" for="callsign">Callsign</label>
         <input class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                type="text" name="callsign" id="callsign" value="<%= @member[:callsign] %>" />
+        <label class="flex items-center gap-1 text-xs mt-1">
+          <input type="hidden" name="no_callsign" value="">
+          <input type="checkbox" name="no_callsign" id="no_callsign" value="1" class="w-auto"
+                 <%= @member[:callsign] == MemberTracker::Member::NO_CALLSIGN_PLACEHOLDER ? "checked='checked'" : nil %> />
+          No callsign
+        </label>
       </div>
     </div>
     <p class="text-xs text-gray-400">* required field</p>
