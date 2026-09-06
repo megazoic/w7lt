@@ -73,8 +73,13 @@
         <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap"><%= r[:ts].strftime("%Y, %b, %d") %></td>
         <% if session[:auth_user_roles].include?('mbr_mgr') %>
         <td class="border border-gray-200 px-2 py-0.5 whitespace-nowrap text-xs">
+          <% if r[:event_type] == "dues payment" %>
+          <a href="/m/payments/edit/<%= r[:id] %>" class="text-blue-600 hover:underline">edit</a> |
+          <a href="/m/payments/destroy/<%= r[:id] %>" class="text-blue-600 hover:underline">delete</a>
+          <% else %>
           <a href="/m/mbr_renewals/edit/<%= r[:id] %>" class="text-blue-600 hover:underline">edit</a> |
           <a href="/m/mbr_renewals/destroy/<%= r[:id] %>" class="text-blue-600 hover:underline">delete</a>
+          <% end %>
         </td>
         <% end %>
       </tr>

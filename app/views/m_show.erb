@@ -146,11 +146,17 @@
           <td class="border border-gray-200 px-3 py-1"><%= mr[:a_user_id] %></td>
           <td class="border border-gray-200 px-3 py-1 max-w-xs break-words"><%= mr[:notes] %></td>
           <td class="border border-gray-200 px-3 py-1 whitespace-nowrap"><%= mr[:ts].strftime("%D") %></td>
-          <td class="border border-gray-200 px-3 py-1">
+          <td class="border border-gray-200 px-3 py-1 whitespace-nowrap">
             <% if mr[:renewal_type] == "dues payment" %>
               <a href="/m/payments/edit/<%= mr[:id] %>" class="text-blue-600 hover:underline text-xs">edit</a>
+              <% if session[:auth_user_roles].include?('mbr_mgr') %>
+              | <a href="/m/payments/destroy/<%= mr[:id] %>" class="text-blue-600 hover:underline text-xs">delete</a>
+              <% end %>
             <% else %>
               <a href="/m/mbr_renewals/edit/<%= mr[:id] %>" class="text-blue-600 hover:underline text-xs">edit</a>
+              <% if session[:auth_user_roles].include?('mbr_mgr') %>
+              | <a href="/m/mbr_renewals/destroy/<%= mr[:id] %>" class="text-blue-600 hover:underline text-xs">delete</a>
+              <% end %>
             <% end %>
           </td>
         </tr>
